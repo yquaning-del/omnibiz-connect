@@ -64,6 +64,62 @@ export type Database = {
           },
         ]
       }
+      hotel_rooms: {
+        Row: {
+          amenities: string[] | null
+          capacity: number
+          created_at: string
+          floor: number | null
+          housekeeping_status: string
+          id: string
+          location_id: string
+          notes: string | null
+          price_per_night: number
+          room_number: string
+          room_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amenities?: string[] | null
+          capacity?: number
+          created_at?: string
+          floor?: number | null
+          housekeeping_status?: string
+          id?: string
+          location_id: string
+          notes?: string | null
+          price_per_night?: number
+          room_number: string
+          room_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amenities?: string[] | null
+          capacity?: number
+          created_at?: string
+          floor?: number | null
+          housekeeping_status?: string
+          id?: string
+          location_id?: string
+          notes?: string | null
+          price_per_night?: number
+          room_number?: string
+          room_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hotel_rooms_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           address: string | null
@@ -405,6 +461,102 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      reservations: {
+        Row: {
+          check_in: string
+          check_out: string | null
+          created_at: string
+          customer_id: string | null
+          guest_count: number
+          guest_email: string | null
+          guest_name: string
+          guest_phone: string | null
+          id: string
+          location_id: string
+          notes: string | null
+          organization_id: string
+          reservation_type: string
+          room_id: string | null
+          status: string
+          table_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          check_in: string
+          check_out?: string | null
+          created_at?: string
+          customer_id?: string | null
+          guest_count?: number
+          guest_email?: string | null
+          guest_name: string
+          guest_phone?: string | null
+          id?: string
+          location_id: string
+          notes?: string | null
+          organization_id: string
+          reservation_type: string
+          room_id?: string | null
+          status?: string
+          table_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          check_in?: string
+          check_out?: string | null
+          created_at?: string
+          customer_id?: string | null
+          guest_count?: number
+          guest_email?: string | null
+          guest_name?: string
+          guest_phone?: string | null
+          id?: string
+          location_id?: string
+          notes?: string | null
+          organization_id?: string
+          reservation_type?: string
+          room_id?: string | null
+          status?: string
+          table_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_tables"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       restaurant_tables: {
         Row: {
