@@ -17,6 +17,9 @@ import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
 import Staff from "./pages/Staff";
 import Tables from "./pages/Tables";
+import Rooms from "./pages/Rooms";
+import Kitchen from "./pages/Kitchen";
+import Reservations from "./pages/Reservations";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -48,6 +51,9 @@ const App = () => (
               <Route path="/reports" element={<Reports />} />
               <Route path="/staff" element={<Staff />} />
               <Route path="/tables" element={<Tables />} />
+              <Route path="/rooms" element={<Rooms />} />
+              <Route path="/kitchen" element={<Kitchen />} />
+              <Route path="/reservations" element={<Reservations />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
 
