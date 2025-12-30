@@ -1,0 +1,356 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Building2, MapPin, User, Bell, Palette, Save } from 'lucide-react';
+import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
+
+export default function Settings() {
+  const { currentOrganization, currentLocation, profile, user } = useAuth();
+  const { toast } = useToast();
+  
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Organization settings
+  const [orgName, setOrgName] = useState('');
+  const [orgVertical, setOrgVertical] = useState<BusinessVertical>('retail');
+
+  // Location settings
+  const [locName, setLocName] = useState('');
+  const [locAddress, setLocAddress] = useState('');
+  const [locCity, setLocCity] = useState('');
+  const [locPhone, setLocPhone] = useState('');
+  const [locEmail, setLocEmail] = useState('');
+
+  // User preferences
+  const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [userPhone, setUserPhone] = useState('');
+
+  // Notification preferences
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [lowStockAlerts, setLowStockAlerts] = useState(true);
+  const [orderNotifications, setOrderNotifications] = useState(true);
+
+  useEffect(() => {
+    if (currentOrganization) {
+      setOrgName(currentOrganization.name);
+      setOrgVertical(currentOrganization.primary_vertical);
+    }
+    if (currentLocation) {
+      setLocName(currentLocation.name);
+      setLocAddress(currentLocation.address || '');
+      setLocCity(currentLocation.city || '');
+      setLocPhone(currentLocation.phone || '');
+      setLocEmail(currentLocation.email || '');
+    }
+    if (profile) {
+      setUserName(profile.full_name || '');
+      setUserEmail(profile.email || '');
+      setUserPhone(profile.phone || '');
+    }
+  }, [currentOrganization, currentLocation, profile]);
+
+  const saveOrganization = async () => {
+    if (!currentOrganization) return;
+    setSaving(true);
+
+    const { error } = await supabase
+      .from('organizations')
+      .update({
+        name: orgName.trim(),
+        primary_vertical: orgVertical,
+      })
+      .eq('id', currentOrganization.id);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } else {
+      toast({ title: 'Organization updated' });
+    }
+    setSaving(false);
+  };
+
+  const saveLocation = async () => {
+    if (!currentLocation) return;
+    setSaving(true);
+
+    const { error } = await supabase
+      .from('locations')
+      .update({
+        name: locName.trim(),
+        address: locAddress.trim() || null,
+        city: locCity.trim() || null,
+        phone: locPhone.trim() || null,
+        email: locEmail.trim() || null,
+      })
+      .eq('id', currentLocation.id);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } else {
+      toast({ title: 'Location updated' });
+    }
+    setSaving(false);
+  };
+
+  const saveProfile = async () => {
+    if (!user) return;
+    setSaving(true);
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: userName.trim() || null,
+        phone: userPhone.trim() || null,
+      })
+      .eq('id', user.id);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } else {
+      toast({ title: 'Profile updated' });
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold font-display text-foreground">Settings</h1>
+        <p className="text-muted-foreground">Manage your organization, locations, and preferences</p>
+      </div>
+
+      <Tabs defaultValue="organization" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="organization" className="flex items-center gap-2">
+            <Building2 className="w-4 h-4" />
+            Organization
+          </TabsTrigger>
+          <TabsTrigger value="location" className="flex items-center gap-2">
+            <MapPin className="w-4 h-4" />
+            Location
+          </TabsTrigger>
+          <TabsTrigger value="profile" className="flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="w-4 h-4" />
+            Notifications
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Organization Settings */}
+        <TabsContent value="organization">
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader>
+              <CardTitle>Organization Settings</CardTitle>
+              <CardDescription>Manage your business organization details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 max-w-md">
+                <div className="space-y-2">
+                  <Label>Organization Name</Label>
+                  <Input
+                    value={orgName}
+                    onChange={(e) => setOrgName(e.target.value)}
+                    placeholder="My Business"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Primary Business Type</Label>
+                  <Select value={orgVertical} onValueChange={(v) => setOrgVertical(v as BusinessVertical)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(VERTICAL_CONFIG).map(([key, config]) => (
+                        <SelectItem key={key} value={key}>
+                          {config.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button onClick={saveOrganization} disabled={saving} className="w-fit">
+                  {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save Changes
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Location Settings */}
+        <TabsContent value="location">
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader>
+              <CardTitle>Location Settings</CardTitle>
+              <CardDescription>Configure your current location details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 max-w-md">
+                <div className="space-y-2">
+                  <Label>Location Name</Label>
+                  <Input
+                    value={locName}
+                    onChange={(e) => setLocName(e.target.value)}
+                    placeholder="Main Branch"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Address</Label>
+                  <Input
+                    value={locAddress}
+                    onChange={(e) => setLocAddress(e.target.value)}
+                    placeholder="123 Main Street"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>City</Label>
+                  <Input
+                    value={locCity}
+                    onChange={(e) => setLocCity(e.target.value)}
+                    placeholder="New York"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Phone</Label>
+                    <Input
+                      value={locPhone}
+                      onChange={(e) => setLocPhone(e.target.value)}
+                      placeholder="+1 234 567 8900"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={locEmail}
+                      onChange={(e) => setLocEmail(e.target.value)}
+                      placeholder="location@business.com"
+                    />
+                  </div>
+                </div>
+
+                <Button onClick={saveLocation} disabled={saving} className="w-fit">
+                  {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save Changes
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Profile Settings */}
+        <TabsContent value="profile">
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader>
+              <CardTitle>Profile Settings</CardTitle>
+              <CardDescription>Manage your personal account details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 max-w-md">
+                <div className="space-y-2">
+                  <Label>Full Name</Label>
+                  <Input
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="John Doe"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={userEmail}
+                    disabled
+                    className="bg-muted"
+                  />
+                  <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Phone</Label>
+                  <Input
+                    value={userPhone}
+                    onChange={(e) => setUserPhone(e.target.value)}
+                    placeholder="+1 234 567 8900"
+                  />
+                </div>
+
+                <Button onClick={saveProfile} disabled={saving} className="w-fit">
+                  {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save Changes
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Notification Settings */}
+        <TabsContent value="notifications">
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader>
+              <CardTitle>Notification Preferences</CardTitle>
+              <CardDescription>Configure how you receive alerts and updates</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4 max-w-md">
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
+                  <div>
+                    <p className="font-medium text-foreground">Email Notifications</p>
+                    <p className="text-sm text-muted-foreground">Receive updates via email</p>
+                  </div>
+                  <Switch
+                    checked={emailNotifications}
+                    onCheckedChange={setEmailNotifications}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
+                  <div>
+                    <p className="font-medium text-foreground">Low Stock Alerts</p>
+                    <p className="text-sm text-muted-foreground">Get notified when items are low</p>
+                  </div>
+                  <Switch
+                    checked={lowStockAlerts}
+                    onCheckedChange={setLowStockAlerts}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
+                  <div>
+                    <p className="font-medium text-foreground">Order Notifications</p>
+                    <p className="text-sm text-muted-foreground">Alerts for new orders</p>
+                  </div>
+                  <Switch
+                    checked={orderNotifications}
+                    onCheckedChange={setOrderNotifications}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
