@@ -20,6 +20,7 @@ import Tables from "./pages/Tables";
 import Rooms from "./pages/Rooms";
 import Kitchen from "./pages/Kitchen";
 import Reservations from "./pages/Reservations";
+import Housekeeping from "./pages/Housekeeping";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/rooms" element={<Rooms />} />
               <Route path="/kitchen" element={<Kitchen />} />
               <Route path="/reservations" element={<Reservations />} />
+              <Route path="/housekeeping" element={<Housekeeping />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
 
