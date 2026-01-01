@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,7 +52,7 @@ const verticals = [
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading, organizations } = useAuth();
   const { toast } = useToast();
   
   const [step, setStep] = useState(1);
@@ -67,6 +67,25 @@ export default function Onboarding() {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
+
+  // Redirect if user already has organizations
+  useEffect(() => {
+    if (!loading && organizations.length > 0) {
+      navigate('/dashboard', { replace: true });
+    }
+    if (!loading && !user) {
+      navigate('/auth', { replace: true });
+    }
+  }, [loading, organizations, user, navigate]);
+
+  // Show loading while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const generateSlug = (name: string) => {
     return name
