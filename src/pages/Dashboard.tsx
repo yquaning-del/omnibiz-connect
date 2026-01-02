@@ -6,6 +6,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { QuickActionCard } from '@/components/dashboard/QuickActionCard';
 import { RecentOrdersTable } from '@/components/dashboard/RecentOrdersTable';
 import { LowStockAlert } from '@/components/dashboard/LowStockAlert';
+import { AIInsightsPanel } from '@/components/ai/AIInsightsPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Order, Product, VERTICAL_CONFIG } from '@/types';
 import {
@@ -19,6 +20,8 @@ import {
   Receipt,
   Warehouse,
   UserPlus,
+  Sparkles,
+  Package as PackageIcon,
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -219,6 +222,20 @@ export default function Dashboard() {
             />
           </CardContent>
         </Card>
+      </div>
+
+      {/* AI Insights Row */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <AIInsightsPanel 
+          type="daily_summary" 
+          title="AI Daily Summary" 
+          icon={<Sparkles className="w-5 h-5 text-primary" />}
+        />
+        <AIInsightsPanel 
+          type="sales_forecast" 
+          title="Sales Forecast" 
+          icon={<TrendingUp className="w-5 h-5 text-success" />}
+        />
       </div>
     </div>
   );
