@@ -2,3 +2,6 @@ project_id = "kjkmoxoossrtvxlywhro"
 
 [functions.ai-insights]
 verify_jwt = false
+
+[functions.drug-interactions]
+verify_jwt = false

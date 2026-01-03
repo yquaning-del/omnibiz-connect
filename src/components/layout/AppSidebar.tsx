@@ -70,7 +70,7 @@ const getNavItems = (vertical: BusinessVertical) => {
       { title: 'Reservations', href: '/reservations', icon: Calendar },
     ],
     pharmacy: [
-      { title: 'Prescriptions', href: '/prescriptions', icon: ClipboardList },
+      { title: 'Pharmacy', href: '/pharmacy', icon: Pill },
     ],
     retail: [
       { title: 'Promotions', href: '/promotions', icon: Receipt },
