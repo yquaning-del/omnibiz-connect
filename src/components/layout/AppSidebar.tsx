@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LocationSwitcher } from './LocationSwitcher';
 import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
 
 const getVerticalIcon = (vertical: BusinessVertical) => {
@@ -104,37 +105,18 @@ export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const { profile, currentOrganization, currentLocation, signOut, hasRole } = useAuth();
+  const { profile, signOut, hasRole } = useAuth();
 
   const isSuperAdmin = hasRole('super_admin');
-  const vertical = currentLocation?.vertical || currentOrganization?.primary_vertical || 'retail';
+  const vertical = 'retail' as BusinessVertical; // Default for nav items
   const { common, verticalSpecific, management } = getNavItems(vertical, isSuperAdmin);
-  const VerticalIcon = isSuperAdmin ? Shield : getVerticalIcon(vertical);
-  const verticalConfig = VERTICAL_CONFIG[vertical];
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
     <Sidebar className={cn('border-r border-border/50', collapsed ? 'w-16' : 'w-64')}>
-      <SidebarHeader className="border-b border-border/50 p-4">
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
-            `bg-${verticalConfig.color}/20`
-          )}>
-            <VerticalIcon className={cn('w-5 h-5', `text-${verticalConfig.color}`)} />
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col min-w-0">
-              <span className="font-semibold text-foreground truncate">
-                {currentOrganization?.name || 'HospitalityOS'}
-              </span>
-              <span className="text-xs text-muted-foreground truncate">
-                {currentLocation?.name || verticalConfig.name}
-              </span>
-            </div>
-          )}
-        </div>
+      <SidebarHeader className="border-b border-border/50 p-2">
+        <LocationSwitcher collapsed={collapsed} />
       </SidebarHeader>
 
       <SidebarContent className="px-2 py-4">
@@ -165,7 +147,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>{isSuperAdmin ? 'All Platforms' : verticalConfig.name}</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel>{isSuperAdmin ? 'All Platforms' : 'Features'}</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {verticalSpecific.map((item) => (

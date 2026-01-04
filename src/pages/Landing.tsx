@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Building2, Utensils, Hotel, Pill, ShoppingBag, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Building2, Utensils, Hotel, Pill, ShoppingBag, CheckCircle2, Play } from 'lucide-react';
+import { DemoModal } from '@/components/demo/DemoModal';
 
 const features = [
   { icon: Utensils, label: 'Restaurants', color: 'text-restaurant' },
@@ -19,8 +21,11 @@ const benefits = [
 ];
 
 const Landing = () => {
+  const [demoOpen, setDemoOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
+      <DemoModal open={demoOpen} onOpenChange={setDemoOpen} />
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
@@ -62,7 +67,8 @@ const Landing = () => {
                   Start Free Trial <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" onClick={() => window.open('https://www.youtube.com/watch?v=demo', '_blank')}>
+              <Button size="lg" variant="outline" onClick={() => setDemoOpen(true)} className="gap-2">
+                <Play className="w-4 h-4" />
                 Watch Demo
               </Button>
             </div>
