@@ -62,7 +62,7 @@ const Landing = () => {
                   Start Free Trial <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" onClick={() => window.open('https://www.youtube.com/watch?v=demo', '_blank')}>
                 Watch Demo
               </Button>
             </div>
