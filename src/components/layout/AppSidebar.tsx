@@ -33,6 +33,7 @@ import {
   ChefHat,
   BedDouble,
   ClipboardList,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -48,7 +49,17 @@ const getVerticalIcon = (vertical: BusinessVertical) => {
   }
 };
 
-const getNavItems = (vertical: BusinessVertical) => {
+// All platform items for super admin view
+const getAllPlatformItems = () => [
+  { title: 'Tables', href: '/tables', icon: UtensilsCrossed },
+  { title: 'Kitchen Display', href: '/kitchen', icon: ChefHat },
+  { title: 'Rooms', href: '/rooms', icon: BedDouble },
+  { title: 'Housekeeping', href: '/housekeeping', icon: ClipboardList },
+  { title: 'Reservations', href: '/reservations', icon: Calendar },
+  { title: 'Pharmacy', href: '/pharmacy', icon: Pill },
+];
+
+const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
   const common = [
     { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { title: 'Point of Sale', href: '/pos', icon: ShoppingCart },
@@ -83,18 +94,22 @@ const getNavItems = (vertical: BusinessVertical) => {
     { title: 'Settings', href: '/settings', icon: Settings },
   ];
 
-  return { common, verticalSpecific: verticalSpecific[vertical], management };
+  // Super admins see all platform features
+  const platformItems = isSuperAdmin ? getAllPlatformItems() : verticalSpecific[vertical];
+
+  return { common, verticalSpecific: platformItems, management, isSuperAdmin };
 };
 
 export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const { profile, currentOrganization, currentLocation, signOut } = useAuth();
+  const { profile, currentOrganization, currentLocation, signOut, hasRole } = useAuth();
 
+  const isSuperAdmin = hasRole('super_admin');
   const vertical = currentLocation?.vertical || currentOrganization?.primary_vertical || 'retail';
-  const { common, verticalSpecific, management } = getNavItems(vertical);
-  const VerticalIcon = getVerticalIcon(vertical);
+  const { common, verticalSpecific, management } = getNavItems(vertical, isSuperAdmin);
+  const VerticalIcon = isSuperAdmin ? Shield : getVerticalIcon(vertical);
   const verticalConfig = VERTICAL_CONFIG[vertical];
 
   const isActive = (path: string) => location.pathname === path;
@@ -150,7 +165,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>{verticalConfig.name}</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel>{isSuperAdmin ? 'All Platforms' : verticalConfig.name}</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {verticalSpecific.map((item) => (
