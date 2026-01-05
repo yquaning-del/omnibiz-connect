@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +10,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, MapPin, User, Bell, Palette, Save } from 'lucide-react';
+import { Loader2, Building2, MapPin, User, Bell, Globe, Save } from 'lucide-react';
 import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
+import { LanguageSettings } from '@/components/settings/LanguageSettings';
 
 export default function Settings() {
   const { currentOrganization, currentLocation, profile, user } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -126,27 +129,31 @@ export default function Settings() {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold font-display text-foreground">Settings</h1>
-        <p className="text-muted-foreground">Manage your organization, locations, and preferences</p>
+        <h1 className="text-2xl font-bold font-display text-foreground">{t('settings.title')}</h1>
+        <p className="text-muted-foreground">{t('settings.subtitle')}</p>
       </div>
 
       <Tabs defaultValue="organization" className="space-y-6">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="organization" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
-            Organization
+            {t('settings.organization')}
           </TabsTrigger>
           <TabsTrigger value="location" className="flex items-center gap-2">
             <MapPin className="w-4 h-4" />
-            Location
+            {t('settings.location')}
           </TabsTrigger>
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="w-4 h-4" />
-            Profile
+            {t('settings.profile')}
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="w-4 h-4" />
-            Notifications
+            {t('settings.notifications')}
+          </TabsTrigger>
+          <TabsTrigger value="language" className="flex items-center gap-2">
+            <Globe className="w-4 h-4" />
+            {t('settings.language')}
           </TabsTrigger>
         </TabsList>
 
@@ -349,6 +356,11 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Language Settings */}
+        <TabsContent value="language">
+          <LanguageSettings />
         </TabsContent>
       </Tabs>
     </div>
