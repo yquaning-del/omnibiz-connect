@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -29,43 +30,45 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            
-            {/* Protected routes with AppLayout */}
-            <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/pos" element={<POS />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/products/new" element={<Products />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/customers/new" element={<Customers />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/orders/:id" element={<Orders />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/staff" element={<Staff />} />
-              <Route path="/tables" element={<Tables />} />
-              <Route path="/rooms" element={<Rooms />} />
-              <Route path="/kitchen" element={<Kitchen />} />
-              <Route path="/reservations" element={<Reservations />} />
-              <Route path="/housekeeping" element={<Housekeeping />} />
-              <Route path="/pharmacy" element={<Pharmacy />} />
-              <Route path="/settings" element={<Settings />} />
-            </Route>
+    <LanguageProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              
+              {/* Protected routes with AppLayout */}
+              <Route element={<AppLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/pos" element={<POS />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/products/new" element={<Products />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/customers/new" element={<Customers />} />
+                <Route path="/orders" element={<Orders />} />
+                <Route path="/orders/:id" element={<Orders />} />
+                <Route path="/inventory" element={<Inventory />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/staff" element={<Staff />} />
+                <Route path="/tables" element={<Tables />} />
+                <Route path="/rooms" element={<Rooms />} />
+                <Route path="/kitchen" element={<Kitchen />} />
+                <Route path="/reservations" element={<Reservations />} />
+                <Route path="/housekeeping" element={<Housekeeping />} />
+                <Route path="/pharmacy" element={<Pharmacy />} />
+                <Route path="/settings" element={<Settings />} />
+              </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </LanguageProvider>
   </QueryClientProvider>
 );
 
