@@ -57,6 +57,11 @@ export default function Onboarding() {
   
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResuming, setIsResuming] = useState(true);
+  
+  // Partial records for resume flow
+  const [existingOrg, setExistingOrg] = useState<{ id: string; name: string; primary_vertical: BusinessVertical } | null>(null);
+  const [existingLocation, setExistingLocation] = useState<{ id: string } | null>(null);
   
   // Step 1: Business info
   const [businessName, setBusinessName] = useState('');
@@ -68,18 +73,92 @@ export default function Onboarding() {
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
 
-  // Redirect if user already has organizations
+  // Check for partial onboarding state and resume
   useEffect(() => {
-    if (!loading && organizations.length > 0) {
-      navigate('/dashboard', { replace: true });
+    const checkPartialOnboarding = async () => {
+      if (!user) {
+        setIsResuming(false);
+        return;
+      }
+
+      try {
+        // Check if user has any roles already (fully onboarded)
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('organization_id, location_id')
+          .eq('user_id', user.id)
+          .limit(1);
+
+        if (roles && roles.length > 0 && roles[0].organization_id && roles[0].location_id) {
+          // Fully onboarded - redirect
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+
+        // Check for partially created org (created_by = user but no role assigned)
+        const { data: partialOrg } = await supabase
+          .from('organizations')
+          .select('id, name, primary_vertical')
+          .eq('created_by', user.id)
+          .limit(1);
+
+        if (partialOrg && partialOrg.length > 0) {
+          const org = partialOrg[0];
+          setExistingOrg(org);
+          setBusinessName(org.name);
+          setSelectedVertical(org.primary_vertical as BusinessVertical);
+
+          // Check for existing location for this org
+          const { data: partialLoc } = await supabase
+            .from('locations')
+            .select('id, name, address, city, country')
+            .eq('organization_id', org.id)
+            .limit(1);
+
+          if (partialLoc && partialLoc.length > 0) {
+            const loc = partialLoc[0];
+            setExistingLocation(loc);
+            setLocationName(loc.name || '');
+            setAddress(loc.address || '');
+            setCity(loc.city || '');
+            setCountry(loc.country || '');
+            // Org + location exist, just need role - go to step 2 to confirm
+            setStep(2);
+            toast({
+              title: 'Resuming setup',
+              description: 'We found your partial setup. Just confirm to complete!',
+            });
+          } else {
+            // Org exists but no location - skip to step 2
+            setLocationName(org.name + ' - Main');
+            setStep(2);
+            toast({
+              title: 'Resuming setup',
+              description: 'We found your business. Add your first location to continue.',
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Resume check error:', error);
+      } finally {
+        setIsResuming(false);
+      }
+    };
+
+    if (!loading) {
+      checkPartialOnboarding();
     }
+  }, [user, loading, navigate, toast]);
+
+  // Redirect if no user
+  useEffect(() => {
     if (!loading && !user) {
       navigate('/auth', { replace: true });
     }
-  }, [loading, organizations, user, navigate]);
+  }, [loading, user, navigate]);
 
-  // Show loading while checking auth state
-  if (loading) {
+  // Show loading while checking auth or resume state
+  if (loading || isResuming) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -124,46 +203,65 @@ export default function Onboarding() {
     setIsLoading(true);
 
     try {
-      // Create organization
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
-          name: businessName.trim(),
-          slug: generateSlug(businessName),
-          primary_vertical: selectedVertical,
-        })
-        .select()
-        .single();
+      let orgId = existingOrg?.id;
+      let locId = existingLocation?.id;
 
-      if (orgError) throw orgError;
+      // Create organization only if we don't have one
+      if (!orgId) {
+        const { data: org, error: orgError } = await supabase
+          .from('organizations')
+          .insert({
+            name: businessName.trim(),
+            slug: generateSlug(businessName),
+            primary_vertical: selectedVertical,
+          })
+          .select()
+          .single();
 
-      // Create first location
-      const { data: loc, error: locError } = await supabase
-        .from('locations')
-        .insert({
-          organization_id: org.id,
-          name: locationName.trim() || businessName + ' - Main',
-          address: address.trim() || null,
-          city: city.trim() || null,
-          country: country.trim() || null,
-          vertical: selectedVertical,
-        })
-        .select()
-        .single();
+        if (orgError) throw orgError;
+        orgId = org.id;
+      }
 
-      if (locError) throw locError;
+      // Create location only if we don't have one
+      if (!locId) {
+        const { data: loc, error: locError } = await supabase
+          .from('locations')
+          .insert({
+            organization_id: orgId,
+            name: locationName.trim() || businessName + ' - Main',
+            address: address.trim() || null,
+            city: city.trim() || null,
+            country: country.trim() || null,
+            vertical: selectedVertical,
+          })
+          .select()
+          .single();
 
-      // Assign org_admin role to user
-      const { error: roleError } = await supabase
+        if (locError) throw locError;
+        locId = loc.id;
+      }
+
+      // Check if role already exists
+      const { data: existingRole } = await supabase
         .from('user_roles')
-        .insert({
-          user_id: user.id,
-          organization_id: org.id,
-          location_id: loc.id,
-          role: 'org_admin',
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('organization_id', orgId)
+        .limit(1);
 
-      if (roleError) throw roleError;
+      // Assign org_admin role only if not already assigned
+      if (!existingRole || existingRole.length === 0) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: user.id,
+            organization_id: orgId,
+            location_id: locId,
+            role: 'org_admin',
+          });
+
+        if (roleError) throw roleError;
+      }
 
       toast({
         title: 'Setup complete!',
