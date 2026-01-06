@@ -214,6 +214,7 @@ export default function Onboarding() {
             name: businessName.trim(),
             slug: generateSlug(businessName),
             primary_vertical: selectedVertical,
+            created_by: user.id,
           })
           .select()
           .single();
