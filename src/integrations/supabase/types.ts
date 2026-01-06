@@ -640,6 +640,7 @@ export type Database = {
       organizations: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           logo_url: string | null
           name: string
@@ -650,6 +651,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           logo_url?: string | null
           name: string
@@ -660,6 +662,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           logo_url?: string | null
           name?: string
@@ -1302,7 +1305,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_location_in_org: {
+        Args: { _location_id: string; _organization_id: string }
+        Returns: boolean
+      }
       is_org_admin: {
+        Args: { _organization_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_org_creator: {
         Args: { _organization_id: string; _user_id: string }
         Returns: boolean
       }
