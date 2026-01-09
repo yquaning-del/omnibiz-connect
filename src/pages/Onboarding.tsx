@@ -7,9 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UtensilsCrossed, Building2, Pill, ShoppingCart, Check, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Loader2, UtensilsCrossed, Building2, Pill, ShoppingCart, Check, ArrowRight, ArrowLeft, RotateCcw } from 'lucide-react';
 import { BusinessVertical } from '@/types';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const verticals = [
   {
@@ -58,6 +69,7 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isResuming, setIsResuming] = useState(true);
+  const [isClearing, setIsClearing] = useState(false);
   
   // Partial records for resume flow
   const [existingOrg, setExistingOrg] = useState<{ id: string; name: string; primary_vertical: BusinessVertical } | null>(null);
@@ -285,6 +297,56 @@ export default function Onboarding() {
     }
   };
 
+  const handleStartFresh = async () => {
+    if (!user) return;
+    
+    setIsClearing(true);
+    try {
+      // Delete user roles first (FK constraint)
+      await supabase.from('user_roles').delete().eq('user_id', user.id);
+      
+      // Delete locations for orgs created by user
+      const { data: userOrgs } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('created_by', user.id);
+      
+      if (userOrgs && userOrgs.length > 0) {
+        for (const org of userOrgs) {
+          await supabase.from('locations').delete().eq('organization_id', org.id);
+        }
+      }
+      
+      // Delete organizations created by user
+      await supabase.from('organizations').delete().eq('created_by', user.id);
+      
+      // Reset local state
+      setExistingOrg(null);
+      setExistingLocation(null);
+      setBusinessName('');
+      setSelectedVertical(null);
+      setLocationName('');
+      setAddress('');
+      setCity('');
+      setCountry('');
+      setStep(1);
+      
+      toast({
+        title: 'Fresh start!',
+        description: 'All partial data has been cleared. You can start over.',
+      });
+    } catch (error: any) {
+      console.error('Clear data error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to clear data',
+        description: error.message || 'An error occurred while clearing data.',
+      });
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="absolute inset-0 bg-grid-pattern opacity-30" />
@@ -292,7 +354,40 @@ export default function Onboarding() {
       
       <Card className="w-full max-w-2xl border-border/50 bg-card/80 backdrop-blur relative z-10">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-muted-foreground hover:text-foreground"
+                  disabled={isClearing}
+                >
+                  {isClearing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RotateCcw className="h-4 w-4 mr-1" />
+                  )}
+                  Start Fresh
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Start fresh?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will delete any partially created business data and let you start the setup from scratch. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleStartFresh}>
+                    Yes, start fresh
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            
+            <div className="flex items-center gap-2">
             {[1, 2].map((s) => (
               <div
                 key={s}
@@ -302,6 +397,8 @@ export default function Onboarding() {
                 )}
               />
             ))}
+            </div>
+            <div className="w-20" /> {/* Spacer for balance */}
           </div>
           <CardTitle className="text-2xl font-display">
             {step === 1 ? 'Set up your business' : 'Add your first location'}
