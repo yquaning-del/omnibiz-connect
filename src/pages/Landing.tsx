@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Building2, Utensils, Hotel, Pill, ShoppingBag, CheckCircle2, Play } from 'lucide-react';
+import { ArrowRight, Building2, Utensils, Hotel, Pill, ShoppingBag, CheckCircle2, Play, LayoutDashboard, Settings2 } from 'lucide-react';
 import { DemoModal } from '@/components/demo/DemoModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 const features = [
   { icon: Utensils, label: 'Restaurants', color: 'text-restaurant' },
@@ -22,6 +23,8 @@ const benefits = [
 
 const Landing = () => {
   const [demoOpen, setDemoOpen] = useState(false);
+  const { user, organizations } = useAuth();
+  const isOnboarded = organizations.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,14 +37,36 @@ const Landing = () => {
             <span className="text-xl font-display font-bold text-foreground">HospitalityOS</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/auth">
-              <Button variant="ghost" size="sm">Sign In</Button>
-            </Link>
-            <Link to="/auth">
-              <Button size="sm" className="gap-2">
-                Get Started <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                {isOnboarded ? (
+                  <Link to="/dashboard">
+                    <Button size="sm" className="gap-2">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to="/onboarding">
+                    <Button size="sm" className="gap-2">
+                      <Settings2 className="h-4 w-4" />
+                      Complete Setup
+                    </Button>
+                  </Link>
+                )}
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="ghost" size="sm">Sign In</Button>
+                </Link>
+                <Link to="/auth">
+                  <Button size="sm" className="gap-2">
+                    Get Started <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
