@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UtensilsCrossed, Building2, Pill, ShoppingCart, Check, ArrowRight, ArrowLeft, RotateCcw } from 'lucide-react';
+import { Loader2, UtensilsCrossed, Building2, Pill, ShoppingCart, Check, ArrowRight, ArrowLeft, RotateCcw, Home } from 'lucide-react';
 import { BusinessVertical } from '@/types';
 import { cn } from '@/lib/utils';
 import {
@@ -398,7 +398,12 @@ export default function Onboarding() {
               />
             ))}
             </div>
-            <div className="w-20" /> {/* Spacer for balance */}
+            <Link to="/">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                <Home className="h-4 w-4 mr-1" />
+                Home
+              </Button>
+            </Link>
           </div>
           <CardTitle className="text-2xl font-display">
             {step === 1 ? 'Set up your business' : 'Add your first location'}
