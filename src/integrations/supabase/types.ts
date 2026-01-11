@@ -14,6 +14,85 @@ export type Database = {
   }
   public: {
     Tables: {
+      amenity_requests: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          guest_name: string
+          id: string
+          location_id: string
+          notes: string | null
+          priority: string | null
+          quantity: number | null
+          request_type: string
+          reservation_id: string | null
+          room_id: string | null
+          room_number: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          guest_name: string
+          id?: string
+          location_id: string
+          notes?: string | null
+          priority?: string | null
+          quantity?: number | null
+          request_type: string
+          reservation_id?: string | null
+          room_id?: string | null
+          room_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          guest_name?: string
+          id?: string
+          location_id?: string
+          notes?: string | null
+          priority?: string | null
+          quantity?: number | null
+          request_type?: string
+          reservation_id?: string | null
+          room_id?: string | null
+          room_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amenity_requests_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "amenity_requests_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "amenity_requests_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       controlled_substance_log: {
         Row: {
           action: string
@@ -188,51 +267,310 @@ export type Database = {
           },
         ]
       }
+      folio_charges: {
+        Row: {
+          charge_type: string
+          created_at: string
+          description: string
+          folio_id: string
+          id: string
+          posted_at: string
+          posted_by: string | null
+          quantity: number | null
+          total_amount: number
+          unit_price: number
+          void_reason: string | null
+          voided: boolean | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          charge_type: string
+          created_at?: string
+          description: string
+          folio_id: string
+          id?: string
+          posted_at?: string
+          posted_by?: string | null
+          quantity?: number | null
+          total_amount: number
+          unit_price: number
+          void_reason?: string | null
+          voided?: boolean | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          charge_type?: string
+          created_at?: string
+          description?: string
+          folio_id?: string
+          id?: string
+          posted_at?: string
+          posted_by?: string | null
+          quantity?: number | null
+          total_amount?: number
+          unit_price?: number
+          void_reason?: string | null
+          voided?: boolean | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folio_charges_folio_id_fkey"
+            columns: ["folio_id"]
+            isOneToOne: false
+            referencedRelation: "guest_folios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_folios: {
+        Row: {
+          balance_due: number | null
+          check_in: string | null
+          check_out: string | null
+          created_at: string
+          customer_id: string | null
+          discount_amount: number | null
+          folio_number: string
+          guest_name: string
+          id: string
+          incidental_charges: number | null
+          location_id: string
+          notes: string | null
+          organization_id: string
+          paid_amount: number | null
+          payment_method: string | null
+          reservation_id: string | null
+          room_charges: number | null
+          room_number: string | null
+          status: string
+          tax_amount: number | null
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          balance_due?: number | null
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string
+          customer_id?: string | null
+          discount_amount?: number | null
+          folio_number: string
+          guest_name: string
+          id?: string
+          incidental_charges?: number | null
+          location_id: string
+          notes?: string | null
+          organization_id: string
+          paid_amount?: number | null
+          payment_method?: string | null
+          reservation_id?: string | null
+          room_charges?: number | null
+          room_number?: string | null
+          status?: string
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          balance_due?: number | null
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string
+          customer_id?: string | null
+          discount_amount?: number | null
+          folio_number?: string
+          guest_name?: string
+          id?: string
+          incidental_charges?: number | null
+          location_id?: string
+          notes?: string | null
+          organization_id?: string
+          paid_amount?: number | null
+          payment_method?: string | null
+          reservation_id?: string | null
+          room_charges?: number | null
+          room_number?: string | null
+          status?: string
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_folios_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_folios_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_folios_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_folios_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_profiles: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          dietary_restrictions: string[] | null
+          id: string
+          id_expiry: string | null
+          id_number: string | null
+          id_type: string | null
+          loyalty_tier: string | null
+          nationality: string | null
+          notes: string | null
+          organization_id: string
+          preferences: Json | null
+          room_preferences: string[] | null
+          special_requests: string | null
+          total_nights: number | null
+          total_spent: number | null
+          total_stays: number | null
+          updated_at: string
+          vip_status: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          dietary_restrictions?: string[] | null
+          id?: string
+          id_expiry?: string | null
+          id_number?: string | null
+          id_type?: string | null
+          loyalty_tier?: string | null
+          nationality?: string | null
+          notes?: string | null
+          organization_id: string
+          preferences?: Json | null
+          room_preferences?: string[] | null
+          special_requests?: string | null
+          total_nights?: number | null
+          total_spent?: number | null
+          total_stays?: number | null
+          updated_at?: string
+          vip_status?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          dietary_restrictions?: string[] | null
+          id?: string
+          id_expiry?: string | null
+          id_number?: string | null
+          id_type?: string | null
+          loyalty_tier?: string | null
+          nationality?: string | null
+          notes?: string | null
+          organization_id?: string
+          preferences?: Json | null
+          room_preferences?: string[] | null
+          special_requests?: string | null
+          total_nights?: number | null
+          total_spent?: number | null
+          total_stays?: number | null
+          updated_at?: string
+          vip_status?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_profiles_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hotel_rooms: {
         Row: {
           amenities: string[] | null
+          base_rate: number | null
           capacity: number
           created_at: string
           floor: number | null
           housekeeping_status: string
           id: string
+          is_ota_available: boolean | null
           location_id: string
           notes: string | null
+          ota_markup_percent: number | null
           price_per_night: number
           room_number: string
           room_type: string
+          seasonal_rate: Json | null
           status: string
           updated_at: string
+          weekend_rate: number | null
         }
         Insert: {
           amenities?: string[] | null
+          base_rate?: number | null
           capacity?: number
           created_at?: string
           floor?: number | null
           housekeeping_status?: string
           id?: string
+          is_ota_available?: boolean | null
           location_id: string
           notes?: string | null
+          ota_markup_percent?: number | null
           price_per_night?: number
           room_number: string
           room_type?: string
+          seasonal_rate?: Json | null
           status?: string
           updated_at?: string
+          weekend_rate?: number | null
         }
         Update: {
           amenities?: string[] | null
+          base_rate?: number | null
           capacity?: number
           created_at?: string
           floor?: number | null
           housekeeping_status?: string
           id?: string
+          is_ota_available?: boolean | null
           location_id?: string
           notes?: string | null
+          ota_markup_percent?: number | null
           price_per_night?: number
           room_number?: string
           room_type?: string
+          seasonal_rate?: Json | null
           status?: string
           updated_at?: string
+          weekend_rate?: number | null
         }
         Relationships: [
           {
@@ -431,6 +769,81 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_requests: {
+        Row: {
+          actual_cost: number | null
+          assigned_to: string | null
+          category: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          estimated_cost: number | null
+          id: string
+          location_id: string
+          notes: string | null
+          priority: string
+          reported_by: string | null
+          room_id: string | null
+          scheduled_date: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          assigned_to?: string | null
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_cost?: number | null
+          id?: string
+          location_id: string
+          notes?: string | null
+          priority?: string
+          reported_by?: string | null
+          room_id?: string | null
+          scheduled_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          assigned_to?: string | null
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_cost?: number | null
+          id?: string
+          location_id?: string
+          notes?: string | null
+          priority?: string
+          reported_by?: string | null
+          room_id?: string | null
+          scheduled_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_requests_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_rooms"
             referencedColumns: ["id"]
           },
         ]
@@ -1061,15 +1474,21 @@ export type Database = {
       }
       reservations: {
         Row: {
+          actual_check_in: string | null
+          actual_check_out: string | null
           check_in: string
           check_out: string | null
           created_at: string
           customer_id: string | null
+          express_checkout: boolean | null
+          folio_id: string | null
           guest_count: number
           guest_email: string | null
           guest_name: string
           guest_phone: string | null
           id: string
+          id_verified: boolean | null
+          key_card_issued: boolean | null
           location_id: string
           notes: string | null
           organization_id: string
@@ -1080,15 +1499,21 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          actual_check_in?: string | null
+          actual_check_out?: string | null
           check_in: string
           check_out?: string | null
           created_at?: string
           customer_id?: string | null
+          express_checkout?: boolean | null
+          folio_id?: string | null
           guest_count?: number
           guest_email?: string | null
           guest_name: string
           guest_phone?: string | null
           id?: string
+          id_verified?: boolean | null
+          key_card_issued?: boolean | null
           location_id: string
           notes?: string | null
           organization_id: string
@@ -1099,15 +1524,21 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          actual_check_in?: string | null
+          actual_check_out?: string | null
           check_in?: string
           check_out?: string | null
           created_at?: string
           customer_id?: string | null
+          express_checkout?: boolean | null
+          folio_id?: string | null
           guest_count?: number
           guest_email?: string | null
           guest_name?: string
           guest_phone?: string | null
           id?: string
+          id_verified?: boolean | null
+          key_card_issued?: boolean | null
           location_id?: string
           notes?: string | null
           organization_id?: string
@@ -1123,6 +1554,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_folio_id_fkey"
+            columns: ["folio_id"]
+            isOneToOne: false
+            referencedRelation: "guest_folios"
             referencedColumns: ["id"]
           },
           {
@@ -1201,6 +1639,120 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_service_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          delivered_by: string | null
+          folio_id: string | null
+          guest_name: string
+          id: string
+          items: Json | null
+          location_id: string
+          order_number: string
+          order_type: string
+          organization_id: string
+          requested_delivery_time: string | null
+          reservation_id: string | null
+          room_id: string | null
+          room_number: string | null
+          service_charge: number | null
+          special_instructions: string | null
+          status: string
+          subtotal: number | null
+          tax_amount: number | null
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          delivered_by?: string | null
+          folio_id?: string | null
+          guest_name: string
+          id?: string
+          items?: Json | null
+          location_id: string
+          order_number: string
+          order_type?: string
+          organization_id: string
+          requested_delivery_time?: string | null
+          reservation_id?: string | null
+          room_id?: string | null
+          room_number?: string | null
+          service_charge?: number | null
+          special_instructions?: string | null
+          status?: string
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          delivered_by?: string | null
+          folio_id?: string | null
+          guest_name?: string
+          id?: string
+          items?: Json | null
+          location_id?: string
+          order_number?: string
+          order_type?: string
+          organization_id?: string
+          requested_delivery_time?: string | null
+          reservation_id?: string | null
+          room_id?: string | null
+          room_number?: string | null
+          service_charge?: number | null
+          special_instructions?: string | null
+          status?: string
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_service_orders_folio_id_fkey"
+            columns: ["folio_id"]
+            isOneToOne: false
+            referencedRelation: "guest_folios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_service_orders_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_service_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_service_orders_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_service_orders_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_rooms"
             referencedColumns: ["id"]
           },
         ]
