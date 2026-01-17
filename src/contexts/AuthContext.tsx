@@ -78,10 +78,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select('*');
       
       if (locsData && locsData.length > 0) {
-        setLocations(locsData as Location[]);
-        // Set first location as current if none selected
+        const typedLocations = locsData as Location[];
+        setLocations(typedLocations);
+        
+        // Try to restore from localStorage first
+        const savedLocationId = localStorage.getItem('currentLocationId');
+        const savedOrgId = localStorage.getItem('currentOrganizationId');
+        
+        if (savedLocationId && savedOrgId && orgsData) {
+          const savedLocation = typedLocations.find(l => l.id === savedLocationId);
+          const typedOrgs = orgsData as Organization[];
+          const savedOrg = typedOrgs.find(o => o.id === savedOrgId);
+          
+          if (savedLocation && savedOrg) {
+            setCurrentLocation(savedLocation);
+            setCurrentOrganization(savedOrg);
+            return;
+          }
+        }
+        
+        // Set first location as current if none saved
         if (!currentLocation) {
-          setCurrentLocation(locsData[0] as Location);
+          setCurrentLocation(typedLocations[0]);
         }
       }
     } catch (error) {

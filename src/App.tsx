@@ -25,6 +25,11 @@ import Housekeeping from "./pages/Housekeeping";
 import Pharmacy from "./pages/Pharmacy";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import FrontDesk from "./pages/FrontDesk";
+import Maintenance from "./pages/Maintenance";
+import GuestServices from "./pages/GuestServices";
+import GuestProfiles from "./pages/GuestProfiles";
+import Billing from "./pages/Billing";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +65,11 @@ const App = () => (
                 <Route path="/reservations" element={<Reservations />} />
                 <Route path="/housekeeping" element={<Housekeeping />} />
                 <Route path="/pharmacy" element={<Pharmacy />} />
+                <Route path="/front-desk" element={<FrontDesk />} />
+                <Route path="/maintenance" element={<Maintenance />} />
+                <Route path="/guest-services" element={<GuestServices />} />
+                <Route path="/guest-profiles" element={<GuestProfiles />} />
+                <Route path="/billing" element={<Billing />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
 
