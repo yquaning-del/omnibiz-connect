@@ -34,6 +34,11 @@ import {
   BedDouble,
   ClipboardList,
   Shield,
+  Wrench,
+  ConciergeBell,
+  UserCheck,
+  CreditCard,
+  DoorOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -77,9 +82,14 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
       { title: 'Reservations', href: '/reservations', icon: Calendar },
     ],
     hotel: [
+      { title: 'Front Desk', href: '/front-desk', icon: DoorOpen },
       { title: 'Rooms', href: '/rooms', icon: BedDouble },
-      { title: 'Housekeeping', href: '/housekeeping', icon: ClipboardList },
       { title: 'Reservations', href: '/reservations', icon: Calendar },
+      { title: 'Housekeeping', href: '/housekeeping', icon: ClipboardList },
+      { title: 'Maintenance', href: '/maintenance', icon: Wrench },
+      { title: 'Guest Services', href: '/guest-services', icon: ConciergeBell },
+      { title: 'Guest Profiles', href: '/guest-profiles', icon: UserCheck },
+      { title: 'Billing & Folios', href: '/billing', icon: CreditCard },
     ],
     pharmacy: [
       { title: 'Pharmacy', href: '/pharmacy', icon: Pill },
@@ -105,10 +115,11 @@ export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const { profile, signOut, hasRole } = useAuth();
+  const { profile, signOut, hasRole, currentOrganization, currentLocation } = useAuth();
 
   const isSuperAdmin = hasRole('super_admin');
-  const vertical = 'retail' as BusinessVertical; // Default for nav items
+  // Use the actual vertical from the current location or organization
+  const vertical = (currentLocation?.vertical || currentOrganization?.primary_vertical || 'retail') as BusinessVertical;
   const { common, verticalSpecific, management } = getNavItems(vertical, isSuperAdmin);
 
   const isActive = (path: string) => location.pathname === path;

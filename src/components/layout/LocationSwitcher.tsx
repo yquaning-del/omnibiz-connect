@@ -41,6 +41,8 @@ export function LocationSwitcher({ collapsed }: LocationSwitcherProps) {
     locations, 
     currentOrganization, 
     currentLocation,
+    setCurrentOrganization,
+    setCurrentLocation,
     hasRole,
   } = useAuth();
 
@@ -53,15 +55,25 @@ export function LocationSwitcher({ collapsed }: LocationSwitcherProps) {
   }));
 
   const handleSelect = (locationId: string) => {
-    // In a real app, this would update the context
-    // For now, we'll just close the popover
-    // The AuthContext would need a setCurrentLocation function
-    console.log('Switch to location:', locationId);
+    // Find the selected location
+    const selectedLocation = locations.find(loc => loc.id === locationId);
+    if (selectedLocation) {
+      // Find the parent organization
+      const parentOrg = organizations.find(org => org.id === selectedLocation.organization_id);
+      
+      // Update the context
+      setCurrentLocation(selectedLocation);
+      if (parentOrg) {
+        setCurrentOrganization(parentOrg);
+      }
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('currentLocationId', locationId);
+      if (parentOrg) {
+        localStorage.setItem('currentOrganizationId', parentOrg.id);
+      }
+    }
     setOpen(false);
-    
-    // Reload the page to reflect the change
-    // In production, you'd update context state instead
-    window.location.reload();
   };
 
   const currentVertical = currentLocation?.vertical || currentOrganization?.primary_vertical || 'retail';
