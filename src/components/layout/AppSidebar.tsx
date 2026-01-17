@@ -39,6 +39,9 @@ import {
   UserCheck,
   CreditCard,
   DoorOpen,
+  FileText,
+  DollarSign,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -92,7 +95,12 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
       { title: 'Billing & Folios', href: '/billing', icon: CreditCard },
     ],
     pharmacy: [
-      { title: 'Pharmacy', href: '/pharmacy', icon: Pill },
+      { title: 'Prescriptions', href: '/pharmacy/prescriptions', icon: FileText },
+      { title: 'Patients', href: '/pharmacy/patients', icon: Users },
+      { title: 'Medications', href: '/pharmacy/medications', icon: Pill },
+      { title: 'Insurance', href: '/pharmacy/insurance', icon: DollarSign },
+      { title: 'Controlled Substances', href: '/pharmacy/controlled', icon: Shield },
+      { title: 'Drug Interactions', href: '/pharmacy/interactions', icon: AlertTriangle },
     ],
     retail: [
       { title: 'Promotions', href: '/promotions', icon: Receipt },
