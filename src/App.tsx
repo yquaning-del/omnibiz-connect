@@ -23,6 +23,12 @@ import Kitchen from "./pages/Kitchen";
 import Reservations from "./pages/Reservations";
 import Housekeeping from "./pages/Housekeeping";
 import Pharmacy from "./pages/Pharmacy";
+import PharmacyPrescriptions from "./pages/PharmacyPrescriptions";
+import PharmacyPatients from "./pages/PharmacyPatients";
+import PharmacyMedications from "./pages/PharmacyMedications";
+import PharmacyInsurance from "./pages/PharmacyInsurance";
+import PharmacyControlled from "./pages/PharmacyControlled";
+import PharmacyInteractions from "./pages/PharmacyInteractions";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import FrontDesk from "./pages/FrontDesk";
@@ -65,6 +71,12 @@ const App = () => (
                 <Route path="/reservations" element={<Reservations />} />
                 <Route path="/housekeeping" element={<Housekeeping />} />
                 <Route path="/pharmacy" element={<Pharmacy />} />
+                <Route path="/pharmacy/prescriptions" element={<PharmacyPrescriptions />} />
+                <Route path="/pharmacy/patients" element={<PharmacyPatients />} />
+                <Route path="/pharmacy/medications" element={<PharmacyMedications />} />
+                <Route path="/pharmacy/insurance" element={<PharmacyInsurance />} />
+                <Route path="/pharmacy/controlled" element={<PharmacyControlled />} />
+                <Route path="/pharmacy/interactions" element={<PharmacyInteractions />} />
                 <Route path="/front-desk" element={<FrontDesk />} />
                 <Route path="/maintenance" element={<Maintenance />} />
                 <Route path="/guest-services" element={<GuestServices />} />
