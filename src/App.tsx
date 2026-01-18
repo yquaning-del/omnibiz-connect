@@ -37,6 +37,7 @@ import GuestServices from "./pages/GuestServices";
 import GuestProfiles from "./pages/GuestProfiles";
 import Billing from "./pages/Billing";
 import Subscription from "./pages/Subscription";
+import Pricing from "./pages/Pricing";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
           <AuthProvider>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding" element={<Onboarding />} />
               

@@ -37,6 +37,9 @@ const Landing = () => {
             <span className="text-xl font-display font-bold text-foreground">HospitalityOS</span>
           </div>
           <div className="flex items-center gap-4">
+            <Link to="/pricing">
+              <Button variant="ghost" size="sm">Pricing</Button>
+            </Link>
             {user ? (
               <>
                 {isOnboarded ? (
