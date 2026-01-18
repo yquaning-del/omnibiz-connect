@@ -193,7 +193,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Clear local state first to ensure UI updates immediately
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    setRoles([]);
+    setOrganizations([]);
+    setLocations([]);
+    setCurrentOrganization(null);
+    setCurrentLocation(null);
+    
+    // Clear localStorage
+    localStorage.removeItem('currentLocationId');
+    localStorage.removeItem('currentOrganizationId');
+    
+    // Try to sign out from Supabase (ignore errors for expired sessions)
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (error) {
+      // Session may already be expired - that's OK, we've cleared local state
+      console.debug('Sign out completed (session may have been expired)');
+    }
   };
 
   const hasRole = (role: string) => {
