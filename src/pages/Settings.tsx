@@ -11,18 +11,20 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard, Upload, BookOpen, ExternalLink, FileText } from 'lucide-react';
+import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard, Upload, BookOpen, FileText, ChevronRight } from 'lucide-react';
 import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
 import { SubscriptionSettings } from '@/components/settings/SubscriptionSettings';
 import DataImport from '@/pages/settings/DataImport';
 import { useLimitChecker, formatLimitDisplay } from '@/hooks/useLimitChecker';
+import { useNavigate } from 'react-router-dom';
 
 export default function Settings() {
   const { currentOrganization, currentLocation, profile, user } = useAuth();
   const { toast } = useToast();
   const { t } = useLanguage();
   const limits = useLimitChecker();
+  const navigate = useNavigate();
   
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -406,11 +408,9 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
-                <a
-                  href="https://github.com/user/repo/blob/main/docs/USER_MANUAL.md"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-start gap-4 p-4 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors group"
+                <button
+                  onClick={() => navigate('/docs?tab=user-manual')}
+                  className="flex items-start gap-4 p-4 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors group text-left"
                 >
                   <div className="p-2 rounded-lg bg-primary/10">
                     <FileText className="w-5 h-5 text-primary" />
@@ -418,19 +418,17 @@ export default function Settings() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-foreground">User Manual</p>
-                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <ChevronRight className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
                       Comprehensive guide covering all modules, features, and workflows
                     </p>
                   </div>
-                </a>
+                </button>
 
-                <a
-                  href="https://github.com/user/repo/blob/main/docs/TESTING.md"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-start gap-4 p-4 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors group"
+                <button
+                  onClick={() => navigate('/docs?tab=testing')}
+                  className="flex items-start gap-4 p-4 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors group text-left"
                 >
                   <div className="p-2 rounded-lg bg-primary/10">
                     <BookOpen className="w-5 h-5 text-primary" />
@@ -438,13 +436,13 @@ export default function Settings() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-foreground">Testing Guide</p>
-                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <ChevronRight className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
                       Technical documentation for testing and verification procedures
                     </p>
                   </div>
-                </a>
+                </button>
               </div>
 
               <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">

@@ -44,6 +44,7 @@ import Subscription from "./pages/Subscription";
 import Pricing from "./pages/Pricing";
 import Terms from "./pages/legal/Terms";
 import Privacy from "./pages/legal/Privacy";
+import Documentation from "./pages/Documentation";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminOrganizations from "./pages/admin/AdminOrganizations";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -72,6 +73,7 @@ const App = () => (
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/docs" element={<Documentation />} />
                 
                 {/* Protected routes with AppLayout */}
                 <Route element={<AppLayout />}>
