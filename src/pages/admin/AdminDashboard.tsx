@@ -27,6 +27,11 @@ interface PlatformStats {
   activeSubscriptions: number;
   trialOrgs: number;
   paidOrgs: number;
+  trialConversionRate: number;
+  churnRate: number;
+  dau: number;
+  wau: number;
+  mau: number;
 }
 
 export default function AdminDashboard() {
@@ -39,6 +44,11 @@ export default function AdminDashboard() {
     activeSubscriptions: 0,
     trialOrgs: 0,
     paidOrgs: 0,
+    trialConversionRate: 0,
+    churnRate: 0,
+    dau: 0,
+    wau: 0,
+    mau: 0,
   });
 
   const [verticalData, setVerticalData] = useState<
@@ -67,49 +77,24 @@ export default function AdminDashboard() {
   const fetchPlatformStats = async () => {
     setLoading(true);
     try {
-      // Fetch organizations count
-      const { count: orgCount } = await supabase
-        .from("organizations")
-        .select("*", { count: "exact", head: true });
+      // Call the database function to get real-time metrics
+      const { data: metricsData, error: metricsError } = await supabase
+        .rpc('calculate_platform_metrics');
 
-      // Fetch organizations by vertical
+      if (metricsError) {
+        console.error('Error fetching metrics:', metricsError);
+      }
+
+      // Parse metrics into stats object
+      const metricsMap: Record<string, number> = {};
+      metricsData?.forEach((m: { metric_name: string; metric_value: number }) => {
+        metricsMap[m.metric_name] = Number(m.metric_value) || 0;
+      });
+
+      // Fetch organizations by vertical for distribution chart
       const { data: orgs } = await supabase
         .from("organizations")
         .select("primary_vertical");
-
-      // Fetch users count
-      const { count: userCount } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true });
-
-      // Fetch subscriptions
-      const { data: subscriptions } = await supabase
-        .from("organization_subscriptions")
-        .select("status, plan_id");
-
-      // Fetch plans for pricing
-      const { data: plans } = await supabase
-        .from("subscription_plans")
-        .select("id, price_monthly, tier");
-
-      // Calculate stats
-      const activeSubscriptions = subscriptions?.filter(
-        (s) => s.status === "active" || s.status === "trialing"
-      ).length || 0;
-
-      const trialOrgs = subscriptions?.filter((s) => s.status === "trialing").length || 0;
-      const paidOrgs = subscriptions?.filter((s) => s.status === "active").length || 0;
-
-      // Calculate MRR
-      let mrr = 0;
-      subscriptions?.forEach((sub) => {
-        if (sub.status === "active" && sub.plan_id) {
-          const plan = plans?.find((p) => p.id === sub.plan_id);
-          if (plan) {
-            mrr += plan.price_monthly;
-          }
-        }
-      });
 
       // Calculate vertical distribution
       const verticalCounts: Record<string, number> = {};
@@ -133,43 +118,99 @@ export default function AdminDashboard() {
         }))
       );
 
+      // Update stats with real metrics
+      const mrr = metricsMap.mrr || 0;
       setStats({
-        totalOrganizations: orgCount || 0,
-        totalUsers: userCount || 0,
+        totalOrganizations: metricsMap.total_organizations || 0,
+        totalUsers: metricsMap.total_users || 0,
         mrr,
-        activeSubscriptions,
-        trialOrgs,
-        paidOrgs,
+        activeSubscriptions: metricsMap.active_subscriptions || 0,
+        trialOrgs: metricsMap.trial_subscriptions || 0,
+        paidOrgs: metricsMap.paid_subscriptions || 0,
+        trialConversionRate: metricsMap.trial_conversion_rate || 0,
+        churnRate: metricsMap.churn_rate || 0,
+        dau: metricsMap.dau || 0,
+        wau: metricsMap.wau || 0,
+        mau: metricsMap.mau || 0,
       });
 
-      // Generate mock revenue data
-      const mockRevenueData = Array.from({ length: 30 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (29 - i));
-        return {
-          date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-          mrr: mrr + Math.random() * 1000 - 500,
-        };
-      });
-      setRevenueData(mockRevenueData);
+      // Fetch historical MRR data from platform_metrics table
+      const { data: historicalMetrics } = await supabase
+        .from("platform_metrics")
+        .select("metric_date, metric_value")
+        .eq("metric_type", "mrr")
+        .order("metric_date", { ascending: true })
+        .limit(30);
 
-      // Generate mock activities from recent orgs
+      if (historicalMetrics && historicalMetrics.length > 0) {
+        setRevenueData(
+          historicalMetrics.map((m) => ({
+            date: new Date(m.metric_date).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            }),
+            mrr: Number(m.metric_value) || 0,
+          }))
+        );
+      } else {
+        // Generate trend data based on current MRR (for new installations)
+        const mockRevenueData = Array.from({ length: 30 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (29 - i));
+          const variance = (Math.random() - 0.5) * 0.1; // ±5% variance
+          return {
+            date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+            mrr: mrr * (0.9 + (i / 30) * 0.1 + variance), // Trend upward
+          };
+        });
+        setRevenueData(mockRevenueData);
+      }
+
+      // Fetch recent activities from audit logs and organizations
       const { data: recentOrgs } = await supabase
         .from("organizations")
         .select("id, name, created_at, primary_vertical")
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(5);
 
-      const mockActivities = recentOrgs?.map((org) => ({
-        id: org.id,
-        type: "org_created" as const,
-        title: `New organization: ${org.name}`,
-        description: `Registered as ${org.primary_vertical}`,
-        timestamp: new Date(org.created_at),
-        metadata: { vertical: org.primary_vertical },
-      })) || [];
+      const { data: recentSubs } = await supabase
+        .from("organization_subscriptions")
+        .select("id, organization_id, status, updated_at, organizations(name)")
+        .order("updated_at", { ascending: false })
+        .limit(5);
 
-      setActivities(mockActivities);
+      const activityList: typeof activities = [];
+
+      // Add org creations
+      recentOrgs?.forEach((org) => {
+        activityList.push({
+          id: org.id,
+          type: "org_created",
+          title: `New organization: ${org.name}`,
+          description: `Registered as ${org.primary_vertical}`,
+          timestamp: new Date(org.created_at),
+          metadata: { vertical: org.primary_vertical },
+        });
+      });
+
+      // Add subscription changes
+      recentSubs?.forEach((sub) => {
+        const orgName = (sub.organizations as { name: string } | null)?.name || "Unknown";
+        if (sub.status === "active") {
+          activityList.push({
+            id: sub.id,
+            type: "subscription_change",
+            title: `Subscription activated: ${orgName}`,
+            description: "Upgraded to paid plan",
+            timestamp: new Date(sub.updated_at),
+          });
+        }
+      });
+
+      // Sort by timestamp
+      activityList.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      setActivities(activityList.slice(0, 10));
+
     } catch (error) {
       console.error("Error fetching platform stats:", error);
     } finally {
@@ -239,7 +280,9 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Trial Conversion</p>
-                  <p className="text-2xl font-bold text-success">67%</p>
+                  <p className={`text-2xl font-bold ${stats.trialConversionRate >= 50 ? 'text-success' : 'text-warning'}`}>
+                    {stats.trialConversionRate.toFixed(1)}%
+                  </p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-success/30" />
               </div>
@@ -250,9 +293,11 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Churn Rate</p>
-                  <p className="text-2xl font-bold text-warning">2.4%</p>
+                  <p className={`text-2xl font-bold ${stats.churnRate <= 5 ? 'text-success' : 'text-destructive'}`}>
+                    {stats.churnRate.toFixed(1)}%
+                  </p>
                 </div>
-                <AlertCircle className="h-8 w-8 text-warning/30" />
+                <AlertCircle className={`h-8 w-8 ${stats.churnRate <= 5 ? 'text-success/30' : 'text-warning/30'}`} />
               </div>
             </CardContent>
           </Card>
@@ -263,7 +308,7 @@ export default function AdminDashboard() {
                   <p className="text-sm text-muted-foreground">Avg Revenue/Org</p>
                   <p className="text-2xl font-bold">
                     ${stats.totalOrganizations > 0 
-                      ? Math.round(stats.mrr / stats.totalOrganizations)
+                      ? Math.round(stats.mrr / stats.totalOrganizations).toLocaleString()
                       : 0}
                   </p>
                 </div>
@@ -275,11 +320,14 @@ export default function AdminDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Platform Health</p>
-                  <p className="text-2xl font-bold text-primary">98.5%</p>
+                  <p className="text-sm text-muted-foreground">Active Users (MAU)</p>
+                  <p className="text-2xl font-bold text-primary">{stats.mau}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {stats.dau} DAU / {stats.wau} WAU
+                  </p>
                 </div>
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                  Healthy
+                  Live
                 </Badge>
               </div>
             </CardContent>
