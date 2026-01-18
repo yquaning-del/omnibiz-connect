@@ -9,17 +9,20 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard, Upload } from 'lucide-react';
 import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
 import { SubscriptionSettings } from '@/components/settings/SubscriptionSettings';
 import DataImport from '@/pages/settings/DataImport';
+import { useLimitChecker, formatLimitDisplay } from '@/hooks/useLimitChecker';
 
 export default function Settings() {
   const { currentOrganization, currentLocation, profile, user } = useAuth();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const limits = useLimitChecker();
   
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -214,8 +217,15 @@ export default function Settings() {
         <TabsContent value="location">
           <Card className="border-border/50 bg-card/50">
             <CardHeader>
-              <CardTitle>Location Settings</CardTitle>
-              <CardDescription>Configure your current location details</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Location Settings</CardTitle>
+                  <CardDescription>Configure your current location details</CardDescription>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {formatLimitDisplay(limits.currentLocations, limits.maxLocations)} locations
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 max-w-md">

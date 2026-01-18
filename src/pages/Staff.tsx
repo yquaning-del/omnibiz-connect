@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 import { Loader2, Plus, UserCog, Shield, Calendar, Edit, Trash2, MoreVertical } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
+import { useLimitChecker, formatLimitDisplay } from '@/hooks/useLimitChecker';
 
 interface StaffMember {
   id: string;
@@ -57,6 +59,7 @@ const roleLabels: Record<string, string> = {
 export default function Staff() {
   const { currentOrganization, currentLocation, isOrgAdmin } = useAuth();
   const { toast } = useToast();
+  const limits = useLimitChecker();
   
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -188,14 +191,20 @@ export default function Staff() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Staff Management</h1>
-          <p className="text-muted-foreground">Manage team roles and schedules</p>
+    <FeatureGate feature="staff_management" requiredTier="Professional">
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-display text-foreground">Staff Management</h1>
+            <p className="text-muted-foreground">Manage team roles and schedules</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="text-xs">
+              {formatLimitDisplay(limits.currentUsers, limits.maxUsers)} users
+            </Badge>
+          </div>
         </div>
-      </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Staff List */}
@@ -397,6 +406,7 @@ export default function Staff() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </FeatureGate>
   );
 }

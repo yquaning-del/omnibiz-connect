@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn } from '@/lib/utils';
 import {
   Sidebar,
@@ -43,16 +44,19 @@ import {
   DollarSign,
   AlertTriangle,
   LucideIcon,
+  Lock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LocationSwitcher } from './LocationSwitcher';
 import { BusinessVertical } from '@/types';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface NavItem {
   title: string;
   href: string;
   icon: LucideIcon;
+  requiredFeature?: string;
 }
 
 // All platform items for super admin view
@@ -128,7 +132,7 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
 
   const management: NavItem[] = [
     { title: 'Reports', href: '/reports', icon: BarChart3 },
-    { title: 'Staff', href: '/staff', icon: UserCog },
+    { title: 'Staff', href: '/staff', icon: UserCog, requiredFeature: 'staff_management' },
     { title: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -143,12 +147,73 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const { profile, signOut, hasRole, currentOrganization, currentLocation } = useAuth();
+  const { canAccess, isExpired } = useSubscription();
 
   const isSuperAdmin = hasRole('super_admin');
   const vertical = (currentLocation?.vertical || currentOrganization?.primary_vertical || 'retail') as BusinessVertical;
   const { common, verticalSpecific, management } = getNavItems(vertical, isSuperAdmin);
 
   const isActive = (path: string) => location.pathname === path;
+  
+  // Check if a nav item is locked based on feature requirement
+  const isLocked = (item: NavItem) => {
+    if (!item.requiredFeature) return false;
+    if (isExpired) return true;
+    return !canAccess(item.requiredFeature);
+  };
+
+  // Render a nav item (regular or locked)
+  const renderNavItem = (item: NavItem) => {
+    const locked = isLocked(item);
+    
+    if (locked) {
+      return (
+        <SidebarMenuItem key={item.href}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <NavLink
+                to="/subscription"
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+                  'text-muted-foreground/50 hover:bg-muted/30 cursor-pointer'
+                )}
+              >
+                <item.icon className="w-5 h-5 shrink-0" />
+                {!collapsed && (
+                  <>
+                    <span className="flex-1">{item.title}</span>
+                    <Lock className="w-3.5 h-3.5 text-muted-foreground/50" />
+                  </>
+                )}
+              </NavLink>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>{item.title} - Upgrade to unlock</p>
+            </TooltipContent>
+          </Tooltip>
+        </SidebarMenuItem>
+      );
+    }
+
+    return (
+      <SidebarMenuItem key={item.href}>
+        <SidebarMenuButton asChild>
+          <NavLink
+            to={item.href}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+              isActive(item.href)
+                ? 'bg-primary/20 text-primary'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            <item.icon className="w-5 h-5 shrink-0" />
+            {!collapsed && <span>{item.title}</span>}
+          </NavLink>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  };
 
   return (
     <Sidebar className={cn('border-r border-border/50', collapsed ? 'w-16' : 'w-64')}>
@@ -161,24 +226,7 @@ export function AppSidebar() {
           {!collapsed && <SidebarGroupLabel>Main</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {common.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.href}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
-                        isActive(item.href)
-                          ? 'bg-primary/20 text-primary'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      )}
-                    >
-                      <item.icon className="w-5 h-5 shrink-0" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {common.map(renderNavItem)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -187,24 +235,7 @@ export function AppSidebar() {
           {!collapsed && <SidebarGroupLabel>{isSuperAdmin ? 'All Platforms' : 'Features'}</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {verticalSpecific.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.href}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
-                        isActive(item.href)
-                          ? 'bg-primary/20 text-primary'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      )}
-                    >
-                      <item.icon className="w-5 h-5 shrink-0" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {verticalSpecific.map(renderNavItem)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -213,24 +244,7 @@ export function AppSidebar() {
           {!collapsed && <SidebarGroupLabel>Management</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {management.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.href}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
-                        isActive(item.href)
-                          ? 'bg-primary/20 text-primary'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      )}
-                    >
-                      <item.icon className="w-5 h-5 shrink-0" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {management.map(renderNavItem)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
