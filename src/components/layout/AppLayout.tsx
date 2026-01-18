@@ -1,23 +1,69 @@
+import { useState, useEffect } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { SubscriptionProvider, useSubscription } from '@/contexts/SubscriptionContext';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { NotificationProvider } from '@/components/notifications/NotificationProvider';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { TrialBadge } from '@/components/subscription/TrialBadge';
 import { ExpiredTrialOverlay } from '@/components/subscription/ExpiredTrialOverlay';
-import { Loader2, Bell, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { CommandPalette } from '@/components/ui/command-palette';
+import { ProductTour } from '@/components/onboarding/ProductTour';
+import { FeedbackWidget } from '@/components/feedback/FeedbackWidget';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { Loader2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
 
 // Inner component that can access subscription context
 function AppLayoutContent() {
   const { isExpired, isPaid, loading: subscriptionLoading } = useSubscription();
+  const { user, profile } = useAuth();
   const showExpiredOverlay = !subscriptionLoading && isExpired && !isPaid;
+  
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+
+  // Initialize keyboard shortcuts
+  useKeyboardShortcuts(() => setCommandPaletteOpen(true));
+
+  // Check if user needs to see the product tour
+  useEffect(() => {
+    const checkTourStatus = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('tour_completed')
+        .eq('id', user.id)
+        .single();
+      
+      if (data && !data.tour_completed) {
+        // Small delay to let the app load first
+        setTimeout(() => setShowTour(true), 1000);
+      }
+    };
+    
+    checkTourStatus();
+  }, [user]);
+
+  const handleSearchClick = () => {
+    setCommandPaletteOpen(true);
+  };
 
   return (
     <>
       {showExpiredOverlay && <ExpiredTrialOverlay />}
+      {showTour && (
+        <ProductTour 
+          onComplete={() => setShowTour(false)} 
+          onSkip={() => setShowTour(false)} 
+        />
+      )}
+      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+      <FeedbackWidget />
+      
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background">
           <AppSidebar />
@@ -28,25 +74,23 @@ function AppLayoutContent() {
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="lg:hidden" />
                 
-                <div className="hidden md:flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5">
+                <button 
+                  onClick={handleSearchClick}
+                  className="hidden md:flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 hover:bg-muted transition-colors cursor-pointer"
+                >
                   <Search className="w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search products, orders..."
-                    className="border-0 bg-transparent h-7 w-64 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  />
+                  <span className="text-sm text-muted-foreground w-48 text-left">
+                    Search or jump to...
+                  </span>
                   <kbd className="hidden lg:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                     ⌘K
                   </kbd>
-                </div>
+                </button>
               </div>
 
               <div className="flex items-center gap-3">
                 <TrialBadge />
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-                </Button>
+                <NotificationCenter />
               </div>
             </header>
 

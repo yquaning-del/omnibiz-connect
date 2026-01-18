@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { Shield, ArrowRight } from 'lucide-react';
+import { SetupChecklist } from '@/components/onboarding/SetupChecklist';
 import RestaurantDashboard from './dashboards/RestaurantDashboard';
 import HotelDashboard from './dashboards/HotelDashboard';
 import PharmacyDashboard from './dashboards/PharmacyDashboard';
@@ -49,9 +50,13 @@ export default function Dashboard() {
   };
 
   return (
-    <>
+    <div className="space-y-6">
       {isSuperAdmin && <AdminBanner />}
+      
+      {/* Getting Started Checklist */}
+      <SetupChecklist />
+      
       {renderDashboard()}
-    </>
+    </div>
   );
 }
