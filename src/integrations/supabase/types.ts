@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_logs: {
+        Row: {
+          action_type: string
+          admin_user_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          target_id: string | null
+          target_type: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_user_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_user_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      admin_impersonation_sessions: {
+        Row: {
+          admin_user_id: string
+          ended_at: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          started_at: string
+          target_organization_id: string | null
+          target_user_id: string
+        }
+        Insert: {
+          admin_user_id: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          started_at?: string
+          target_organization_id?: string | null
+          target_user_id: string
+        }
+        Update: {
+          admin_user_id?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          started_at?: string
+          target_organization_id?: string | null
+          target_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_impersonation_sessions_target_organization_id_fkey"
+            columns: ["target_organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       amenity_requests: {
         Row: {
           assigned_to: string | null
@@ -1351,6 +1428,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_metrics: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          metric_date: string
+          metric_type: string
+          metric_value: number | null
+          updated_at: string
+          vertical: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          metric_date?: string
+          metric_type: string
+          metric_value?: number | null
+          updated_at?: string
+          vertical?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          metric_date?: string
+          metric_type?: string
+          metric_value?: number | null
+          updated_at?: string
+          vertical?: string | null
+        }
+        Relationships: []
       }
       prescription_items: {
         Row: {
