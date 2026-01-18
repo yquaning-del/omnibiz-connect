@@ -36,6 +36,7 @@ import Maintenance from "./pages/Maintenance";
 import GuestServices from "./pages/GuestServices";
 import GuestProfiles from "./pages/GuestProfiles";
 import Billing from "./pages/Billing";
+import Subscription from "./pages/Subscription";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +83,7 @@ const App = () => (
                 <Route path="/guest-services" element={<GuestServices />} />
                 <Route path="/guest-profiles" element={<GuestProfiles />} />
                 <Route path="/billing" element={<Billing />} />
+                <Route path="/subscription" element={<Subscription />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
 

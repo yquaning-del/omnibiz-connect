@@ -282,7 +282,7 @@ export default function HotelDashboard() {
                       {arrival.status === 'checked_in' ? 'Arrived' : 'Expected'}
                     </Badge>
                   </div>
-                ))
+                ))}
               </div>
             )}
           </CardContent>
