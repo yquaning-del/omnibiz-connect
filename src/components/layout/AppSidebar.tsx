@@ -42,24 +42,21 @@ import {
   FileText,
   DollarSign,
   AlertTriangle,
+  LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LocationSwitcher } from './LocationSwitcher';
-import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
+import { BusinessVertical } from '@/types';
 
-const getVerticalIcon = (vertical: BusinessVertical) => {
-  switch (vertical) {
-    case 'restaurant': return UtensilsCrossed;
-    case 'hotel': return Building2;
-    case 'pharmacy': return Pill;
-    case 'retail': return Store;
-    default: return Store;
-  }
-};
+interface NavItem {
+  title: string;
+  href: string;
+  icon: LucideIcon;
+}
 
 // All platform items for super admin view
-const getAllPlatformItems = () => [
+const getAllPlatformItems = (): NavItem[] => [
   { title: 'Tables', href: '/tables', icon: UtensilsCrossed },
   { title: 'Kitchen Display', href: '/kitchen', icon: ChefHat },
   { title: 'Rooms', href: '/rooms', icon: BedDouble },
@@ -69,54 +66,76 @@ const getAllPlatformItems = () => [
 ];
 
 const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
-  const common = [
-    { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { title: 'Point of Sale', href: '/pos', icon: ShoppingCart },
-    { title: 'Products', href: '/products', icon: Package },
-    { title: 'Inventory', href: '/inventory', icon: Warehouse },
-    { title: 'Customers', href: '/customers', icon: Users },
-    { title: 'Orders', href: '/orders', icon: Receipt },
-  ];
-
-  const verticalSpecific: Record<BusinessVertical, typeof common> = {
-    restaurant: [
-      { title: 'Tables', href: '/tables', icon: UtensilsCrossed },
-      { title: 'Kitchen Display', href: '/kitchen', icon: ChefHat },
-      { title: 'Reservations', href: '/reservations', icon: Calendar },
-    ],
-    hotel: [
-      { title: 'Front Desk', href: '/front-desk', icon: DoorOpen },
-      { title: 'Rooms', href: '/rooms', icon: BedDouble },
-      { title: 'Reservations', href: '/reservations', icon: Calendar },
-      { title: 'Housekeeping', href: '/housekeeping', icon: ClipboardList },
-      { title: 'Maintenance', href: '/maintenance', icon: Wrench },
-      { title: 'Guest Services', href: '/guest-services', icon: ConciergeBell },
-      { title: 'Guest Profiles', href: '/guest-profiles', icon: UserCheck },
-      { title: 'Billing & Folios', href: '/billing', icon: CreditCard },
-    ],
-    pharmacy: [
-      { title: 'Prescriptions', href: '/pharmacy/prescriptions', icon: FileText },
-      { title: 'Patients', href: '/pharmacy/patients', icon: Users },
-      { title: 'Medications', href: '/pharmacy/medications', icon: Pill },
-      { title: 'Insurance', href: '/pharmacy/insurance', icon: DollarSign },
-      { title: 'Controlled Substances', href: '/pharmacy/controlled', icon: Shield },
-      { title: 'Drug Interactions', href: '/pharmacy/interactions', icon: AlertTriangle },
-    ],
-    retail: [
-      { title: 'Promotions', href: '/promotions', icon: Receipt },
-    ],
+  const verticalNav: Record<BusinessVertical, { main: NavItem[]; features: NavItem[] }> = {
+    restaurant: {
+      main: [
+        { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { title: 'Point of Sale', href: '/pos', icon: ShoppingCart },
+        { title: 'Tables', href: '/tables', icon: UtensilsCrossed },
+        { title: 'Kitchen Display', href: '/kitchen', icon: ChefHat },
+        { title: 'Orders', href: '/orders', icon: Receipt },
+      ],
+      features: [
+        { title: 'Reservations', href: '/reservations', icon: Calendar },
+        { title: 'Products', href: '/products', icon: Package },
+        { title: 'Inventory', href: '/inventory', icon: Warehouse },
+        { title: 'Customers', href: '/customers', icon: Users },
+      ],
+    },
+    hotel: {
+      main: [
+        { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { title: 'Front Desk', href: '/front-desk', icon: DoorOpen },
+        { title: 'Rooms', href: '/rooms', icon: BedDouble },
+        { title: 'Reservations', href: '/reservations', icon: Calendar },
+      ],
+      features: [
+        { title: 'Housekeeping', href: '/housekeeping', icon: ClipboardList },
+        { title: 'Maintenance', href: '/maintenance', icon: Wrench },
+        { title: 'Guest Services', href: '/guest-services', icon: ConciergeBell },
+        { title: 'Guest Profiles', href: '/guest-profiles', icon: UserCheck },
+        { title: 'Billing & Folios', href: '/billing', icon: CreditCard },
+      ],
+    },
+    pharmacy: {
+      main: [
+        { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { title: 'Prescriptions', href: '/pharmacy/prescriptions', icon: FileText },
+        { title: 'Patients', href: '/pharmacy/patients', icon: Users },
+        { title: 'Medications', href: '/pharmacy/medications', icon: Pill },
+      ],
+      features: [
+        { title: 'Insurance', href: '/pharmacy/insurance', icon: DollarSign },
+        { title: 'Controlled Substances', href: '/pharmacy/controlled', icon: Shield },
+        { title: 'Drug Interactions', href: '/pharmacy/interactions', icon: AlertTriangle },
+        { title: 'Inventory', href: '/inventory', icon: Warehouse },
+        { title: 'POS', href: '/pos', icon: ShoppingCart },
+      ],
+    },
+    retail: {
+      main: [
+        { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { title: 'Point of Sale', href: '/pos', icon: ShoppingCart },
+        { title: 'Products', href: '/products', icon: Package },
+        { title: 'Orders', href: '/orders', icon: Receipt },
+      ],
+      features: [
+        { title: 'Inventory', href: '/inventory', icon: Warehouse },
+        { title: 'Customers', href: '/customers', icon: Users },
+      ],
+    },
   };
 
-  const management = [
+  const management: NavItem[] = [
     { title: 'Reports', href: '/reports', icon: BarChart3 },
     { title: 'Staff', href: '/staff', icon: UserCog },
     { title: 'Settings', href: '/settings', icon: Settings },
   ];
 
-  // Super admins see all platform features
-  const platformItems = isSuperAdmin ? getAllPlatformItems() : verticalSpecific[vertical];
+  const nav = verticalNav[vertical];
+  const platformItems = isSuperAdmin ? getAllPlatformItems() : nav.features;
 
-  return { common, verticalSpecific: platformItems, management, isSuperAdmin };
+  return { common: nav.main, verticalSpecific: platformItems, management, isSuperAdmin };
 };
 
 export function AppSidebar() {
@@ -126,7 +145,6 @@ export function AppSidebar() {
   const { profile, signOut, hasRole, currentOrganization, currentLocation } = useAuth();
 
   const isSuperAdmin = hasRole('super_admin');
-  // Use the actual vertical from the current location or organization
   const vertical = (currentLocation?.vertical || currentOrganization?.primary_vertical || 'retail') as BusinessVertical;
   const { common, verticalSpecific, management } = getNavItems(vertical, isSuperAdmin);
 
