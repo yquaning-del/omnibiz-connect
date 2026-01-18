@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BusinessVertical } from '@/types';
@@ -65,49 +66,54 @@ const verticalFeatures: Record<BusinessVertical, { feature: string; starter: boo
   ],
 };
 
-export function FeatureTable({ vertical }: FeatureTableProps) {
-  const features = verticalFeatures[vertical];
+const FeatureTable = React.forwardRef<HTMLDivElement, FeatureTableProps>(
+  ({ vertical }, ref) => {
+    const features = verticalFeatures[vertical];
 
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="border-b border-border">
-            <th className="py-4 px-4 text-left text-foreground font-medium">Feature</th>
-            <th className="py-4 px-4 text-center text-foreground font-medium">Starter</th>
-            <th className="py-4 px-4 text-center text-foreground font-medium">Professional</th>
-            <th className="py-4 px-4 text-center text-foreground font-medium">Enterprise</th>
-          </tr>
-        </thead>
-        <tbody>
-          {features.map((row, index) => (
-            <tr key={index} className={cn('border-b border-border/50', index % 2 === 0 ? 'bg-card/30' : '')}>
-              <td className="py-3 px-4 text-foreground">{row.feature}</td>
-              <td className="py-3 px-4 text-center">
-                {row.starter ? (
-                  <Check className="h-5 w-5 text-success mx-auto" />
-                ) : (
-                  <X className="h-5 w-5 text-muted-foreground/50 mx-auto" />
-                )}
-              </td>
-              <td className="py-3 px-4 text-center">
-                {row.professional ? (
-                  <Check className="h-5 w-5 text-success mx-auto" />
-                ) : (
-                  <X className="h-5 w-5 text-muted-foreground/50 mx-auto" />
-                )}
-              </td>
-              <td className="py-3 px-4 text-center">
-                {row.enterprise ? (
-                  <Check className="h-5 w-5 text-success mx-auto" />
-                ) : (
-                  <X className="h-5 w-5 text-muted-foreground/50 mx-auto" />
-                )}
-              </td>
+    return (
+      <div ref={ref} className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="py-4 px-4 text-left text-foreground font-medium">Feature</th>
+              <th className="py-4 px-4 text-center text-foreground font-medium">Starter</th>
+              <th className="py-4 px-4 text-center text-foreground font-medium">Professional</th>
+              <th className="py-4 px-4 text-center text-foreground font-medium">Enterprise</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+          </thead>
+          <tbody>
+            {features.map((row, index) => (
+              <tr key={index} className={cn('border-b border-border/50', index % 2 === 0 ? 'bg-card/30' : '')}>
+                <td className="py-3 px-4 text-foreground">{row.feature}</td>
+                <td className="py-3 px-4 text-center">
+                  {row.starter ? (
+                    <Check className="h-5 w-5 text-success mx-auto" />
+                  ) : (
+                    <X className="h-5 w-5 text-muted-foreground/50 mx-auto" />
+                  )}
+                </td>
+                <td className="py-3 px-4 text-center">
+                  {row.professional ? (
+                    <Check className="h-5 w-5 text-success mx-auto" />
+                  ) : (
+                    <X className="h-5 w-5 text-muted-foreground/50 mx-auto" />
+                  )}
+                </td>
+                <td className="py-3 px-4 text-center">
+                  {row.enterprise ? (
+                    <Check className="h-5 w-5 text-success mx-auto" />
+                  ) : (
+                    <X className="h-5 w-5 text-muted-foreground/50 mx-auto" />
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+);
+FeatureTable.displayName = 'FeatureTable';
+
+export { FeatureTable };
