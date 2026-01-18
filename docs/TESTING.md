@@ -2,9 +2,17 @@
 
 This document provides comprehensive testing credentials and scenarios for validating all modules across all business verticals and subscription tiers.
 
-## Quick Start
+## Quick Setup
 
-To create all test users, first ensure you're logged in as a super admin, then call the edge function:
+### Step 1: Create Test Auth Users
+
+Test organizations, locations, and subscriptions are already seeded in the database. You need to create the auth users by signing up through the app:
+
+1. Go to `/auth` in the app
+2. Sign up with each test email (password: `Test123!`)
+3. During onboarding, select the matching vertical and connect to the existing test organization
+
+**Alternatively**, if you have super admin access, call the edge function:
 
 ```bash
 curl -X POST 'https://kjkmoxoossrtvxlywhro.supabase.co/functions/v1/create-test-users' \
@@ -12,7 +20,9 @@ curl -X POST 'https://kjkmoxoossrtvxlywhro.supabase.co/functions/v1/create-test-
   -H 'Content-Type: application/json'
 ```
 
-Or use the Admin Testing Panel in the app (Settings → Admin → Create Test Users).
+### Step 2: Verify Setup
+
+After creating users, verify they can access their assigned organizations with the correct tier features.
 
 ---
 
