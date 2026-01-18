@@ -91,6 +91,42 @@ export type Database = {
           },
         ]
       }
+      admin_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string | null
+          priority: string | null
+          target_id: string | null
+          target_type: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          priority?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          priority?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       amenity_requests: {
         Row: {
           assigned_to: string | null
@@ -1757,6 +1793,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          is_suspended: boolean | null
           phone: string | null
           updated_at: string
         }
@@ -1766,6 +1803,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          is_suspended?: boolean | null
           phone?: string | null
           updated_at?: string
         }
@@ -1775,6 +1813,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_suspended?: boolean | null
           phone?: string | null
           updated_at?: string
         }
@@ -2250,11 +2289,43 @@ export type Database = {
           },
         ]
       }
+      user_sessions: {
+        Row: {
+          id: string
+          ip_address: string | null
+          logged_in_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          logged_in_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          logged_in_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      calculate_platform_metrics: {
+        Args: never
+        Returns: {
+          calculated_at: string
+          metric_name: string
+          metric_value: number
+        }[]
+      }
       get_user_location_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {

@@ -36,8 +36,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserData = async (userId: string) => {
+  // Log user session for analytics
+  const logUserSession = async (userId: string) => {
     try {
+      await supabase
+        .from('user_sessions')
+        .insert({
+          user_id: userId,
+          logged_in_at: new Date().toISOString(),
+        });
+    } catch (error) {
+      // Silent fail - session logging shouldn't break auth
+      console.debug('Session logging failed:', error);
+    }
+  };
+
+  const fetchUserData = async (userId: string, isNewSession: boolean = false) => {
+    try {
+      // Log session for DAU/WAU/MAU tracking
+      if (isNewSession) {
+        logUserSession(userId);
+      }
+
       // Fetch profile
       const { data: profileData } = await supabase
         .from('profiles')
@@ -115,9 +135,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          // Log session on SIGNED_IN event only (new login)
+          const isNewSession = event === 'SIGNED_IN';
+          
           // Defer data fetching to avoid deadlock
           setTimeout(() => {
-            fetchUserData(session.user.id);
+            fetchUserData(session.user.id, isNewSession);
           }, 0);
         } else {
           // Clear all state on logout
@@ -132,12 +155,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // Check for existing session
+    // Check for existing session (not a new login, so don't log)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserData(session.user.id);
+        fetchUserData(session.user.id, false);
       }
       setLoading(false);
     });
