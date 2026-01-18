@@ -206,6 +206,66 @@ export type Database = {
           },
         ]
       }
+      business_goals: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          current_value: number | null
+          end_date: string
+          goal_type: string
+          id: string
+          location_id: string | null
+          organization_id: string | null
+          period: string
+          start_date: string
+          target_value: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          current_value?: number | null
+          end_date: string
+          goal_type: string
+          id?: string
+          location_id?: string | null
+          organization_id?: string | null
+          period: string
+          start_date: string
+          target_value: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          current_value?: number | null
+          end_date?: string
+          goal_type?: string
+          id?: string
+          location_id?: string | null
+          organization_id?: string | null
+          period?: string
+          start_date?: string
+          target_value?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_goals_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_goals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       controlled_substance_log: {
         Row: {
           action: string
@@ -451,6 +511,50 @@ export type Database = {
             columns: ["medication_2_id"]
             isOneToOne: false
             referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_submissions: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          organization_id: string | null
+          page_url: string | null
+          rating: number | null
+          status: string | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          page_url?: string | null
+          rating?: number | null
+          status?: string | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          page_url?: string | null
+          rating?: number | null
+          status?: string | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_submissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1791,31 +1895,43 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           email: string | null
+          email_preferences: Json | null
           full_name: string | null
           id: string
           is_suspended: boolean | null
+          onboarding_progress: Json | null
           phone: string | null
+          tour_completed: boolean | null
           updated_at: string
+          user_settings: Json | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           email?: string | null
+          email_preferences?: Json | null
           full_name?: string | null
           id: string
           is_suspended?: boolean | null
+          onboarding_progress?: Json | null
           phone?: string | null
+          tour_completed?: boolean | null
           updated_at?: string
+          user_settings?: Json | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           email?: string | null
+          email_preferences?: Json | null
           full_name?: string | null
           id?: string
           is_suspended?: boolean | null
+          onboarding_progress?: Json | null
           phone?: string | null
+          tour_completed?: boolean | null
           updated_at?: string
+          user_settings?: Json | null
         }
         Relationships: []
       }
@@ -2244,6 +2360,60 @@ export type Database = {
           payment_provider?: string
           tax_rate?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achieved_at: string | null
+          achievement_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          achieved_at?: string | null
+          achievement_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          achieved_at?: string | null
+          achievement_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          link: string | null
+          message: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          link?: string | null
+          message?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          link?: string | null
+          message?: string | null
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
