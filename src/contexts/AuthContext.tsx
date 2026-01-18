@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Log user session for analytics
+  // Log user session for analytics (fire and forget)
   const logUserSession = async (userId: string) => {
     try {
       await supabase
@@ -46,57 +46,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           logged_in_at: new Date().toISOString(),
         });
     } catch (error) {
-      // Silent fail - session logging shouldn't break auth
       console.debug('Session logging failed:', error);
     }
   };
 
   const fetchUserData = async (userId: string, isNewSession: boolean = false) => {
     try {
-      // Log session for DAU/WAU/MAU tracking
+      // Log session for DAU/WAU/MAU tracking (fire and forget)
       if (isNewSession) {
         logUserSession(userId);
       }
 
-      // Fetch profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (profileData) {
-        setProfile(profileData as Profile);
+      // Fetch all data in parallel for better performance
+      const [profileResult, rolesResult, orgsResult, locsResult] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+        supabase.from('user_roles').select('*').eq('user_id', userId),
+        supabase.from('organizations').select('*'),
+        supabase.from('locations').select('*'),
+      ]);
+
+      // Process profile
+      if (profileResult.data) {
+        setProfile(profileResult.data as Profile);
       }
 
-      // Fetch roles
-      const { data: rolesData } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId);
-      
-      if (rolesData) {
-        setRoles(rolesData as UserRole[]);
+      // Process roles
+      if (rolesResult.data) {
+        setRoles(rolesResult.data as UserRole[]);
       }
 
-      // Fetch organizations
-      const { data: orgsData } = await supabase
-        .from('organizations')
-        .select('*');
-      
+      // Process organizations
+      const orgsData = orgsResult.data;
       if (orgsData && orgsData.length > 0) {
         setOrganizations(orgsData as Organization[]);
-        // Set first org as current if none selected
-        if (!currentOrganization) {
-          setCurrentOrganization(orgsData[0] as Organization);
-        }
       }
 
-      // Fetch locations
-      const { data: locsData } = await supabase
-        .from('locations')
-        .select('*');
-      
+      // Process locations and restore context
+      const locsData = locsResult.data;
       if (locsData && locsData.length > 0) {
         const typedLocations = locsData as Location[];
         setLocations(typedLocations);
@@ -117,10 +103,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
         
-        // Set first location as current if none saved
+        // Set first location/org as current if none saved
         if (!currentLocation) {
           setCurrentLocation(typedLocations[0]);
         }
+        if (!currentOrganization && orgsData && orgsData.length > 0) {
+          setCurrentOrganization(orgsData[0] as Organization);
+        }
+      } else if (orgsData && orgsData.length > 0 && !currentOrganization) {
+        // Set first org as current if no locations
+        setCurrentOrganization(orgsData[0] as Organization);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
