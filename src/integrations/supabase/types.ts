@@ -1289,6 +1289,69 @@ export type Database = {
           },
         ]
       }
+      payment_transactions: {
+        Row: {
+          amount: number
+          completed_at: string | null
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json | null
+          mobile_network: string | null
+          organization_id: string | null
+          payment_method: string | null
+          provider: string
+          provider_reference: string | null
+          status: string
+          subscription_id: string | null
+        }
+        Insert: {
+          amount: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          mobile_network?: string | null
+          organization_id?: string | null
+          payment_method?: string | null
+          provider: string
+          provider_reference?: string | null
+          status?: string
+          subscription_id?: string | null
+        }
+        Update: {
+          amount?: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          mobile_network?: string | null
+          organization_id?: string | null
+          payment_method?: string | null
+          provider?: string
+          provider_reference?: string | null
+          status?: string
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_transactions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "organization_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prescription_items: {
         Row: {
           copay_amount: number | null
@@ -1938,7 +2001,9 @@ export type Database = {
       }
       subscription_plans: {
         Row: {
+          country_code: string | null
           created_at: string | null
+          currency: string | null
           description: string | null
           features: Json | null
           id: string
@@ -1947,13 +2012,17 @@ export type Database = {
           max_users: number | null
           name: string
           price_monthly: number
+          price_monthly_local: number | null
           price_yearly: number | null
+          price_yearly_local: number | null
           tier: string
           updated_at: string | null
           vertical: Database["public"]["Enums"]["business_vertical"]
         }
         Insert: {
+          country_code?: string | null
           created_at?: string | null
+          currency?: string | null
           description?: string | null
           features?: Json | null
           id?: string
@@ -1962,13 +2031,17 @@ export type Database = {
           max_users?: number | null
           name: string
           price_monthly: number
+          price_monthly_local?: number | null
           price_yearly?: number | null
+          price_yearly_local?: number | null
           tier: string
           updated_at?: string | null
           vertical: Database["public"]["Enums"]["business_vertical"]
         }
         Update: {
+          country_code?: string | null
           created_at?: string | null
+          currency?: string | null
           description?: string | null
           features?: Json | null
           id?: string
@@ -1977,10 +2050,51 @@ export type Database = {
           max_users?: number | null
           name?: string
           price_monthly?: number
+          price_monthly_local?: number | null
           price_yearly?: number | null
+          price_yearly_local?: number | null
           tier?: string
           updated_at?: string | null
           vertical?: Database["public"]["Enums"]["business_vertical"]
+        }
+        Relationships: []
+      }
+      supported_countries: {
+        Row: {
+          country_code: string
+          country_name: string
+          created_at: string
+          currency_code: string
+          currency_symbol: string
+          id: string
+          is_active: boolean | null
+          payment_provider: string
+          tax_rate: number | null
+          updated_at: string
+        }
+        Insert: {
+          country_code: string
+          country_name: string
+          created_at?: string
+          currency_code: string
+          currency_symbol: string
+          id?: string
+          is_active?: boolean | null
+          payment_provider?: string
+          tax_rate?: number | null
+          updated_at?: string
+        }
+        Update: {
+          country_code?: string
+          country_name?: string
+          created_at?: string
+          currency_code?: string
+          currency_symbol?: string
+          id?: string
+          is_active?: boolean | null
+          payment_provider?: string
+          tax_rate?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
