@@ -2175,6 +2175,8 @@ export type Database = {
         | "location_manager"
         | "department_lead"
         | "staff"
+        | "pharmacist"
+        | "front_desk"
       business_vertical: "restaurant" | "hotel" | "pharmacy" | "retail"
     }
     CompositeTypes: {
@@ -2309,6 +2311,8 @@ export const Constants = {
         "location_manager",
         "department_lead",
         "staff",
+        "pharmacist",
+        "front_desk",
       ],
       business_vertical: ["restaurant", "hotel", "pharmacy", "retail"],
     },
