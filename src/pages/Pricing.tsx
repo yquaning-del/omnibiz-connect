@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -9,12 +9,15 @@ import { PricingToggle } from '@/components/pricing/PricingToggle';
 import { VerticalTabs } from '@/components/pricing/VerticalTabs';
 import { FeatureTable } from '@/components/pricing/FeatureTable';
 import { PricingFAQ } from '@/components/pricing/PricingFAQ';
+import { CountrySelector, Country, SUPPORTED_COUNTRIES } from '@/components/payment/CountrySelector';
 
 type PlanData = {
   name: string;
   description: string;
   priceMonthly: number;
   priceYearly: number;
+  priceMonthlyGHS: number;
+  priceYearlyGHS: number;
   features: string[];
   tier: 'starter' | 'professional' | 'enterprise';
   isPopular?: boolean;
@@ -27,6 +30,8 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       description: 'Perfect for small cafes and food trucks',
       priceMonthly: 49,
       priceYearly: 470,
+      priceMonthlyGHS: 750,
+      priceYearlyGHS: 7200,
       tier: 'starter',
       features: [
         'Point of Sale system',
@@ -43,6 +48,8 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       description: 'For growing restaurants and chains',
       priceMonthly: 99,
       priceYearly: 950,
+      priceMonthlyGHS: 1500,
+      priceYearlyGHS: 14400,
       tier: 'professional',
       isPopular: true,
       features: [
@@ -61,6 +68,8 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       description: 'For large restaurant groups',
       priceMonthly: 199,
       priceYearly: 1910,
+      priceMonthlyGHS: 3000,
+      priceYearlyGHS: 28800,
       tier: 'enterprise',
       features: [
         'Everything in Professional',
@@ -80,6 +89,8 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       description: 'For boutique hotels and B&Bs',
       priceMonthly: 79,
       priceYearly: 758,
+      priceMonthlyGHS: 1200,
+      priceYearlyGHS: 11520,
       tier: 'starter',
       features: [
         'Front desk operations',
@@ -96,6 +107,8 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       description: 'For mid-size hotels',
       priceMonthly: 149,
       priceYearly: 1430,
+      priceMonthlyGHS: 2250,
+      priceYearlyGHS: 21600,
       tier: 'professional',
       isPopular: true,
       features: [
@@ -114,6 +127,8 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       description: 'For hotel chains and resorts',
       priceMonthly: 299,
       priceYearly: 2870,
+      priceMonthlyGHS: 4500,
+      priceYearlyGHS: 43200,
       tier: 'enterprise',
       features: [
         'Everything in Professional',
@@ -133,6 +148,8 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       description: 'For independent pharmacies',
       priceMonthly: 99,
       priceYearly: 950,
+      priceMonthlyGHS: 1500,
+      priceYearlyGHS: 14400,
       tier: 'starter',
       features: [
         'Prescription management',
@@ -149,6 +166,8 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       description: 'For growing pharmacy operations',
       priceMonthly: 199,
       priceYearly: 1910,
+      priceMonthlyGHS: 3000,
+      priceYearlyGHS: 28800,
       tier: 'professional',
       isPopular: true,
       features: [
@@ -167,6 +186,8 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       description: 'For pharmacy chains',
       priceMonthly: 399,
       priceYearly: 3830,
+      priceMonthlyGHS: 6000,
+      priceYearlyGHS: 57600,
       tier: 'enterprise',
       features: [
         'Everything in Professional',
@@ -186,6 +207,8 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       description: 'For small retail shops',
       priceMonthly: 39,
       priceYearly: 374,
+      priceMonthlyGHS: 600,
+      priceYearlyGHS: 5760,
       tier: 'starter',
       features: [
         'Point of Sale system',
@@ -202,6 +225,8 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       description: 'For growing retail businesses',
       priceMonthly: 79,
       priceYearly: 758,
+      priceMonthlyGHS: 1200,
+      priceYearlyGHS: 11520,
       tier: 'professional',
       isPopular: true,
       features: [
@@ -220,6 +245,8 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       description: 'For retail chains',
       priceMonthly: 149,
       priceYearly: 1430,
+      priceMonthlyGHS: 2250,
+      priceYearlyGHS: 21600,
       tier: 'enterprise',
       features: [
         'Everything in Professional',
@@ -251,10 +278,22 @@ const trustBadges = [
 export default function Pricing() {
   const [activeVertical, setActiveVertical] = useState<BusinessVertical>('restaurant');
   const [isYearly, setIsYearly] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<Country>(SUPPORTED_COUNTRIES[0]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("selectedCountry");
+    if (saved) {
+      const country = SUPPORTED_COUNTRIES.find((c) => c.code === saved);
+      if (country) {
+        setSelectedCountry(country);
+      }
+    }
+  }, []);
 
   const plans = pricingData[activeVertical];
   const verticalColor = verticalColors[activeVertical];
-
+  const isGhana = selectedCountry.code === "GH";
+  const currencySymbol = selectedCountry.symbol;
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -304,10 +343,13 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* Billing Toggle */}
+      {/* Billing Toggle & Currency Selector */}
       <section className="pb-12">
         <div className="container mx-auto px-6">
-          <PricingToggle isYearly={isYearly} onToggle={setIsYearly} />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <PricingToggle isYearly={isYearly} onToggle={setIsYearly} />
+            <CountrySelector value={selectedCountry.code} onChange={setSelectedCountry} />
+          </div>
         </div>
       </section>
 
@@ -320,13 +362,14 @@ export default function Pricing() {
                 key={plan.name}
                 name={plan.name}
                 description={plan.description}
-                priceMonthly={plan.priceMonthly}
-                priceYearly={plan.priceYearly}
+                priceMonthly={isGhana ? plan.priceMonthlyGHS : plan.priceMonthly}
+                priceYearly={isGhana ? plan.priceYearlyGHS : plan.priceYearly}
                 isYearly={isYearly}
                 features={plan.features}
                 tier={plan.tier}
                 isPopular={plan.isPopular}
                 verticalColor={verticalColor}
+                currencySymbol={currencySymbol}
               />
             ))}
           </div>
