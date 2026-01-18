@@ -2154,8 +2154,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_front_desk: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_location_in_org: {
         Args: { _location_id: string; _organization_id: string }
+        Returns: boolean
+      }
+      is_manager: {
+        Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
       is_org_admin: {
@@ -2164,6 +2172,10 @@ export type Database = {
       }
       is_org_creator: {
         Args: { _organization_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_pharmacist: {
+        Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }

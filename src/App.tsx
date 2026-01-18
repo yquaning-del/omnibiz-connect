@@ -6,8 +6,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CookieConsent } from "@/components/CookieConsent";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import POS from "./pages/POS";
@@ -38,6 +42,8 @@ import GuestProfiles from "./pages/GuestProfiles";
 import Billing from "./pages/Billing";
 import Subscription from "./pages/Subscription";
 import Pricing from "./pages/Pricing";
+import Terms from "./pages/legal/Terms";
+import Privacy from "./pages/legal/Privacy";
 
 const queryClient = new QueryClient();
 
@@ -45,54 +51,61 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              
-              {/* Protected routes with AppLayout */}
-              <Route element={<AppLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/pos" element={<POS />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/products/new" element={<Products />} />
-                <Route path="/customers" element={<Customers />} />
-                <Route path="/customers/new" element={<Customers />} />
-                <Route path="/orders" element={<Orders />} />
-                <Route path="/orders/:id" element={<Orders />} />
-                <Route path="/inventory" element={<Inventory />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/staff" element={<Staff />} />
-                <Route path="/tables" element={<Tables />} />
-                <Route path="/rooms" element={<Rooms />} />
-                <Route path="/kitchen" element={<Kitchen />} />
-                <Route path="/reservations" element={<Reservations />} />
-                <Route path="/housekeeping" element={<Housekeeping />} />
-                <Route path="/pharmacy" element={<Pharmacy />} />
-                <Route path="/pharmacy/prescriptions" element={<PharmacyPrescriptions />} />
-                <Route path="/pharmacy/patients" element={<PharmacyPatients />} />
-                <Route path="/pharmacy/medications" element={<PharmacyMedications />} />
-                <Route path="/pharmacy/insurance" element={<PharmacyInsurance />} />
-                <Route path="/pharmacy/controlled" element={<PharmacyControlled />} />
-                <Route path="/pharmacy/interactions" element={<PharmacyInteractions />} />
-                <Route path="/front-desk" element={<FrontDesk />} />
-                <Route path="/maintenance" element={<Maintenance />} />
-                <Route path="/guest-services" element={<GuestServices />} />
-                <Route path="/guest-profiles" element={<GuestProfiles />} />
-                <Route path="/billing" element={<Billing />} />
-                <Route path="/subscription" element={<Subscription />} />
-                <Route path="/settings" element={<Settings />} />
-              </Route>
+        <ErrorBoundary>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                
+                {/* Protected routes with AppLayout */}
+                <Route element={<AppLayout />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/pos" element={<POS />} />
+                  <Route path="/products" element={<Products />} />
+                  <Route path="/products/new" element={<Products />} />
+                  <Route path="/customers" element={<Customers />} />
+                  <Route path="/customers/new" element={<Customers />} />
+                  <Route path="/orders" element={<Orders />} />
+                  <Route path="/orders/:id" element={<Orders />} />
+                  <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/staff" element={<Staff />} />
+                  <Route path="/tables" element={<Tables />} />
+                  <Route path="/rooms" element={<Rooms />} />
+                  <Route path="/kitchen" element={<Kitchen />} />
+                  <Route path="/reservations" element={<Reservations />} />
+                  <Route path="/housekeeping" element={<Housekeeping />} />
+                  <Route path="/pharmacy" element={<Pharmacy />} />
+                  <Route path="/pharmacy/prescriptions" element={<PharmacyPrescriptions />} />
+                  <Route path="/pharmacy/patients" element={<PharmacyPatients />} />
+                  <Route path="/pharmacy/medications" element={<PharmacyMedications />} />
+                  <Route path="/pharmacy/insurance" element={<PharmacyInsurance />} />
+                  <Route path="/pharmacy/controlled" element={<PharmacyControlled />} />
+                  <Route path="/pharmacy/interactions" element={<PharmacyInteractions />} />
+                  <Route path="/front-desk" element={<FrontDesk />} />
+                  <Route path="/maintenance" element={<Maintenance />} />
+                  <Route path="/guest-services" element={<GuestServices />} />
+                  <Route path="/guest-profiles" element={<GuestProfiles />} />
+                  <Route path="/billing" element={<Billing />} />
+                  <Route path="/subscription" element={<Subscription />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <CookieConsent />
+            </AuthProvider>
+          </BrowserRouter>
+        </ErrorBoundary>
       </TooltipProvider>
     </LanguageProvider>
   </QueryClientProvider>
