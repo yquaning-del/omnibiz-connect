@@ -15,6 +15,7 @@ interface PricingCardProps {
   tier: 'starter' | 'professional' | 'enterprise';
   isPopular?: boolean;
   verticalColor: string;
+  currencySymbol?: string;
 }
 
 export function PricingCard({
@@ -27,6 +28,7 @@ export function PricingCard({
   tier,
   isPopular = false,
   verticalColor,
+  currencySymbol = '$',
 }: PricingCardProps) {
   const price = isYearly ? Math.round(priceYearly / 12) : priceMonthly;
   const yearlyTotal = priceYearly;
@@ -58,16 +60,16 @@ export function PricingCard({
       <CardContent className="flex-1">
         <div className="mb-6">
           <div className="flex items-baseline gap-1">
-            <span className="text-4xl font-bold font-display">${price}</span>
+            <span className="text-4xl font-bold font-display">{currencySymbol}{price.toLocaleString()}</span>
             <span className="text-muted-foreground">/mo</span>
           </div>
           {isYearly && (
             <div className="mt-1 flex flex-col gap-1">
               <span className="text-sm text-muted-foreground">
-                ${yearlyTotal} billed yearly
+                {currencySymbol}{yearlyTotal.toLocaleString()} billed yearly
               </span>
               <span className="text-sm text-success font-medium">
-                Save ${monthlySavings}/mo
+                Save {currencySymbol}{monthlySavings.toLocaleString()}/mo
               </span>
             </div>
           )}
