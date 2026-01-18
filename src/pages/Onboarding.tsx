@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { PlanSelectionStep } from '@/components/subscription/PlanSelectionStep';
 
 const verticals = [
   {
@@ -84,6 +85,9 @@ export default function Onboarding() {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
+  
+  // Step 3: Plan selection
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
   // Check for partial onboarding state and resume
   useEffect(() => {
@@ -209,9 +213,15 @@ export default function Onboarding() {
     }
   };
 
-  const handleComplete = async () => {
+  const handleLocationComplete = () => {
+    // Move to plan selection step
+    setStep(3);
+  };
+
+  const handlePlanSelect = async (planId: string, startTrial: boolean) => {
     if (!user || !selectedVertical) return;
     
+    setSelectedPlanId(planId);
     setIsLoading(true);
 
     try {
@@ -276,9 +286,30 @@ export default function Onboarding() {
         if (roleError) throw roleError;
       }
 
+      // Create subscription with trial
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+
+      const { error: subError } = await supabase
+        .from('organization_subscriptions')
+        .upsert({
+          organization_id: orgId,
+          plan_id: planId,
+          status: startTrial ? 'trial' : 'active',
+          trial_ends_at: startTrial ? trialEndsAt.toISOString() : null,
+          current_period_start: new Date().toISOString(),
+          current_period_end: trialEndsAt.toISOString(),
+        }, {
+          onConflict: 'organization_id',
+        });
+
+      if (subError) throw subError;
+
       toast({
         title: 'Setup complete!',
-        description: 'Your business has been created. Redirecting to dashboard...',
+        description: startTrial 
+          ? 'Your 14-day free trial has started. Redirecting to dashboard...'
+          : 'Your business has been created. Redirecting to dashboard...',
       });
 
       // Brief delay then navigate
@@ -388,7 +419,7 @@ export default function Onboarding() {
             </AlertDialog>
             
             <div className="flex items-center gap-2">
-            {[1, 2].map((s) => (
+            {[1, 2, 3].map((s) => (
               <div
                 key={s}
                 className={cn(
@@ -406,12 +437,14 @@ export default function Onboarding() {
             </Link>
           </div>
           <CardTitle className="text-2xl font-display">
-            {step === 1 ? 'Set up your business' : 'Add your first location'}
+            {step === 1 ? 'Set up your business' : step === 2 ? 'Add your first location' : 'Choose your plan'}
           </CardTitle>
           <CardDescription>
             {step === 1 
               ? 'Tell us about your business to get started' 
-              : 'Where is your business located?'}
+              : step === 2 
+                ? 'Where is your business located?'
+                : 'Start with a 14-day free trial'}
           </CardDescription>
         </CardHeader>
 
@@ -528,24 +561,23 @@ export default function Onboarding() {
                   Back
                 </Button>
                 <Button 
-                  onClick={handleComplete}
-                  disabled={isLoading}
+                  onClick={handleLocationComplete}
                   className="flex-1"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Setting up...
-                    </>
-                  ) : (
-                    <>
-                      Complete Setup
-                      <Check className="ml-2 h-4 w-4" />
-                    </>
-                  )}
+                  Continue
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </>
+          )}
+
+          {step === 3 && selectedVertical && (
+            <PlanSelectionStep
+              vertical={selectedVertical}
+              onSelect={handlePlanSelect}
+              onBack={() => setStep(2)}
+              isLoading={isLoading}
+            />
           )}
         </CardContent>
       </Card>
