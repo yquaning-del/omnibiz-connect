@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Crown, Sparkles, Zap, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CountrySelector, Country, SUPPORTED_COUNTRIES } from '@/components/payment/CountrySelector';
 
 interface Plan {
   id: string;
@@ -43,14 +44,17 @@ export function PlanSelectionStep({ vertical, onSelect, onBack, isLoading = fals
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isYearly, setIsYearly] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<Country>(SUPPORTED_COUNTRIES[0]);
 
   useEffect(() => {
     const fetchPlans = async () => {
+      setLoading(true);
       const { data, error } = await supabase
         .from('subscription_plans')
         .select('*')
         .eq('vertical', vertical)
         .eq('is_active', true)
+        .eq('currency', selectedCountry.currency)
         .order('price_monthly', { ascending: true });
 
       if (!error && data) {
@@ -64,13 +68,15 @@ export function PlanSelectionStep({ vertical, onSelect, onBack, isLoading = fals
         const professionalPlan = formattedPlans.find(p => p.tier.toLowerCase() === 'professional');
         if (professionalPlan) {
           setSelectedPlan(professionalPlan.id);
+        } else if (formattedPlans.length > 0) {
+          setSelectedPlan(formattedPlans[0].id);
         }
       }
       setLoading(false);
     };
 
     fetchPlans();
-  }, [vertical]);
+  }, [vertical, selectedCountry]);
 
   const handleContinue = () => {
     if (selectedPlan) {
@@ -95,27 +101,33 @@ export function PlanSelectionStep({ vertical, onSelect, onBack, isLoading = fals
         </p>
       </div>
 
-      {/* Billing Toggle */}
-      <div className="flex items-center justify-center gap-4">
-        <span className={cn("text-sm", !isYearly && "font-semibold text-foreground")}>Monthly</span>
-        <button
-          onClick={() => setIsYearly(!isYearly)}
-          className={cn(
-            "relative w-14 h-7 rounded-full transition-colors",
-            isYearly ? "bg-primary" : "bg-muted"
-          )}
-        >
-          <div
+      {/* Currency & Billing Toggle */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <CountrySelector 
+          value={selectedCountry.code} 
+          onChange={setSelectedCountry} 
+        />
+        <div className="flex items-center gap-4">
+          <span className={cn("text-sm", !isYearly && "font-semibold text-foreground")}>Monthly</span>
+          <button
+            onClick={() => setIsYearly(!isYearly)}
             className={cn(
-              "absolute top-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm",
-              isYearly ? "translate-x-8" : "translate-x-1"
+              "relative w-14 h-7 rounded-full transition-colors",
+              isYearly ? "bg-primary" : "bg-muted"
             )}
-          />
-        </button>
-        <span className={cn("text-sm", isYearly && "font-semibold text-foreground")}>
-          Yearly
-          <Badge variant="secondary" className="ml-2 text-xs">Save 20%</Badge>
-        </span>
+          >
+            <div
+              className={cn(
+                "absolute top-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm",
+                isYearly ? "translate-x-8" : "translate-x-1"
+              )}
+            />
+          </button>
+          <span className={cn("text-sm", isYearly && "font-semibold text-foreground")}>
+            Yearly
+            <Badge variant="secondary" className="ml-2 text-xs">Save 20%</Badge>
+          </span>
+        </div>
       </div>
 
       {/* Plans Grid */}
@@ -159,7 +171,9 @@ export function PlanSelectionStep({ vertical, onSelect, onBack, isLoading = fals
               
               <CardContent className="space-y-4">
                 <div>
-                  <span className="text-3xl font-bold">${price}</span>
+                  <span className="text-3xl font-bold">
+                    {selectedCountry.symbol}{price.toLocaleString()}
+                  </span>
                   <span className="text-muted-foreground text-sm">/month</span>
                 </div>
 
