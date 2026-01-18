@@ -222,6 +222,81 @@ export type Database = {
           },
         ]
       }
+      data_migrations: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          error_log: Json | null
+          failed_records: number | null
+          field_mapping: Json | null
+          id: string
+          imported_record_ids: Json | null
+          location_id: string | null
+          migration_type: string
+          organization_id: string
+          processed_records: number | null
+          source_file_name: string | null
+          started_at: string | null
+          status: string
+          total_records: number | null
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_log?: Json | null
+          failed_records?: number | null
+          field_mapping?: Json | null
+          id?: string
+          imported_record_ids?: Json | null
+          location_id?: string | null
+          migration_type: string
+          organization_id: string
+          processed_records?: number | null
+          source_file_name?: string | null
+          started_at?: string | null
+          status?: string
+          total_records?: number | null
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_log?: Json | null
+          failed_records?: number | null
+          field_mapping?: Json | null
+          id?: string
+          imported_record_ids?: Json | null
+          location_id?: string | null
+          migration_type?: string
+          organization_id?: string
+          processed_records?: number | null
+          source_file_name?: string | null
+          started_at?: string | null
+          status?: string
+          total_records?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_migrations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_migrations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drug_interactions: {
         Row: {
           created_at: string
