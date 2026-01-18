@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.drug-interactions]
 verify_jwt = false
+
+[functions.paystack-payment]
+verify_jwt = false
+
+[functions.paystack-webhook]
+verify_jwt = false
+
+[functions.create-test-users]
+verify_jwt = false
