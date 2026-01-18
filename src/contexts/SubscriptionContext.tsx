@@ -37,29 +37,56 @@ interface SubscriptionContextType {
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
-// Feature to tier mapping
+// Feature to tier mapping - comprehensive list
 const FEATURE_TIERS: Record<string, string[]> = {
-  // Starter features
+  // === STARTER FEATURES (All tiers) ===
   'basic_pos': ['starter', 'professional', 'enterprise'],
   'basic_inventory': ['starter', 'professional', 'enterprise'],
   'basic_customers': ['starter', 'professional', 'enterprise'],
   'basic_reports': ['starter', 'professional', 'enterprise'],
+  'basic_orders': ['starter', 'professional', 'enterprise'],
+  'basic_products': ['starter', 'professional', 'enterprise'],
   
-  // Professional features
+  // === PROFESSIONAL FEATURES ===
   'advanced_reports': ['professional', 'enterprise'],
+  'data_export': ['professional', 'enterprise'],
   'multi_location': ['professional', 'enterprise'],
   'staff_management': ['professional', 'enterprise'],
+  'staff_scheduling': ['professional', 'enterprise'],
   'integrations': ['professional', 'enterprise'],
   'custom_branding': ['professional', 'enterprise'],
   
-  // Enterprise features
+  // Vertical-specific Professional features
+  'reservations': ['professional', 'enterprise'],
+  'guest_profiles': ['professional', 'enterprise'],
+  'maintenance_tracking': ['professional', 'enterprise'],
+  'housekeeping_management': ['professional', 'enterprise'],
+  'prescription_management': ['professional', 'enterprise'],
+  'insurance_billing': ['professional', 'enterprise'],
+  'controlled_substances': ['professional', 'enterprise'],
+  'drug_interactions': ['professional', 'enterprise'],
+  'kitchen_display': ['professional', 'enterprise'],
+  'table_management': ['professional', 'enterprise'],
+  
+  // === ENTERPRISE FEATURES ===
   'api_access': ['enterprise'],
   'sso': ['enterprise'],
   'priority_support': ['enterprise'],
   'custom_integrations': ['enterprise'],
   'unlimited_users': ['enterprise'],
+  'unlimited_locations': ['enterprise'],
   'dedicated_support': ['enterprise'],
+  'white_label': ['enterprise'],
+  'advanced_analytics': ['enterprise'],
 };
+
+// Get required tier for a feature
+export function getRequiredTier(feature: string): string {
+  const tiers = FEATURE_TIERS[feature];
+  if (!tiers || tiers.includes('starter')) return 'Starter';
+  if (tiers.includes('professional')) return 'Professional';
+  return 'Enterprise';
+}
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { currentOrganization } = useAuth();
@@ -192,3 +219,5 @@ export function useSubscription() {
   }
   return context;
 }
+
+export { FEATURE_TIERS };

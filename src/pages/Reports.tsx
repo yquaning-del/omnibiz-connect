@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Download, TrendingUp, DollarSign, ShoppingCart, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Download, TrendingUp, DollarSign, ShoppingCart, Users, Lock, Crown } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import { Link } from 'react-router-dom';
+import { LockedFeatureOverlay } from '@/components/subscription/UpgradePrompt';
 
 interface SalesData {
   date: string;
@@ -21,6 +25,9 @@ interface CategoryData {
 
 export default function Reports() {
   const { currentOrganization } = useAuth();
+  const { canAccess, isExpired } = useSubscription();
+  const hasAdvancedReports = !isExpired && canAccess('advanced_reports');
+  const hasDataExport = !isExpired && canAccess('data_export');
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('7');
   const [salesData, setSalesData] = useState<SalesData[]>([]);
@@ -158,15 +165,24 @@ export default function Reports() {
             <SelectContent>
               <SelectItem value="7">Last 7 days</SelectItem>
               <SelectItem value="14">Last 14 days</SelectItem>
-              <SelectItem value="30">Last 30 days</SelectItem>
-              <SelectItem value="90">Last 90 days</SelectItem>
+              <SelectItem value="30" disabled={!hasAdvancedReports}>Last 30 days {!hasAdvancedReports && '🔒'}</SelectItem>
+              <SelectItem value="90" disabled={!hasAdvancedReports}>Last 90 days {!hasAdvancedReports && '🔒'}</SelectItem>
             </SelectContent>
           </Select>
           
-          <Button variant="outline" onClick={exportToCSV}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          {hasDataExport ? (
+            <Button variant="outline" onClick={exportToCSV}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          ) : (
+            <Button variant="outline" asChild>
+              <Link to="/subscription">
+                <Lock className="w-4 h-4 mr-2" />
+                Export
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -291,6 +307,29 @@ export default function Reports() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Advanced Reports Section - Locked for Starter */}
+      {!hasAdvancedReports && (
+        <Card className="border-border/50 bg-card/50 relative overflow-hidden">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              Advanced Analytics
+              <Badge variant="outline" className="text-xs">
+                <Crown className="w-3 h-3 mr-1" />
+                Professional
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-3 gap-4 opacity-50 blur-[2px] pointer-events-none">
+              <div className="p-4 rounded-lg bg-muted/30 h-40" />
+              <div className="p-4 rounded-lg bg-muted/30 h-40" />
+              <div className="p-4 rounded-lg bg-muted/30 h-40" />
+            </div>
+          </CardContent>
+          <LockedFeatureOverlay feature="advanced_reports" requiredTier="Professional" />
+        </Card>
+      )}
     </div>
   );
 }
