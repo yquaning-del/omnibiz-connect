@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { SalesChart } from '@/components/charts/SalesChart';
+import { PieBreakdown } from '@/components/charts/PieBreakdown';
+import { BarChartCard } from '@/components/charts/BarChartCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import {
   Pill,
   FileText,
@@ -35,6 +37,16 @@ interface PendingRx {
   created_at: string;
 }
 
+interface DailyVolume {
+  name: string;
+  value: number;
+}
+
+interface ClaimData {
+  name: string;
+  value: number;
+}
+
 export default function PharmacyDashboard() {
   const navigate = useNavigate();
   const { currentOrganization, currentLocation } = useAuth();
@@ -46,6 +58,8 @@ export default function PharmacyDashboard() {
   const [todayDispensed, setTodayDispensed] = useState(0);
   const [todayRevenue, setTodayRevenue] = useState(0);
   const [patientCount, setPatientCount] = useState(0);
+  const [dailyVolume, setDailyVolume] = useState<DailyVolume[]>([]);
+  const [claimStats, setClaimStats] = useState<ClaimData[]>([]);
 
   useEffect(() => {
     if (!currentOrganization?.id) return;
@@ -116,16 +130,42 @@ export default function PharmacyDashboard() {
           p => p.status === 'dispensed' && p.created_at.startsWith(today)
         ).length;
         setTodayDispensed(todayDispensedCount);
+
+        // Daily volume for last 7 days
+        const volumeData: DailyVolume[] = [];
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split('T')[0];
+          const dayName = date.toLocaleDateString('en', { weekday: 'short' });
+
+          const dayCount = prescriptions.filter(p => p.created_at.startsWith(dateStr)).length;
+          volumeData.push({ name: dayName, value: dayCount });
+        }
+        setDailyVolume(volumeData);
       }
 
-      // Insurance claims pending
-      const { count: insCount } = await supabase
+      // Insurance claims with status breakdown
+      const { data: claims } = await supabase
         .from('insurance_claims')
-        .select('*', { count: 'exact', head: true })
-        .eq('organization_id', currentOrganization.id)
-        .in('status', ['pending', 'submitted']);
+        .select('status')
+        .eq('organization_id', currentOrganization.id);
 
-      setInsurancePending(insCount || 0);
+      if (claims) {
+        const claimCounts = claims.reduce((acc, c) => {
+          acc[c.status] = (acc[c.status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        setInsurancePending((claimCounts['pending'] || 0) + (claimCounts['submitted'] || 0));
+        
+        setClaimStats([
+          { name: 'Pending', value: claimCounts['pending'] || 0 },
+          { name: 'Submitted', value: claimCounts['submitted'] || 0 },
+          { name: 'Approved', value: claimCounts['approved'] || 0 },
+          { name: 'Denied', value: claimCounts['denied'] || 0 },
+        ]);
+      }
 
       // Low stock medications
       const { data: products } = await supabase
@@ -175,6 +215,12 @@ export default function PharmacyDashboard() {
     if (hours < 24) return `${hours}h ago`;
     return `${Math.floor(hours / 24)}d ago`;
   };
+
+  const rxStatusPieData = [
+    { name: 'Pending', value: rxStats.pending, color: 'hsl(var(--warning))' },
+    { name: 'Ready', value: rxStats.ready, color: 'hsl(var(--success))' },
+    { name: 'Dispensed', value: rxStats.dispensed, color: 'hsl(var(--pharmacy))' },
+  ].filter(d => d.value > 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -229,8 +275,35 @@ export default function PharmacyDashboard() {
         />
       </div>
 
+      {/* Charts Row */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <SalesChart
+          title="Daily Rx Volume"
+          data={dailyVolume}
+          color="hsl(var(--pharmacy))"
+          icon={TrendingUp}
+          showAxis
+          valuePrefix=""
+          height={180}
+        />
+        <BarChartCard
+          title="Insurance Claims"
+          data={claimStats}
+          color="hsl(var(--pharmacy))"
+          icon={DollarSign}
+          height={180}
+        />
+      </div>
+
       {/* Workflow & Alerts */}
       <div className="grid lg:grid-cols-2 gap-6">
+        {/* Rx Status Pie */}
+        <PieBreakdown
+          title="Prescription Status"
+          data={rxStatusPieData}
+          icon={FileText}
+        />
+
         {/* Pending Prescriptions */}
         <Card className="border-border/50 bg-card/50 backdrop-blur">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -267,16 +340,18 @@ export default function PharmacyDashboard() {
             )}
           </CardContent>
         </Card>
+      </div>
 
-        {/* Alerts & Stats */}
-        <Card className="border-border/50 bg-card/50 backdrop-blur">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-warning" />
-              Attention Required
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      {/* Alerts & Stats */}
+      <Card className="border-border/50 bg-card/50 backdrop-blur">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-warning" />
+            Attention Required
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid sm:grid-cols-3 gap-4">
             <div 
               className="flex items-center justify-between p-3 rounded-lg bg-warning/10 border border-warning/20 cursor-pointer hover:bg-warning/20 transition-colors"
               onClick={() => navigate('/pharmacy/insurance')}
@@ -315,9 +390,9 @@ export default function PharmacyDashboard() {
                 Log
               </Badge>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <Card className="border-border/50 bg-card/50 backdrop-blur">

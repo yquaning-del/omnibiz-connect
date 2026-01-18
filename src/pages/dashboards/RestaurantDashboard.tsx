@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { SalesChart } from '@/components/charts/SalesChart';
+import { PieBreakdown } from '@/components/charts/PieBreakdown';
+import { BarChartCard } from '@/components/charts/BarChartCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +17,6 @@ import {
   Clock,
   Calendar,
   TrendingUp,
-  AlertCircle,
   Plus,
   Eye
 } from 'lucide-react';
@@ -34,6 +36,16 @@ interface KitchenOrder {
   items_count: number;
 }
 
+interface HourlySales {
+  name: string;
+  value: number;
+}
+
+interface WeeklyRevenue {
+  name: string;
+  value: number;
+}
+
 export default function RestaurantDashboard() {
   const navigate = useNavigate();
   const { currentOrganization, currentLocation } = useAuth();
@@ -44,6 +56,8 @@ export default function RestaurantDashboard() {
   const [todaySales, setTodaySales] = useState(0);
   const [todayCovers, setTodayCovers] = useState(0);
   const [avgTicket, setAvgTicket] = useState(0);
+  const [hourlySales, setHourlySales] = useState<HourlySales[]>([]);
+  const [weeklyRevenue, setWeeklyRevenue] = useState<WeeklyRevenue[]>([]);
 
   useEffect(() => {
     if (!currentLocation?.id) return;
@@ -55,6 +69,8 @@ export default function RestaurantDashboard() {
     setLoading(true);
 
     try {
+      const today = new Date().toISOString().split('T')[0];
+
       // Fetch table statuses
       const { data: tables } = await supabase
         .from('restaurant_tables')
@@ -90,7 +106,6 @@ export default function RestaurantDashboard() {
       }
 
       // Today's reservations
-      const today = new Date().toISOString().split('T')[0];
       const { count: resCount } = await supabase
         .from('reservations')
         .select('*', { count: 'exact', head: true })
@@ -101,10 +116,10 @@ export default function RestaurantDashboard() {
 
       setTodayReservations(resCount || 0);
 
-      // Today's sales and covers
+      // Today's sales and covers with hourly breakdown
       const { data: todayOrders } = await supabase
         .from('orders')
-        .select('total_amount, metadata')
+        .select('total_amount, metadata, created_at')
         .eq('organization_id', currentOrganization.id)
         .eq('vertical', 'restaurant')
         .gte('created_at', today + 'T00:00:00')
@@ -115,7 +130,45 @@ export default function RestaurantDashboard() {
         setTodaySales(sales);
         setTodayCovers(todayOrders.length);
         setAvgTicket(todayOrders.length > 0 ? sales / todayOrders.length : 0);
+
+        // Aggregate hourly sales
+        const hourlyData: Record<number, number> = {};
+        todayOrders.forEach(order => {
+          const hour = new Date(order.created_at).getHours();
+          hourlyData[hour] = (hourlyData[hour] || 0) + Number(order.total_amount);
+        });
+
+        const currentHour = new Date().getHours();
+        const hourlyChartData: HourlySales[] = [];
+        for (let i = Math.max(0, currentHour - 6); i <= currentHour; i++) {
+          hourlyChartData.push({
+            name: `${i}:00`,
+            value: hourlyData[i] || 0,
+          });
+        }
+        setHourlySales(hourlyChartData);
       }
+
+      // Weekly revenue
+      const weeklyData: WeeklyRevenue[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = date.toLocaleDateString('en', { weekday: 'short' });
+
+        const { data: dayOrders } = await supabase
+          .from('orders')
+          .select('total_amount')
+          .eq('organization_id', currentOrganization.id)
+          .eq('vertical', 'restaurant')
+          .gte('created_at', dateStr + 'T00:00:00')
+          .lte('created_at', dateStr + 'T23:59:59');
+
+        const dayTotal = dayOrders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
+        weeklyData.push({ name: dayName, value: dayTotal });
+      }
+      setWeeklyRevenue(weeklyData);
     } catch (error) {
       console.error('Error fetching restaurant dashboard:', error);
     } finally {
@@ -137,6 +190,12 @@ export default function RestaurantDashboard() {
     if (mins < 60) return `${mins}m`;
     return `${Math.floor(mins / 60)}h ${mins % 60}m`;
   };
+
+  const tableStatusPieData = [
+    { name: 'Available', value: tableStatus.available, color: 'hsl(var(--success))' },
+    { name: 'Occupied', value: tableStatus.occupied, color: 'hsl(var(--warning))' },
+    { name: 'Reserved', value: tableStatus.reserved, color: 'hsl(var(--info))' },
+  ].filter(d => d.value > 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -192,36 +251,35 @@ export default function RestaurantDashboard() {
         />
       </div>
 
+      {/* Charts Row */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <SalesChart
+          title="Hourly Sales"
+          data={hourlySales}
+          color="hsl(var(--restaurant))"
+          icon={Clock}
+          showAxis
+          valuePrefix="$"
+          height={180}
+        />
+        <BarChartCard
+          title="Weekly Revenue"
+          data={weeklyRevenue}
+          color="hsl(var(--restaurant))"
+          icon={TrendingUp}
+          valuePrefix="$"
+          height={180}
+        />
+      </div>
+
       {/* Table Status & Kitchen Orders */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Table Status Card */}
-        <Card className="border-border/50 bg-card/50 backdrop-blur">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <UtensilsCrossed className="w-5 h-5 text-restaurant" />
-              Floor Status
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/tables')}>
-              View All
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 rounded-lg bg-success/10 border border-success/20">
-                <p className="text-3xl font-bold text-success">{tableStatus.available}</p>
-                <p className="text-sm text-muted-foreground">Available</p>
-              </div>
-              <div className="text-center p-4 rounded-lg bg-warning/10 border border-warning/20">
-                <p className="text-3xl font-bold text-warning">{tableStatus.occupied}</p>
-                <p className="text-sm text-muted-foreground">Occupied</p>
-              </div>
-              <div className="text-center p-4 rounded-lg bg-info/10 border border-info/20">
-                <p className="text-3xl font-bold text-info">{tableStatus.reserved}</p>
-                <p className="text-sm text-muted-foreground">Reserved</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Table Status Pie Chart */}
+        <PieBreakdown
+          title="Table Distribution"
+          data={tableStatusPieData}
+          icon={UtensilsCrossed}
+        />
 
         {/* Kitchen Orders */}
         <Card className="border-border/50 bg-card/50 backdrop-blur">
