@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard, Upload } from 'lucide-react';
+import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard, Upload, BookOpen, ExternalLink, FileText } from 'lucide-react';
 import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
 import { SubscriptionSettings } from '@/components/settings/SubscriptionSettings';
@@ -167,6 +167,10 @@ export default function Settings() {
           <TabsTrigger value="import" className="flex items-center gap-2">
             <Upload className="w-4 h-4" />
             Data Import
+          </TabsTrigger>
+          <TabsTrigger value="help" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Help & Docs
           </TabsTrigger>
         </TabsList>
 
@@ -391,6 +395,68 @@ export default function Settings() {
         {/* Data Import */}
         <TabsContent value="import">
           <DataImport />
+        </TabsContent>
+
+        {/* Help & Documentation */}
+        <TabsContent value="help">
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader>
+              <CardTitle>Help & Documentation</CardTitle>
+              <CardDescription>Access guides, manuals, and support resources</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <a
+                  href="https://github.com/user/repo/blob/main/docs/USER_MANUAL.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-4 p-4 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors group"
+                >
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <FileText className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground">User Manual</p>
+                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Comprehensive guide covering all modules, features, and workflows
+                    </p>
+                  </div>
+                </a>
+
+                <a
+                  href="https://github.com/user/repo/blob/main/docs/TESTING.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-4 p-4 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors group"
+                >
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground">Testing Guide</p>
+                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Technical documentation for testing and verification procedures
+                    </p>
+                  </div>
+                </a>
+              </div>
+
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <h4 className="font-medium text-foreground mb-2">Quick Tips</h4>
+                <ul className="text-sm text-muted-foreground space-y-2">
+                  <li>• Press <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">⌘K</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">Ctrl+K</kbd> to open the command palette</li>
+                  <li>• Use keyboard shortcuts: <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">Shift+P</kbd> for POS, <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">Shift+I</kbd> for Inventory</li>
+                  <li>• The Setup Checklist on your dashboard guides you through initial configuration</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
