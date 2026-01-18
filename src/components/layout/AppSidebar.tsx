@@ -136,10 +136,15 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
     { title: 'Settings', href: '/settings', icon: Settings },
   ];
 
+  // Admin panel link - only visible to super admins
+  const adminItems: NavItem[] = isSuperAdmin
+    ? [{ title: 'Admin Panel', href: '/admin', icon: Shield }]
+    : [];
+
   const nav = verticalNav[vertical];
   const platformItems = isSuperAdmin ? getAllPlatformItems() : nav.features;
 
-  return { common: nav.main, verticalSpecific: platformItems, management, isSuperAdmin };
+  return { common: nav.main, verticalSpecific: platformItems, management, adminItems, isSuperAdmin };
 };
 
 export function AppSidebar() {
@@ -151,7 +156,7 @@ export function AppSidebar() {
 
   const isSuperAdmin = hasRole('super_admin');
   const vertical = (currentLocation?.vertical || currentOrganization?.primary_vertical || 'retail') as BusinessVertical;
-  const { common, verticalSpecific, management } = getNavItems(vertical, isSuperAdmin);
+  const { common, verticalSpecific, management, adminItems } = getNavItems(vertical, isSuperAdmin);
 
   const isActive = (path: string) => location.pathname === path;
   
@@ -248,6 +253,34 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {adminItems.length > 0 && (
+          <SidebarGroup>
+            {!collapsed && <SidebarGroupLabel className="text-primary">Platform Admin</SidebarGroupLabel>}
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.href}
+                        className={cn(
+                          'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+                          location.pathname.startsWith('/admin')
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-primary hover:bg-primary/10'
+                        )}
+                      >
+                        <item.icon className="w-5 h-5 shrink-0" />
+                        {!collapsed && <span className="font-medium">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border/50 p-4">
