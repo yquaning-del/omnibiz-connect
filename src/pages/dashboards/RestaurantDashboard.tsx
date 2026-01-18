@@ -6,6 +6,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { SalesChart } from '@/components/charts/SalesChart';
 import { PieBreakdown } from '@/components/charts/PieBreakdown';
 import { BarChartCard } from '@/components/charts/BarChartCard';
+import { DashboardSkeleton } from '@/components/ui/dashboard-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,28 @@ interface WeeklyRevenue {
   value: number;
 }
 
+// Helper to group orders by day
+const groupOrdersByDay = (orders: { total_amount: number; created_at: string }[] | null): WeeklyRevenue[] => {
+  if (!orders) return [];
+  
+  const dayMap: Record<string, number> = {};
+  orders.forEach(order => {
+    const dateStr = order.created_at.split('T')[0];
+    dayMap[dateStr] = (dayMap[dateStr] || 0) + Number(order.total_amount);
+  });
+
+  // Generate last 7 days
+  const result: WeeklyRevenue[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    const dayName = date.toLocaleDateString('en', { weekday: 'short' });
+    result.push({ name: dayName, value: dayMap[dateStr] || 0 });
+  }
+  return result;
+};
+
 export default function RestaurantDashboard() {
   const navigate = useNavigate();
   const { currentOrganization, currentLocation } = useAuth();
@@ -70,14 +93,61 @@ export default function RestaurantDashboard() {
 
     try {
       const today = new Date().toISOString().split('T')[0];
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - 6);
+      weekStart.setHours(0, 0, 0, 0);
 
-      // Fetch table statuses
-      const { data: tables } = await supabase
-        .from('restaurant_tables')
-        .select('status')
-        .eq('location_id', currentLocation.id);
+      // Run all independent queries in parallel
+      const [
+        tablesResult,
+        kitchenOrdersResult,
+        reservationsResult,
+        todayOrdersResult,
+        weekOrdersResult,
+      ] = await Promise.all([
+        // Tables
+        supabase
+          .from('restaurant_tables')
+          .select('status')
+          .eq('location_id', currentLocation.id),
+        // Kitchen orders
+        supabase
+          .from('orders')
+          .select('id, order_number, status, created_at')
+          .eq('location_id', currentLocation.id)
+          .eq('vertical', 'restaurant')
+          .in('status', ['pending', 'preparing', 'ready'])
+          .order('created_at', { ascending: true })
+          .limit(10),
+        // Today's reservations
+        supabase
+          .from('reservations')
+          .select('*', { count: 'exact', head: true })
+          .eq('location_id', currentLocation.id)
+          .eq('reservation_type', 'table')
+          .gte('check_in', today + 'T00:00:00')
+          .lte('check_in', today + 'T23:59:59'),
+        // Today's orders (for sales + hourly breakdown)
+        supabase
+          .from('orders')
+          .select('total_amount, metadata, created_at')
+          .eq('organization_id', currentOrganization.id)
+          .eq('vertical', 'restaurant')
+          .gte('created_at', today + 'T00:00:00')
+          .lte('created_at', today + 'T23:59:59'),
+        // Weekly orders (single query for all 7 days)
+        supabase
+          .from('orders')
+          .select('total_amount, created_at')
+          .eq('organization_id', currentOrganization.id)
+          .eq('vertical', 'restaurant')
+          .gte('created_at', weekStart.toISOString())
+          .lte('created_at', new Date().toISOString()),
+      ]);
 
-      if (tables) {
+      // Process tables
+      if (tablesResult.data) {
+        const tables = tablesResult.data;
         const statusCounts = tables.reduce((acc, t) => {
           acc[t.status] = (acc[t.status] || 0) + 1;
           return acc;
@@ -91,41 +161,17 @@ export default function RestaurantDashboard() {
         });
       }
 
-      // Fetch kitchen orders (pending/in_progress)
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('id, order_number, status, created_at')
-        .eq('location_id', currentLocation.id)
-        .eq('vertical', 'restaurant')
-        .in('status', ['pending', 'preparing', 'ready'])
-        .order('created_at', { ascending: true })
-        .limit(10);
-
-      if (orders) {
-        setKitchenOrders(orders.map(o => ({ ...o, items_count: 0 })));
+      // Process kitchen orders
+      if (kitchenOrdersResult.data) {
+        setKitchenOrders(kitchenOrdersResult.data.map(o => ({ ...o, items_count: 0 })));
       }
 
-      // Today's reservations
-      const { count: resCount } = await supabase
-        .from('reservations')
-        .select('*', { count: 'exact', head: true })
-        .eq('location_id', currentLocation.id)
-        .eq('reservation_type', 'table')
-        .gte('check_in', today + 'T00:00:00')
-        .lte('check_in', today + 'T23:59:59');
+      // Process reservations
+      setTodayReservations(reservationsResult.count || 0);
 
-      setTodayReservations(resCount || 0);
-
-      // Today's sales and covers with hourly breakdown
-      const { data: todayOrders } = await supabase
-        .from('orders')
-        .select('total_amount, metadata, created_at')
-        .eq('organization_id', currentOrganization.id)
-        .eq('vertical', 'restaurant')
-        .gte('created_at', today + 'T00:00:00')
-        .lte('created_at', today + 'T23:59:59');
-
-      if (todayOrders) {
+      // Process today's orders
+      if (todayOrdersResult.data) {
+        const todayOrders = todayOrdersResult.data;
         const sales = todayOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
         setTodaySales(sales);
         setTodayCovers(todayOrders.length);
@@ -149,26 +195,8 @@ export default function RestaurantDashboard() {
         setHourlySales(hourlyChartData);
       }
 
-      // Weekly revenue
-      const weeklyData: WeeklyRevenue[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        const dayName = date.toLocaleDateString('en', { weekday: 'short' });
-
-        const { data: dayOrders } = await supabase
-          .from('orders')
-          .select('total_amount')
-          .eq('organization_id', currentOrganization.id)
-          .eq('vertical', 'restaurant')
-          .gte('created_at', dateStr + 'T00:00:00')
-          .lte('created_at', dateStr + 'T23:59:59');
-
-        const dayTotal = dayOrders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
-        weeklyData.push({ name: dayName, value: dayTotal });
-      }
-      setWeeklyRevenue(weeklyData);
+      // Process weekly revenue (group by day client-side)
+      setWeeklyRevenue(groupOrdersByDay(weekOrdersResult.data));
     } catch (error) {
       console.error('Error fetching restaurant dashboard:', error);
     } finally {
@@ -190,6 +218,11 @@ export default function RestaurantDashboard() {
     if (mins < 60) return `${mins}m`;
     return `${Math.floor(mins / 60)}h ${mins % 60}m`;
   };
+
+  // Show skeleton while loading
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
 
   const tableStatusPieData = [
     { name: 'Available', value: tableStatus.available, color: 'hsl(var(--success))' },

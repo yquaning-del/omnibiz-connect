@@ -6,6 +6,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { SalesChart } from '@/components/charts/SalesChart';
 import { PieBreakdown } from '@/components/charts/PieBreakdown';
 import { BarChartCard } from '@/components/charts/BarChartCard';
+import { DashboardSkeleton } from '@/components/ui/dashboard-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -73,14 +74,55 @@ export default function PharmacyDashboard() {
     try {
       const today = new Date().toISOString().split('T')[0];
 
-      // Prescription stats
-      const { data: prescriptions } = await supabase
-        .from('prescriptions')
-        .select('id, prescription_number, status, created_at, patient_id')
-        .eq('organization_id', currentOrganization.id)
-        .order('created_at', { ascending: false });
+      // Run all independent queries in parallel
+      const [
+        prescriptionsResult,
+        claimsResult,
+        productsResult,
+        patientCountResult,
+        todayOrdersResult,
+      ] = await Promise.all([
+        // Prescriptions with patient info (using join)
+        supabase
+          .from('prescriptions')
+          .select(`
+            id, prescription_number, status, created_at, patient_id,
+            patient_profiles!patient_id (
+              customer_id,
+              customers!customer_id (full_name)
+            )
+          `)
+          .eq('organization_id', currentOrganization.id)
+          .order('created_at', { ascending: false }),
+        // Insurance claims
+        supabase
+          .from('insurance_claims')
+          .select('status')
+          .eq('organization_id', currentOrganization.id),
+        // Products for inventory
+        supabase
+          .from('products')
+          .select('stock_quantity, low_stock_threshold')
+          .eq('organization_id', currentOrganization.id)
+          .eq('vertical', 'pharmacy')
+          .eq('is_active', true),
+        // Patient count
+        supabase
+          .from('patient_profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', currentOrganization.id),
+        // Today's orders
+        supabase
+          .from('orders')
+          .select('total_amount')
+          .eq('organization_id', currentOrganization.id)
+          .eq('vertical', 'pharmacy')
+          .gte('created_at', today + 'T00:00:00'),
+      ]);
 
-      if (prescriptions) {
+      // Process prescriptions
+      if (prescriptionsResult.data) {
+        const prescriptions = prescriptionsResult.data;
         const statusCounts = prescriptions.reduce((acc, p) => {
           acc[p.status] = (acc[p.status] || 0) + 1;
           return acc;
@@ -93,37 +135,18 @@ export default function PharmacyDashboard() {
           total: prescriptions.length,
         });
 
-        // Get pending prescriptions with patient info
-        const pending = prescriptions.filter(p => p.status === 'pending').slice(0, 5);
-        const pendingWithPatients = await Promise.all(
-          pending.map(async (p) => {
-            let patientName = 'Unknown Patient';
-            if (p.patient_id) {
-              const { data: patient } = await supabase
-                .from('patient_profiles')
-                .select('customer_id')
-                .eq('id', p.patient_id)
-                .single();
-              
-              if (patient?.customer_id) {
-                const { data: customer } = await supabase
-                  .from('customers')
-                  .select('full_name')
-                  .eq('id', patient.customer_id)
-                  .single();
-                patientName = customer?.full_name || 'Unknown';
-              }
-            }
-            return {
-              id: p.id,
-              prescription_number: p.prescription_number,
-              patient_name: patientName,
-              status: p.status,
-              created_at: p.created_at,
-            };
-          })
-        );
-        setPendingRx(pendingWithPatients);
+        // Get pending prescriptions with patient info (already joined)
+        const pending = prescriptions
+          .filter(p => p.status === 'pending')
+          .slice(0, 5)
+          .map((p: any) => ({
+            id: p.id,
+            prescription_number: p.prescription_number,
+            patient_name: p.patient_profiles?.customers?.full_name || 'Unknown Patient',
+            status: p.status,
+            created_at: p.created_at,
+          }));
+        setPendingRx(pending);
 
         // Today's dispensed
         const todayDispensedCount = prescriptions.filter(
@@ -145,13 +168,9 @@ export default function PharmacyDashboard() {
         setDailyVolume(volumeData);
       }
 
-      // Insurance claims with status breakdown
-      const { data: claims } = await supabase
-        .from('insurance_claims')
-        .select('status')
-        .eq('organization_id', currentOrganization.id);
-
-      if (claims) {
+      // Process claims
+      if (claimsResult.data) {
+        const claims = claimsResult.data;
         const claimCounts = claims.reduce((acc, c) => {
           acc[c.status] = (acc[c.status] || 0) + 1;
           return acc;
@@ -167,39 +186,21 @@ export default function PharmacyDashboard() {
         ]);
       }
 
-      // Low stock medications
-      const { data: products } = await supabase
-        .from('products')
-        .select('stock_quantity, low_stock_threshold')
-        .eq('organization_id', currentOrganization.id)
-        .eq('vertical', 'pharmacy')
-        .eq('is_active', true);
-
-      if (products) {
+      // Process products
+      if (productsResult.data) {
+        const products = productsResult.data;
         const lowStock = products.filter(p => 
           (p.stock_quantity || 0) <= (p.low_stock_threshold || 10)
         ).length;
         setLowStockMeds(lowStock);
       }
 
-      // Patient count
-      const { count: patCount } = await supabase
-        .from('patient_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('organization_id', currentOrganization.id);
+      // Process patient count
+      setPatientCount(patientCountResult.count || 0);
 
-      setPatientCount(patCount || 0);
-
-      // Today's revenue from orders
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('total_amount')
-        .eq('organization_id', currentOrganization.id)
-        .eq('vertical', 'pharmacy')
-        .gte('created_at', today + 'T00:00:00');
-
-      if (orders) {
-        setTodayRevenue(orders.reduce((sum, o) => sum + Number(o.total_amount), 0));
+      // Process today's revenue
+      if (todayOrdersResult.data) {
+        setTodayRevenue(todayOrdersResult.data.reduce((sum, o) => sum + Number(o.total_amount), 0));
       }
     } catch (error) {
       console.error('Error fetching pharmacy dashboard:', error);
@@ -215,6 +216,11 @@ export default function PharmacyDashboard() {
     if (hours < 24) return `${hours}h ago`;
     return `${Math.floor(hours / 24)}d ago`;
   };
+
+  // Show skeleton while loading
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
 
   const rxStatusPieData = [
     { name: 'Pending', value: rxStats.pending, color: 'hsl(var(--warning))' },

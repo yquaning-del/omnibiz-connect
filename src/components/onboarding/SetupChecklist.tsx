@@ -34,7 +34,7 @@ export function SetupChecklist() {
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { currentOrganization, currentLocation, user } = useAuth();
+  const { currentOrganization, user } = useAuth();
 
   const checklistItems: ChecklistItem[] = [
     {
@@ -115,26 +115,40 @@ export function SetupChecklist() {
   }, [currentOrganization]);
 
   const checkProgress = async () => {
-    setLoading(true);
-    const completed = new Set<string>();
-    
-    for (const item of checklistItems) {
-      try {
-        const isComplete = await item.checkFn();
-        if (isComplete) {
-          completed.add(item.id);
-        }
-      } catch (error) {
-        console.error(`Error checking ${item.id}:`, error);
-      }
+    if (!currentOrganization) {
+      setLoading(false);
+      return;
     }
     
-    setCompletedItems(completed);
-    setLoading(false);
+    setLoading(true);
     
-    // Auto-dismiss if all complete
-    if (completed.size === checklistItems.length) {
-      setTimeout(() => setIsDismissed(true), 2000);
+    try {
+      // Run all checks in parallel for better performance
+      const results = await Promise.all(
+        checklistItems.map(async (item) => {
+          try {
+            const isComplete = await item.checkFn();
+            return { id: item.id, complete: isComplete };
+          } catch (error) {
+            console.error(`Error checking ${item.id}:`, error);
+            return { id: item.id, complete: false };
+          }
+        })
+      );
+      
+      const completed = new Set<string>(
+        results.filter(r => r.complete).map(r => r.id)
+      );
+      setCompletedItems(completed);
+      
+      // Auto-dismiss if all complete
+      if (completed.size === checklistItems.length) {
+        setTimeout(() => setIsDismissed(true), 2000);
+      }
+    } catch (error) {
+      console.error('Error checking progress:', error);
+    } finally {
+      setLoading(false);
     }
   };
 

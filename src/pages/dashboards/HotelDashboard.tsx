@@ -6,10 +6,10 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { SalesChart } from '@/components/charts/SalesChart';
 import { PieBreakdown } from '@/components/charts/PieBreakdown';
 import { BarChartCard } from '@/components/charts/BarChartCard';
+import { DashboardSkeleton } from '@/components/ui/dashboard-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import {
   Building2,
   BedDouble,
@@ -51,6 +51,28 @@ interface RevenueData {
   value: number;
 }
 
+// Helper to group folios by day
+const groupFoliosByDay = (folios: { total_amount: number; created_at: string }[] | null): RevenueData[] => {
+  if (!folios) return [];
+  
+  const dayMap: Record<string, number> = {};
+  folios.forEach(folio => {
+    const dateStr = folio.created_at.split('T')[0];
+    dayMap[dateStr] = (dayMap[dateStr] || 0) + Number(folio.total_amount || 0);
+  });
+
+  // Generate last 7 days
+  const result: RevenueData[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    const dayName = date.toLocaleDateString('en', { weekday: 'short' });
+    result.push({ name: dayName, value: dayMap[dateStr] || 0 });
+  }
+  return result;
+};
+
 export default function HotelDashboard() {
   const navigate = useNavigate();
   const { currentOrganization, currentLocation } = useAuth();
@@ -72,136 +94,145 @@ export default function HotelDashboard() {
 
   const fetchDashboardData = async () => {
     if (!currentLocation?.id || !currentOrganization?.id) return;
-    setLoading(false);
+    setLoading(true);
 
     try {
       const today = new Date().toISOString().split('T')[0];
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - 6);
+      weekStart.setHours(0, 0, 0, 0);
 
-      // Fetch room stats
-      const { data: rooms } = await supabase
-        .from('hotel_rooms')
-        .select('status, housekeeping_status')
-        .eq('location_id', currentLocation.id);
-
-      if (rooms) {
-        const stats: RoomStats = {
-          total: rooms.length,
-          available: rooms.filter(r => r.status === 'available').length,
-          occupied: rooms.filter(r => r.status === 'occupied').length,
-          maintenance: rooms.filter(r => r.status === 'maintenance').length,
-          dirty: rooms.filter(r => r.housekeeping_status === 'dirty').length,
-        };
-        setRoomStats(stats);
-        setOccupancyRate(stats.total > 0 ? (stats.occupied / stats.total) * 100 : 0);
-      }
-
-      // Today's arrivals
-      const { data: arrivals } = await supabase
-        .from('reservations')
-        .select('id, guest_name, check_in, status, room_id')
-        .eq('location_id', currentLocation.id)
-        .eq('reservation_type', 'room')
-        .gte('check_in', today + 'T00:00:00')
-        .lte('check_in', today + 'T23:59:59')
-        .in('status', ['confirmed', 'checked_in'])
-        .limit(10);
-
-      if (arrivals) {
-        const arrivalsWithRooms = await Promise.all(
-          arrivals.map(async (a) => {
-            if (a.room_id) {
-              const { data: room } = await supabase
-                .from('hotel_rooms')
-                .select('room_number')
-                .eq('id', a.room_id)
-                .single();
-              return { ...a, room_number: room?.room_number || 'TBA' };
-            }
-            return { ...a, room_number: 'TBA' };
-          })
-        );
-        setArrivalsToday(arrivalsWithRooms);
-      }
-
-      // Today's departures
-      const { count: deptCount } = await supabase
-        .from('reservations')
-        .select('*', { count: 'exact', head: true })
-        .eq('location_id', currentLocation.id)
-        .eq('reservation_type', 'room')
-        .gte('check_out', today + 'T00:00:00')
-        .lte('check_out', today + 'T23:59:59');
-
-      setDeparturesToday(deptCount || 0);
-
-      // Housekeeping pending
-      const { count: hkCount } = await supabase
-        .from('housekeeping_tasks')
-        .select('*', { count: 'exact', head: true })
-        .eq('location_id', currentLocation.id)
-        .in('status', ['pending', 'in_progress']);
-
-      setHousekeepingPending(hkCount || 0);
-
-      // Maintenance pending
-      const { count: maintCount } = await supabase
-        .from('maintenance_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('location_id', currentLocation.id)
-        .in('status', ['open', 'in_progress']);
-
-      setMaintenancePending(maintCount || 0);
-
-      // Today's revenue from folios
-      const { data: folios } = await supabase
-        .from('guest_folios')
-        .select('total_amount')
-        .eq('location_id', currentLocation.id)
-        .gte('created_at', today + 'T00:00:00');
-
-      if (folios) {
-        setTodayRevenue(folios.reduce((sum, f) => sum + Number(f.total_amount || 0), 0));
-      }
-
-      // Weekly revenue trend
-      const weeklyData: RevenueData[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        const dayName = date.toLocaleDateString('en', { weekday: 'short' });
-
-        const { data: dayFolios } = await supabase
-          .from('guest_folios')
-          .select('total_amount')
+      // Run all independent queries in parallel
+      const [
+        roomsResult,
+        arrivalsResult,
+        departuresResult,
+        housekeepingResult,
+        maintenanceResult,
+        todayFoliosResult,
+        weekFoliosResult,
+        weekReservationsResult,
+      ] = await Promise.all([
+        // Rooms
+        supabase
+          .from('hotel_rooms')
+          .select('id, status, housekeeping_status, room_number')
+          .eq('location_id', currentLocation.id),
+        // Today's arrivals with room info (using join)
+        supabase
+          .from('reservations')
+          .select(`
+            id, guest_name, check_in, status, room_id,
+            hotel_rooms!room_id (room_number)
+          `)
           .eq('location_id', currentLocation.id)
-          .gte('created_at', dateStr + 'T00:00:00')
-          .lte('created_at', dateStr + 'T23:59:59');
-
-        const dayTotal = dayFolios?.reduce((sum, f) => sum + Number(f.total_amount || 0), 0) || 0;
-        weeklyData.push({ name: dayName, value: dayTotal });
-      }
-      setWeeklyRevenue(weeklyData);
-
-      // Occupancy trend (simulated based on reservations per day)
-      const occupancyData: OccupancyData[] = [];
-      const totalRooms = rooms?.length || 1;
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        const dayName = date.toLocaleDateString('en', { weekday: 'short' });
-
-        const { count } = await supabase
+          .eq('reservation_type', 'room')
+          .gte('check_in', today + 'T00:00:00')
+          .lte('check_in', today + 'T23:59:59')
+          .in('status', ['confirmed', 'checked_in'])
+          .limit(10),
+        // Today's departures
+        supabase
           .from('reservations')
           .select('*', { count: 'exact', head: true })
           .eq('location_id', currentLocation.id)
           .eq('reservation_type', 'room')
+          .gte('check_out', today + 'T00:00:00')
+          .lte('check_out', today + 'T23:59:59'),
+        // Housekeeping pending
+        supabase
+          .from('housekeeping_tasks')
+          .select('*', { count: 'exact', head: true })
+          .eq('location_id', currentLocation.id)
+          .in('status', ['pending', 'in_progress']),
+        // Maintenance pending
+        supabase
+          .from('maintenance_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('location_id', currentLocation.id)
+          .in('status', ['open', 'in_progress']),
+        // Today's folios
+        supabase
+          .from('guest_folios')
+          .select('total_amount')
+          .eq('location_id', currentLocation.id)
+          .gte('created_at', today + 'T00:00:00'),
+        // Weekly folios (single query for all 7 days)
+        supabase
+          .from('guest_folios')
+          .select('total_amount, created_at')
+          .eq('location_id', currentLocation.id)
+          .gte('created_at', weekStart.toISOString())
+          .lte('created_at', new Date().toISOString()),
+        // Weekly reservations for occupancy trend
+        supabase
+          .from('reservations')
+          .select('check_in, check_out, status')
+          .eq('location_id', currentLocation.id)
+          .eq('reservation_type', 'room')
           .eq('status', 'checked_in')
-          .lte('check_in', dateStr + 'T23:59:59')
-          .gte('check_out', dateStr + 'T00:00:00');
+          .lte('check_in', new Date().toISOString())
+          .gte('check_out', weekStart.toISOString()),
+      ]);
 
-        const rate = Math.min(100, ((count || 0) / totalRooms) * 100);
+      // Process rooms
+      const rooms = roomsResult.data || [];
+      const stats: RoomStats = {
+        total: rooms.length,
+        available: rooms.filter(r => r.status === 'available').length,
+        occupied: rooms.filter(r => r.status === 'occupied').length,
+        maintenance: rooms.filter(r => r.status === 'maintenance').length,
+        dirty: rooms.filter(r => r.housekeeping_status === 'dirty').length,
+      };
+      setRoomStats(stats);
+      setOccupancyRate(stats.total > 0 ? (stats.occupied / stats.total) * 100 : 0);
+
+      // Process arrivals (with joined room data)
+      if (arrivalsResult.data) {
+        const arrivalsWithRooms = arrivalsResult.data.map((a: any) => ({
+          id: a.id,
+          guest_name: a.guest_name,
+          check_in: a.check_in,
+          status: a.status,
+          room_number: a.hotel_rooms?.room_number || 'TBA',
+        }));
+        setArrivalsToday(arrivalsWithRooms);
+      }
+
+      // Process departures
+      setDeparturesToday(departuresResult.count || 0);
+
+      // Process housekeeping and maintenance
+      setHousekeepingPending(housekeepingResult.count || 0);
+      setMaintenancePending(maintenanceResult.count || 0);
+
+      // Process today's revenue
+      if (todayFoliosResult.data) {
+        setTodayRevenue(todayFoliosResult.data.reduce((sum, f) => sum + Number(f.total_amount || 0), 0));
+      }
+
+      // Process weekly revenue
+      setWeeklyRevenue(groupFoliosByDay(weekFoliosResult.data));
+
+      // Process occupancy trend
+      const totalRooms = rooms.length || 1;
+      const occupancyData: OccupancyData[] = [];
+      const reservations = weekReservationsResult.data || [];
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = date.toLocaleDateString('en', { weekday: 'short' });
+
+        // Count reservations that were active on this day
+        const activeOnDay = reservations.filter(r => {
+          const checkIn = r.check_in.split('T')[0];
+          const checkOut = r.check_out?.split('T')[0] || dateStr;
+          return checkIn <= dateStr && checkOut >= dateStr;
+        }).length;
+
+        const rate = Math.min(100, (activeOnDay / totalRooms) * 100);
         occupancyData.push({ name: dayName, value: Math.round(rate) });
       }
       setOccupancyTrend(occupancyData);
@@ -211,6 +242,11 @@ export default function HotelDashboard() {
       setLoading(false);
     }
   };
+
+  // Show skeleton while loading
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
 
   const roomStatusPieData = [
     { name: 'Available', value: roomStats.available, color: 'hsl(var(--success))' },

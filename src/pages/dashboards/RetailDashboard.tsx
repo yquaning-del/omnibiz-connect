@@ -6,8 +6,8 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { SalesChart } from '@/components/charts/SalesChart';
 import { PieBreakdown } from '@/components/charts/PieBreakdown';
 import { BarChartCard } from '@/components/charts/BarChartCard';
+import { DashboardSkeleton } from '@/components/ui/dashboard-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -53,6 +53,32 @@ interface HourlyData {
   value: number;
 }
 
+// Helper to group orders by day
+const groupOrdersByDay = (orders: { total_amount: number; created_at: string }[] | null): { data: DailySales[], total: number } => {
+  if (!orders) return { data: [], total: 0 };
+  
+  const dayMap: Record<string, number> = {};
+  let total = 0;
+  
+  orders.forEach(order => {
+    const dateStr = order.created_at.split('T')[0];
+    const amount = Number(order.total_amount);
+    dayMap[dateStr] = (dayMap[dateStr] || 0) + amount;
+    total += amount;
+  });
+
+  // Generate last 7 days
+  const result: DailySales[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    const dayName = date.toLocaleDateString('en', { weekday: 'short' });
+    result.push({ name: dayName, value: dayMap[dateStr] || 0 });
+  }
+  return { data: result, total };
+};
+
 export default function RetailDashboard() {
   const navigate = useNavigate();
   const { currentOrganization, currentLocation } = useAuth();
@@ -82,21 +108,67 @@ export default function RetailDashboard() {
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const weekStart = new Date(today);
+      weekStart.setDate(weekStart.getDate() - 6);
+      weekStart.setHours(0, 0, 0, 0);
 
-      // Today's sales with hourly breakdown
-      const { data: todayOrders } = await supabase
-        .from('orders')
-        .select('total_amount, created_at')
-        .eq('organization_id', currentOrganization.id)
-        .gte('created_at', todayStr + 'T00:00:00')
-        .lte('created_at', todayStr + 'T23:59:59');
+      // Run all independent queries in parallel
+      const [
+        todayOrdersResult,
+        yesterdayOrdersResult,
+        weekOrdersResult,
+        orderItemsResult,
+        productsResult,
+        customerCountResult,
+      ] = await Promise.all([
+        // Today's orders
+        supabase
+          .from('orders')
+          .select('total_amount, created_at')
+          .eq('organization_id', currentOrganization.id)
+          .gte('created_at', todayStr + 'T00:00:00')
+          .lte('created_at', todayStr + 'T23:59:59'),
+        // Yesterday's orders
+        supabase
+          .from('orders')
+          .select('total_amount')
+          .eq('organization_id', currentOrganization.id)
+          .gte('created_at', yesterdayStr + 'T00:00:00')
+          .lte('created_at', yesterdayStr + 'T23:59:59'),
+        // Weekly orders (single query for all 7 days)
+        supabase
+          .from('orders')
+          .select('total_amount, created_at')
+          .eq('organization_id', currentOrganization.id)
+          .gte('created_at', weekStart.toISOString())
+          .lte('created_at', today.toISOString()),
+        // Order items for top products
+        supabase
+          .from('order_items')
+          .select('product_id, product_name, quantity, total_price')
+          .order('created_at', { ascending: false })
+          .limit(100),
+        // Products for inventory
+        supabase
+          .from('products')
+          .select('id, category, stock_quantity, low_stock_threshold')
+          .eq('organization_id', currentOrganization.id)
+          .eq('is_active', true),
+        // Customer count
+        supabase
+          .from('customers')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', currentOrganization.id),
+      ]);
 
-      const todaySales = todayOrders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
-      const transactions = todayOrders?.length || 0;
+      // Process today's orders
+      const todayOrders = todayOrdersResult.data || [];
+      const todaySales = todayOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+      const transactions = todayOrders.length;
 
       // Hourly traffic
       const hourlyData: Record<number, number> = {};
-      todayOrders?.forEach(order => {
+      todayOrders.forEach(order => {
         const hour = new Date(order.created_at).getHours();
         hourlyData[hour] = (hourlyData[hour] || 0) + 1;
       });
@@ -110,54 +182,24 @@ export default function RetailDashboard() {
       }
       setHourlyTraffic(hourlyChartData);
 
-      // Yesterday's sales
-      const { data: yesterdayOrders } = await supabase
-        .from('orders')
-        .select('total_amount')
-        .eq('organization_id', currentOrganization.id)
-        .gte('created_at', yesterdayStr + 'T00:00:00')
-        .lte('created_at', yesterdayStr + 'T23:59:59');
+      // Process yesterday's orders
+      const yesterdaySales = yesterdayOrdersResult.data?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
 
-      const yesterdaySales = yesterdayOrders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
-
-      // Weekly sales trend
-      const weeklyData: DailySales[] = [];
-      let weekTotal = 0;
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        const dayName = date.toLocaleDateString('en', { weekday: 'short' });
-
-        const { data: dayOrders } = await supabase
-          .from('orders')
-          .select('total_amount')
-          .eq('organization_id', currentOrganization.id)
-          .gte('created_at', dateStr + 'T00:00:00')
-          .lte('created_at', dateStr + 'T23:59:59');
-
-        const dayTotal = dayOrders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
-        weekTotal += dayTotal;
-        weeklyData.push({ name: dayName, value: dayTotal });
-      }
-      setWeeklySales(weeklyData);
+      // Process weekly orders
+      const weeklyResult = groupOrdersByDay(weekOrdersResult.data);
+      setWeeklySales(weeklyResult.data);
 
       setSalesStats({
         today: todaySales,
         yesterday: yesterdaySales,
-        week: weekTotal,
+        week: weeklyResult.total,
         transactions,
       });
       setAvgTransaction(transactions > 0 ? todaySales / transactions : 0);
 
-      // Top selling products with category info
-      const { data: orderItems } = await supabase
-        .from('order_items')
-        .select('product_id, product_name, quantity, total_price')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (orderItems) {
+      // Process order items for top products
+      const orderItems = orderItemsResult.data || [];
+      if (orderItems.length > 0) {
         const productSales: Record<string, { name: string; sales: number; revenue: number }> = {};
         orderItems.forEach(item => {
           const key = item.product_id || item.product_name;
@@ -176,14 +218,9 @@ export default function RetailDashboard() {
         setTopProducts(sorted);
       }
 
-      // Category sales breakdown
-      const { data: products } = await supabase
-        .from('products')
-        .select('id, category, stock_quantity, low_stock_threshold')
-        .eq('organization_id', currentOrganization.id)
-        .eq('is_active', true);
-
-      if (products && orderItems) {
+      // Process products for inventory and categories
+      const products = productsResult.data || [];
+      if (products.length > 0 && orderItems.length > 0) {
         const categoryMap: Record<string, number> = {};
         const productToCategory: Record<string, string> = {};
         
@@ -226,18 +263,18 @@ export default function RetailDashboard() {
       }
 
       // Customer count
-      const { count: custCount } = await supabase
-        .from('customers')
-        .select('*', { count: 'exact', head: true })
-        .eq('organization_id', currentOrganization.id);
-
-      setCustomerCount(custCount || 0);
+      setCustomerCount(customerCountResult.count || 0);
     } catch (error) {
       console.error('Error fetching retail dashboard:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Show skeleton while loading
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
 
   const salesChange = salesStats.yesterday > 0 
     ? ((salesStats.today - salesStats.yesterday) / salesStats.yesterday * 100).toFixed(1)
