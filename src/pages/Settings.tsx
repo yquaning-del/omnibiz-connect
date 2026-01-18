@@ -10,9 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, MapPin, User, Bell, Globe, Save } from 'lucide-react';
+import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard } from 'lucide-react';
 import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
+import { SubscriptionSettings } from '@/components/settings/SubscriptionSettings';
 
 export default function Settings() {
   const { currentOrganization, currentLocation, profile, user } = useAuth();
@@ -150,6 +151,10 @@ export default function Settings() {
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="w-4 h-4" />
             {t('settings.notifications')}
+          </TabsTrigger>
+          <TabsTrigger value="subscription" className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4" />
+            Subscription
           </TabsTrigger>
           <TabsTrigger value="language" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
@@ -356,6 +361,11 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Subscription Settings */}
+        <TabsContent value="subscription">
+          <SubscriptionSettings />
         </TabsContent>
 
         {/* Language Settings */}
