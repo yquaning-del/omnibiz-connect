@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { SalesChart } from '@/components/charts/SalesChart';
+import { PieBreakdown } from '@/components/charts/PieBreakdown';
+import { BarChartCard } from '@/components/charts/BarChartCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,6 +41,16 @@ interface Arrival {
   status: string;
 }
 
+interface OccupancyData {
+  name: string;
+  value: number;
+}
+
+interface RevenueData {
+  name: string;
+  value: number;
+}
+
 export default function HotelDashboard() {
   const navigate = useNavigate();
   const { currentOrganization, currentLocation } = useAuth();
@@ -49,6 +62,8 @@ export default function HotelDashboard() {
   const [maintenancePending, setMaintenancePending] = useState(0);
   const [todayRevenue, setTodayRevenue] = useState(0);
   const [occupancyRate, setOccupancyRate] = useState(0);
+  const [occupancyTrend, setOccupancyTrend] = useState<OccupancyData[]>([]);
+  const [weeklyRevenue, setWeeklyRevenue] = useState<RevenueData[]>([]);
 
   useEffect(() => {
     if (!currentLocation?.id) return;
@@ -60,6 +75,8 @@ export default function HotelDashboard() {
     setLoading(false);
 
     try {
+      const today = new Date().toISOString().split('T')[0];
+
       // Fetch room stats
       const { data: rooms } = await supabase
         .from('hotel_rooms')
@@ -79,7 +96,6 @@ export default function HotelDashboard() {
       }
 
       // Today's arrivals
-      const today = new Date().toISOString().split('T')[0];
       const { data: arrivals } = await supabase
         .from('reservations')
         .select('id, guest_name, check_in, status, room_id')
@@ -91,7 +107,6 @@ export default function HotelDashboard() {
         .limit(10);
 
       if (arrivals) {
-        // Get room numbers for arrivals
         const arrivalsWithRooms = await Promise.all(
           arrivals.map(async (a) => {
             if (a.room_id) {
@@ -147,12 +162,62 @@ export default function HotelDashboard() {
       if (folios) {
         setTodayRevenue(folios.reduce((sum, f) => sum + Number(f.total_amount || 0), 0));
       }
+
+      // Weekly revenue trend
+      const weeklyData: RevenueData[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = date.toLocaleDateString('en', { weekday: 'short' });
+
+        const { data: dayFolios } = await supabase
+          .from('guest_folios')
+          .select('total_amount')
+          .eq('location_id', currentLocation.id)
+          .gte('created_at', dateStr + 'T00:00:00')
+          .lte('created_at', dateStr + 'T23:59:59');
+
+        const dayTotal = dayFolios?.reduce((sum, f) => sum + Number(f.total_amount || 0), 0) || 0;
+        weeklyData.push({ name: dayName, value: dayTotal });
+      }
+      setWeeklyRevenue(weeklyData);
+
+      // Occupancy trend (simulated based on reservations per day)
+      const occupancyData: OccupancyData[] = [];
+      const totalRooms = rooms?.length || 1;
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = date.toLocaleDateString('en', { weekday: 'short' });
+
+        const { count } = await supabase
+          .from('reservations')
+          .select('*', { count: 'exact', head: true })
+          .eq('location_id', currentLocation.id)
+          .eq('reservation_type', 'room')
+          .eq('status', 'checked_in')
+          .lte('check_in', dateStr + 'T23:59:59')
+          .gte('check_out', dateStr + 'T00:00:00');
+
+        const rate = Math.min(100, ((count || 0) / totalRooms) * 100);
+        occupancyData.push({ name: dayName, value: Math.round(rate) });
+      }
+      setOccupancyTrend(occupancyData);
     } catch (error) {
       console.error('Error fetching hotel dashboard:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  const roomStatusPieData = [
+    { name: 'Available', value: roomStats.available, color: 'hsl(var(--success))' },
+    { name: 'Occupied', value: roomStats.occupied, color: 'hsl(var(--info))' },
+    { name: 'Maintenance', value: roomStats.maintenance, color: 'hsl(var(--destructive))' },
+    { name: 'Dirty', value: roomStats.dirty, color: 'hsl(var(--warning))' },
+  ].filter(d => d.value > 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -207,48 +272,35 @@ export default function HotelDashboard() {
         />
       </div>
 
+      {/* Charts Row */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <SalesChart
+          title="Occupancy Trend"
+          data={occupancyTrend}
+          color="hsl(var(--hotel))"
+          icon={TrendingUp}
+          showAxis
+          valuePrefix=""
+          height={180}
+        />
+        <BarChartCard
+          title="Weekly Revenue"
+          data={weeklyRevenue}
+          color="hsl(var(--hotel))"
+          icon={DollarSign}
+          valuePrefix="$"
+          height={180}
+        />
+      </div>
+
       {/* Room Status & Arrivals */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Room Status */}
-        <Card className="border-border/50 bg-card/50 backdrop-blur">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <BedDouble className="w-5 h-5 text-hotel" />
-              Room Status
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/rooms')}>
-              View All
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Occupancy</span>
-                <span className="font-medium">{roomStats.occupied}/{roomStats.total} rooms</span>
-              </div>
-              <Progress value={occupancyRate} className="h-2" />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-lg bg-success/10 border border-success/20 text-center">
-                <p className="text-2xl font-bold text-success">{roomStats.available}</p>
-                <p className="text-xs text-muted-foreground">Available</p>
-              </div>
-              <div className="p-3 rounded-lg bg-info/10 border border-info/20 text-center">
-                <p className="text-2xl font-bold text-info">{roomStats.occupied}</p>
-                <p className="text-xs text-muted-foreground">Occupied</p>
-              </div>
-              <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 text-center">
-                <p className="text-2xl font-bold text-warning">{roomStats.dirty}</p>
-                <p className="text-xs text-muted-foreground">Need Cleaning</p>
-              </div>
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-center">
-                <p className="text-2xl font-bold text-destructive">{roomStats.maintenance}</p>
-                <p className="text-xs text-muted-foreground">Maintenance</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Room Status Pie */}
+        <PieBreakdown
+          title="Room Distribution"
+          data={roomStatusPieData}
+          icon={BedDouble}
+        />
 
         {/* Today's Arrivals */}
         <Card className="border-border/50 bg-card/50 backdrop-blur">

@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { SalesChart } from '@/components/charts/SalesChart';
+import { PieBreakdown } from '@/components/charts/PieBreakdown';
+import { BarChartCard } from '@/components/charts/BarChartCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,8 +19,8 @@ import {
   AlertTriangle,
   BarChart3,
   Tag,
-  Barcode,
   Receipt,
+  Clock,
 } from 'lucide-react';
 
 interface TopProduct {
@@ -34,6 +37,22 @@ interface SalesStats {
   transactions: number;
 }
 
+interface DailySales {
+  name: string;
+  value: number;
+}
+
+interface CategorySales {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface HourlyData {
+  name: string;
+  value: number;
+}
+
 export default function RetailDashboard() {
   const navigate = useNavigate();
   const { currentOrganization, currentLocation } = useAuth();
@@ -44,6 +63,9 @@ export default function RetailDashboard() {
   const [customerCount, setCustomerCount] = useState(0);
   const [productCount, setProductCount] = useState(0);
   const [avgTransaction, setAvgTransaction] = useState(0);
+  const [weeklySales, setWeeklySales] = useState<DailySales[]>([]);
+  const [categorySales, setCategorySales] = useState<CategorySales[]>([]);
+  const [hourlyTraffic, setHourlyTraffic] = useState<HourlyData[]>([]);
 
   useEffect(() => {
     if (!currentOrganization?.id) return;
@@ -60,20 +82,33 @@ export default function RetailDashboard() {
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split('T')[0];
-      const weekAgo = new Date(today);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const weekAgoStr = weekAgo.toISOString().split('T')[0];
 
-      // Today's sales
+      // Today's sales with hourly breakdown
       const { data: todayOrders } = await supabase
         .from('orders')
-        .select('total_amount')
+        .select('total_amount, created_at')
         .eq('organization_id', currentOrganization.id)
         .gte('created_at', todayStr + 'T00:00:00')
         .lte('created_at', todayStr + 'T23:59:59');
 
       const todaySales = todayOrders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
       const transactions = todayOrders?.length || 0;
+
+      // Hourly traffic
+      const hourlyData: Record<number, number> = {};
+      todayOrders?.forEach(order => {
+        const hour = new Date(order.created_at).getHours();
+        hourlyData[hour] = (hourlyData[hour] || 0) + 1;
+      });
+
+      const hourlyChartData: HourlyData[] = [];
+      for (let i = 8; i <= 20; i++) {
+        hourlyChartData.push({
+          name: `${i}:00`,
+          value: hourlyData[i] || 0,
+        });
+      }
+      setHourlyTraffic(hourlyChartData);
 
       // Yesterday's sales
       const { data: yesterdayOrders } = await supabase
@@ -85,27 +120,40 @@ export default function RetailDashboard() {
 
       const yesterdaySales = yesterdayOrders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
 
-      // Week sales
-      const { data: weekOrders } = await supabase
-        .from('orders')
-        .select('total_amount')
-        .eq('organization_id', currentOrganization.id)
-        .gte('created_at', weekAgoStr + 'T00:00:00');
+      // Weekly sales trend
+      const weeklyData: DailySales[] = [];
+      let weekTotal = 0;
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = date.toLocaleDateString('en', { weekday: 'short' });
 
-      const weekSales = weekOrders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
+        const { data: dayOrders } = await supabase
+          .from('orders')
+          .select('total_amount')
+          .eq('organization_id', currentOrganization.id)
+          .gte('created_at', dateStr + 'T00:00:00')
+          .lte('created_at', dateStr + 'T23:59:59');
+
+        const dayTotal = dayOrders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
+        weekTotal += dayTotal;
+        weeklyData.push({ name: dayName, value: dayTotal });
+      }
+      setWeeklySales(weeklyData);
 
       setSalesStats({
         today: todaySales,
         yesterday: yesterdaySales,
-        week: weekSales,
+        week: weekTotal,
         transactions,
       });
       setAvgTransaction(transactions > 0 ? todaySales / transactions : 0);
 
-      // Top selling products (simplified - by order items)
+      // Top selling products with category info
       const { data: orderItems } = await supabase
         .from('order_items')
-        .select('product_id, product_name, quantity, total_price, order_id')
+        .select('product_id, product_name, quantity, total_price')
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -128,27 +176,53 @@ export default function RetailDashboard() {
         setTopProducts(sorted);
       }
 
-      // Product count
-      const { count: prodCount } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('organization_id', currentOrganization.id)
-        .eq('is_active', true);
-
-      setProductCount(prodCount || 0);
-
-      // Low stock
+      // Category sales breakdown
       const { data: products } = await supabase
         .from('products')
-        .select('stock_quantity, low_stock_threshold')
+        .select('id, category, stock_quantity, low_stock_threshold')
         .eq('organization_id', currentOrganization.id)
         .eq('is_active', true);
 
-      if (products) {
+      if (products && orderItems) {
+        const categoryMap: Record<string, number> = {};
+        const productToCategory: Record<string, string> = {};
+        
+        products.forEach(p => {
+          productToCategory[p.id] = p.category || 'Uncategorized';
+        });
+
+        orderItems.forEach(item => {
+          if (item.product_id) {
+            const category = productToCategory[item.product_id] || 'Uncategorized';
+            categoryMap[category] = (categoryMap[category] || 0) + Number(item.total_price);
+          }
+        });
+
+        const colors = [
+          'hsl(var(--retail))',
+          'hsl(var(--success))',
+          'hsl(var(--warning))',
+          'hsl(var(--info))',
+          'hsl(var(--muted-foreground))',
+        ];
+
+        const categoryData = Object.entries(categoryMap)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 5)
+          .map(([name, value], index) => ({
+            name,
+            value: Math.round(value),
+            color: colors[index % colors.length],
+          }));
+
+        setCategorySales(categoryData);
+
+        // Low stock and product counts
         const lowStock = products.filter(p => 
           (p.stock_quantity || 0) <= (p.low_stock_threshold || 10)
         ).length;
         setLowStockCount(lowStock);
+        setProductCount(products.length);
       }
 
       // Customer count
@@ -225,8 +299,37 @@ export default function RetailDashboard() {
         />
       </div>
 
+      {/* Charts Row */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <SalesChart
+          title="Weekly Sales Trend"
+          data={weeklySales}
+          color="hsl(var(--retail))"
+          icon={TrendingUp}
+          showAxis
+          valuePrefix="$"
+          height={180}
+        />
+        <BarChartCard
+          title="Hourly Traffic"
+          data={hourlyTraffic}
+          color="hsl(var(--retail))"
+          icon={Clock}
+          height={180}
+        />
+      </div>
+
       {/* Sales & Inventory */}
       <div className="grid lg:grid-cols-2 gap-6">
+        {/* Category Sales Pie */}
+        {categorySales.length > 0 && (
+          <PieBreakdown
+            title="Sales by Category"
+            data={categorySales}
+            icon={Tag}
+          />
+        )}
+
         {/* Top Selling Products */}
         <Card className="border-border/50 bg-card/50 backdrop-blur">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -267,54 +370,52 @@ export default function RetailDashboard() {
             )}
           </CardContent>
         </Card>
-
-        {/* Inventory Alerts */}
-        <Card className="border-border/50 bg-card/50 backdrop-blur">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-warning" />
-              Inventory Status
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/inventory')}>
-              Manage
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 rounded-lg bg-muted/50">
-              <div className="flex justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Stock Health</span>
-                <span className="text-sm font-medium">
-                  {productCount > 0 ? Math.round((1 - lowStockCount / productCount) * 100) : 100}%
-                </span>
-              </div>
-              <Progress 
-                value={productCount > 0 ? (1 - lowStockCount / productCount) * 100 : 100} 
-                className="h-2"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-4 rounded-lg bg-success/10 border border-success/20 text-center">
-                <p className="text-2xl font-bold text-success">{productCount - lowStockCount}</p>
-                <p className="text-sm text-muted-foreground">In Stock</p>
-              </div>
-              <div 
-                className="p-4 rounded-lg bg-warning/10 border border-warning/20 text-center cursor-pointer hover:bg-warning/20 transition-colors"
-                onClick={() => navigate('/inventory')}
-              >
-                <p className="text-2xl font-bold text-warning">{lowStockCount}</p>
-                <p className="text-sm text-muted-foreground">Low Stock</p>
-              </div>
-            </div>
-
-            <div className="text-center pt-2">
-              <p className="text-sm text-muted-foreground">
-                Weekly Sales: <span className="font-medium text-foreground">${salesStats.week.toFixed(2)}</span>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Inventory Alerts */}
+      <Card className="border-border/50 bg-card/50 backdrop-blur">
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-warning" />
+            Inventory Status
+          </CardTitle>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/inventory')}>
+            Manage
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-4 rounded-lg bg-muted/50">
+            <div className="flex justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Stock Health</span>
+              <span className="text-sm font-medium">
+                {productCount > 0 ? Math.round((1 - lowStockCount / productCount) * 100) : 100}%
+              </span>
+            </div>
+            <Progress 
+              value={productCount > 0 ? (1 - lowStockCount / productCount) * 100 : 100} 
+              className="h-2"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="p-4 rounded-lg bg-success/10 border border-success/20 text-center">
+              <p className="text-2xl font-bold text-success">{productCount - lowStockCount}</p>
+              <p className="text-sm text-muted-foreground">In Stock</p>
+            </div>
+            <div 
+              className="p-4 rounded-lg bg-warning/10 border border-warning/20 text-center cursor-pointer hover:bg-warning/20 transition-colors"
+              onClick={() => navigate('/inventory')}
+            >
+              <p className="text-2xl font-bold text-warning">{lowStockCount}</p>
+              <p className="text-sm text-muted-foreground">Low Stock</p>
+            </div>
+            <div className="p-4 rounded-lg bg-retail/10 border border-retail/20 text-center">
+              <p className="text-2xl font-bold text-retail">${salesStats.week.toFixed(0)}</p>
+              <p className="text-sm text-muted-foreground">Weekly Sales</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <Card className="border-border/50 bg-card/50 backdrop-blur">
