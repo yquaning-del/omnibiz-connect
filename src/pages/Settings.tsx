@@ -10,10 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard } from 'lucide-react';
+import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard, Upload } from 'lucide-react';
 import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
 import { SubscriptionSettings } from '@/components/settings/SubscriptionSettings';
+import DataImport from '@/pages/settings/DataImport';
 
 export default function Settings() {
   const { currentOrganization, currentLocation, profile, user } = useAuth();
@@ -159,6 +160,10 @@ export default function Settings() {
           <TabsTrigger value="language" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
             {t('settings.language')}
+          </TabsTrigger>
+          <TabsTrigger value="import" className="flex items-center gap-2">
+            <Upload className="w-4 h-4" />
+            Data Import
           </TabsTrigger>
         </TabsList>
 
@@ -371,6 +376,11 @@ export default function Settings() {
         {/* Language Settings */}
         <TabsContent value="language">
           <LanguageSettings />
+        </TabsContent>
+
+        {/* Data Import */}
+        <TabsContent value="import">
+          <DataImport />
         </TabsContent>
       </Tabs>
     </div>

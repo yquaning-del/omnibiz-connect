@@ -367,8 +367,8 @@ export const useDataImport = () => {
                   .single();
 
                 if (singleError) throw singleError;
-                if (single && typeof single === 'object' && 'id' in single) {
-                  importedIds.push((single as any).id);
+                if (single && typeof single === 'object' && 'id' in (single as object)) {
+                  importedIds.push((single as unknown as { id: string }).id);
                 }
                 progressState.successful++;
               } catch (error: any) {
