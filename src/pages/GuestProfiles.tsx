@@ -28,6 +28,7 @@ import {
   Edit,
   Award,
 } from 'lucide-react';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 
 interface Customer {
   id: string;
@@ -231,14 +232,15 @@ export default function GuestProfiles() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Guest Profiles</h1>
-          <p className="text-muted-foreground">Manage guest preferences and loyalty</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <FeatureGate feature="guest_profiles" requiredTier="Professional">
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-display text-foreground">Guest Profiles</h1>
+            <p className="text-muted-foreground">Manage guest preferences and loyalty</p>
+          </div>
+          <div className="flex items-center gap-2">
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -520,6 +522,6 @@ export default function GuestProfiles() {
           })
         )}
       </div>
-    </div>
+    </FeatureGate>
   );
 }

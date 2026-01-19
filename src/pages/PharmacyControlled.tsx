@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import ControlledSubstances from "@/components/pharmacy/ControlledSubstances";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const PharmacyControlled = () => {
   const { currentOrganization } = useAuth();
@@ -22,13 +23,15 @@ const PharmacyControlled = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Controlled Substances</h1>
-        <p className="text-muted-foreground">Track and log controlled substance transactions</p>
+    <FeatureGate feature="controlled_substances" requiredTier="Professional">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Controlled Substances</h1>
+          <p className="text-muted-foreground">Track and log controlled substance transactions</p>
+        </div>
+        <ControlledSubstances />
       </div>
-      <ControlledSubstances />
-    </div>
+    </FeatureGate>
   );
 };
 

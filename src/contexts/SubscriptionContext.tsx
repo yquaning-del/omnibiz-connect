@@ -46,6 +46,11 @@ const FEATURE_TIERS: Record<string, string[]> = {
   'basic_reports': ['starter', 'professional', 'enterprise'],
   'basic_orders': ['starter', 'professional', 'enterprise'],
   'basic_products': ['starter', 'professional', 'enterprise'],
+  'basic_tables': ['starter', 'professional', 'enterprise'],
+  'basic_rooms': ['starter', 'professional', 'enterprise'],
+  'basic_prescriptions': ['starter', 'professional', 'enterprise'],
+  'basic_patients': ['starter', 'professional', 'enterprise'],
+  'basic_medications': ['starter', 'professional', 'enterprise'],
   
   // === PROFESSIONAL FEATURES ===
   'advanced_reports': ['professional', 'enterprise'],
@@ -56,17 +61,24 @@ const FEATURE_TIERS: Record<string, string[]> = {
   'integrations': ['professional', 'enterprise'],
   'custom_branding': ['professional', 'enterprise'],
   
-  // Vertical-specific Professional features
+  // Restaurant Professional features
+  'kitchen_display': ['professional', 'enterprise'],
   'reservations': ['professional', 'enterprise'],
-  'guest_profiles': ['professional', 'enterprise'],
-  'maintenance_tracking': ['professional', 'enterprise'],
+  'inventory_management': ['professional', 'enterprise'],
+  
+  // Hotel Professional features
   'housekeeping_management': ['professional', 'enterprise'],
-  'prescription_management': ['professional', 'enterprise'],
+  'maintenance_tracking': ['professional', 'enterprise'],
+  'guest_profiles': ['professional', 'enterprise'],
+  'guest_services': ['professional', 'enterprise'],
+  
+  // Pharmacy Professional features
   'insurance_billing': ['professional', 'enterprise'],
   'controlled_substances': ['professional', 'enterprise'],
   'drug_interactions': ['professional', 'enterprise'],
-  'kitchen_display': ['professional', 'enterprise'],
-  'table_management': ['professional', 'enterprise'],
+  
+  // Retail Professional features
+  'customer_management': ['professional', 'enterprise'],
   
   // === ENTERPRISE FEATURES ===
   'api_access': ['enterprise'],

@@ -25,6 +25,7 @@ import {
   User,
   Filter,
 } from 'lucide-react';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 
 interface MaintenanceRequest {
   id: string;
@@ -239,14 +240,15 @@ export default function Maintenance() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Maintenance</h1>
-          <p className="text-muted-foreground">Track and manage maintenance work orders</p>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <FeatureGate feature="maintenance_tracking" requiredTier="Professional">
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-display text-foreground">Maintenance</h1>
+            <p className="text-muted-foreground">Track and manage maintenance work orders</p>
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
@@ -529,6 +531,6 @@ export default function Maintenance() {
           ))
         )}
       </div>
-    </div>
+    </FeatureGate>
   );
 }

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Search, Shield, Info, CheckCircle2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 interface Medication {
   id: string;
@@ -118,13 +119,14 @@ const PharmacyInteractions = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Drug Interactions</h1>
-        <p className="text-muted-foreground">Check for potential drug interactions between medications</p>
-      </div>
+    <FeatureGate feature="drug_interactions" requiredTier="Professional">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Drug Interactions</h1>
+          <p className="text-muted-foreground">Check for potential drug interactions between medications</p>
+        </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
         {/* Medication Selection */}
         <Card>
           <CardHeader>
@@ -262,7 +264,7 @@ const PharmacyInteractions = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </FeatureGate>
   );
 };
 
