@@ -36,6 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 
 export default function Customers() {
   const { currentOrganization } = useAuth();
@@ -173,15 +174,16 @@ export default function Customers() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Customers</h1>
-          <p className="text-muted-foreground">
-            Manage your customer database
-          </p>
+    <FeatureGate feature="customer_management" requiredTier="Professional">
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-display text-foreground">Customers</h1>
+            <p className="text-muted-foreground">
+              Manage your customer database
+            </p>
+          </div>
         </div>
-        
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) resetForm();
@@ -358,6 +360,6 @@ export default function Customers() {
           ))}
         </div>
       )}
-    </div>
+    </FeatureGate>
   );
 }

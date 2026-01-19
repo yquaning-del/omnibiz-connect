@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Loader2, Plus, CalendarIcon, UtensilsCrossed, BedDouble, Clock, Users, Phone, Mail, Trash2 } from 'lucide-react';
 import { format, addDays, isSameDay } from 'date-fns';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 
 interface Reservation {
   id: string;
@@ -223,14 +224,15 @@ export default function Reservations() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Reservations</h1>
-          <p className="text-muted-foreground">Manage table and room reservations</p>
+    <FeatureGate feature="reservations" requiredTier="Professional">
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-display text-foreground">Reservations</h1>
+            <p className="text-muted-foreground">Manage table and room reservations</p>
+          </div>
         </div>
-        
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) resetForm();
@@ -564,6 +566,6 @@ export default function Reservations() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </FeatureGate>
   );
 }

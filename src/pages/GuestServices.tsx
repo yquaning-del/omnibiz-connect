@@ -27,6 +27,7 @@ import {
   Car,
   Package,
 } from 'lucide-react';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 
 interface RoomServiceOrder {
   id: string;
@@ -283,17 +284,18 @@ export default function GuestServices() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Guest Services</h1>
-          <p className="text-muted-foreground">Room service and amenity requests</p>
+    <FeatureGate feature="guest_services" requiredTier="Professional">
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-display text-foreground">Guest Services</h1>
+            <p className="text-muted-foreground">Room service and amenity requests</p>
+          </div>
         </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-border/50 bg-card/50">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -675,6 +677,6 @@ export default function GuestServices() {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+    </FeatureGate>
   );
 }

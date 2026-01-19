@@ -26,6 +26,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from 'lucide-react';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 
 export default function Inventory() {
   const { currentOrganization } = useAuth();
@@ -115,18 +116,19 @@ export default function Inventory() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Inventory</h1>
-          <p className="text-muted-foreground">
-            Track and manage your stock levels
-          </p>
+    <FeatureGate feature="inventory_management" requiredTier="Professional">
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-display text-foreground">Inventory</h1>
+            <p className="text-muted-foreground">
+              Track and manage your stock levels
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-border/50 bg-card/50 p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -364,6 +366,6 @@ export default function Inventory() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </FeatureGate>
   );
 }

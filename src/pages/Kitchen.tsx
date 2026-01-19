@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Loader2, ChefHat, Clock, CheckCircle, AlertCircle, Play, Pause } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 
 interface OrderItem {
   id: string;
@@ -142,28 +143,29 @@ export default function Kitchen() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-restaurant/20 flex items-center justify-center">
-            <ChefHat className="w-6 h-6 text-restaurant" />
+    <FeatureGate feature="kitchen_display" requiredTier="Professional">
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-restaurant/20 flex items-center justify-center">
+              <ChefHat className="w-6 h-6 text-restaurant" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold font-display text-foreground">Kitchen Display</h1>
+              <p className="text-muted-foreground">
+                {orders.length} active orders • Real-time updates
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold font-display text-foreground">Kitchen Display</h1>
-            <p className="text-muted-foreground">
-              {orders.length} active orders • Real-time updates
-            </p>
+          
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-success rounded-full animate-pulse" />
+            <span className="text-sm text-muted-foreground">Live</span>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-success rounded-full animate-pulse" />
-          <span className="text-sm text-muted-foreground">Live</span>
-        </div>
-      </div>
 
-      {/* Stats */}
+        {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {Object.entries(columnLabels).map(([status, { title, icon: Icon }]) => (
           <Card key={status} className={cn('border-border/50', statusColors[status].split(' ')[0])}>
@@ -280,6 +282,6 @@ export default function Kitchen() {
           </div>
         ))}
       </div>
-    </div>
+    </FeatureGate>
   );
 }

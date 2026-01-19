@@ -37,6 +37,7 @@ import {
   BedDouble,
   Loader2,
 } from "lucide-react";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 interface HousekeepingTask {
   id: string;
@@ -296,15 +297,16 @@ const Housekeeping = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Housekeeping Dashboard</h1>
-          <p className="text-muted-foreground">
-            Manage cleaning tasks and room status
-          </p>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <FeatureGate feature="housekeeping_management" requiredTier="Professional">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Housekeeping Dashboard</h1>
+            <p className="text-muted-foreground">
+              Manage cleaning tasks and room status
+            </p>
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -691,7 +693,7 @@ const Housekeeping = () => {
           </Card>
         </div>
       </div>
-    </div>
+    </FeatureGate>
   );
 };
 
