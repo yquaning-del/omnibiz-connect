@@ -1,4 +1,4 @@
-export type BusinessVertical = 'restaurant' | 'hotel' | 'pharmacy' | 'retail';
+export type BusinessVertical = 'restaurant' | 'hotel' | 'pharmacy' | 'retail' | 'property';
 
 export type AppRole = 'super_admin' | 'org_admin' | 'location_manager' | 'department_lead' | 'staff';
 
@@ -187,5 +187,12 @@ export const VERTICAL_CONFIG: Record<BusinessVertical, VerticalConfig> = {
     icon: 'ShoppingCart',
     color: 'retail',
     features: ['pos', 'inventory', 'promotions', 'loyalty'],
+  },
+  property: {
+    id: 'property',
+    name: 'Property Management',
+    icon: 'Building',
+    color: 'property',
+    features: ['unit-management', 'tenant-screening', 'lease-management', 'rent-collection'],
   },
 };

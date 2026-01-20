@@ -75,6 +75,7 @@ export default {
         hotel: "hsl(var(--hotel))",
         pharmacy: "hsl(var(--pharmacy))",
         retail: "hsl(var(--retail))",
+        property: "hsl(var(--property))",
         // POS-specific
         pos: {
           button: "hsl(var(--pos-button))",

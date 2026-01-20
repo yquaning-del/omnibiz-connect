@@ -64,6 +64,22 @@ const verticalFeatures: Record<BusinessVertical, { feature: string; starter: boo
     { feature: 'E-commerce Integration', starter: false, professional: false, enterprise: true },
     { feature: 'Custom Integrations', starter: false, professional: false, enterprise: true },
   ],
+  property: [
+    { feature: 'Unit Management (up to 10)', starter: true, professional: true, enterprise: true },
+    { feature: 'Tenant Profiles', starter: true, professional: true, enterprise: true },
+    { feature: 'Basic Lease Tracking', starter: true, professional: true, enterprise: true },
+    { feature: 'Rent Collection', starter: true, professional: true, enterprise: true },
+    { feature: 'Maintenance Requests', starter: true, professional: true, enterprise: true },
+    { feature: 'Tenant Screening', starter: false, professional: true, enterprise: true },
+    { feature: 'Digital Lease Signing', starter: false, professional: true, enterprise: true },
+    { feature: 'Automated Rent Reminders', starter: false, professional: true, enterprise: true },
+    { feature: 'Financial Reports', starter: false, professional: true, enterprise: true },
+    { feature: 'Multi-Property Support', starter: false, professional: true, enterprise: true },
+    { feature: 'Unlimited Units', starter: false, professional: false, enterprise: true },
+    { feature: 'API Access', starter: false, professional: false, enterprise: true },
+    { feature: 'Accounting Integration', starter: false, professional: false, enterprise: true },
+    { feature: 'Custom Lease Templates', starter: false, professional: false, enterprise: true },
+  ],
 };
 
 const FeatureTable = React.forwardRef<HTMLDivElement, FeatureTableProps>(

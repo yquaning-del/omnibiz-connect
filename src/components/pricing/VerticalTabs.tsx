@@ -1,4 +1,4 @@
-import { Utensils, Hotel, Pill, ShoppingBag } from 'lucide-react';
+import { Utensils, Hotel, Pill, ShoppingBag, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BusinessVertical } from '@/types';
 
@@ -12,6 +12,7 @@ const verticals = [
   { id: 'hotel' as BusinessVertical, label: 'Hotel', icon: Hotel, color: 'text-hotel hover:bg-hotel/10' },
   { id: 'pharmacy' as BusinessVertical, label: 'Pharmacy', icon: Pill, color: 'text-pharmacy hover:bg-pharmacy/10' },
   { id: 'retail' as BusinessVertical, label: 'Retail', icon: ShoppingBag, color: 'text-retail hover:bg-retail/10' },
+  { id: 'property' as BusinessVertical, label: 'Property', icon: Building, color: 'text-property hover:bg-property/10' },
 ];
 
 export function VerticalTabs({ activeVertical, onVerticalChange }: VerticalTabsProps) {

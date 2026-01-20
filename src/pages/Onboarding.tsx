@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UtensilsCrossed, Building2, Pill, ShoppingCart, Check, ArrowRight, ArrowLeft, RotateCcw, Home } from 'lucide-react';
+import { Loader2, UtensilsCrossed, Building2, Pill, ShoppingCart, Check, ArrowRight, ArrowLeft, RotateCcw, Home, Building } from 'lucide-react';
 import { BusinessVertical } from '@/types';
 import { cn } from '@/lib/utils';
 import {
@@ -59,6 +59,15 @@ const verticals = [
     color: 'retail',
     bgClass: 'bg-retail/20 border-retail/30',
     activeClass: 'bg-retail/30 border-retail ring-2 ring-retail/50',
+  },
+  {
+    id: 'property' as BusinessVertical,
+    name: 'Property Management',
+    description: 'Apartments, condos, single/multi-unit rentals',
+    icon: Building,
+    color: 'property',
+    bgClass: 'bg-property/20 border-property/30',
+    activeClass: 'bg-property/30 border-property ring-2 ring-property/50',
   },
 ];
 

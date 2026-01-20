@@ -51,6 +51,11 @@ const FEATURE_TIERS: Record<string, string[]> = {
   'basic_prescriptions': ['starter', 'professional', 'enterprise'],
   'basic_patients': ['starter', 'professional', 'enterprise'],
   'basic_medications': ['starter', 'professional', 'enterprise'],
+  // Property Starter features
+  'basic_units': ['starter', 'professional', 'enterprise'],
+  'basic_tenants': ['starter', 'professional', 'enterprise'],
+  'basic_leases': ['starter', 'professional', 'enterprise'],
+  'basic_rent': ['starter', 'professional', 'enterprise'],
   
   // === PROFESSIONAL FEATURES ===
   'advanced_reports': ['professional', 'enterprise'],
@@ -80,6 +85,13 @@ const FEATURE_TIERS: Record<string, string[]> = {
   // Retail Professional features
   'customer_management': ['professional', 'enterprise'],
   
+  // Property Professional features
+  'tenant_screening': ['professional', 'enterprise'],
+  'lease_documents': ['professional', 'enterprise'],
+  'rent_reminders': ['professional', 'enterprise'],
+  'financial_reports': ['professional', 'enterprise'],
+  'multi_property': ['professional', 'enterprise'],
+  
   // === ENTERPRISE FEATURES ===
   'api_access': ['enterprise'],
   'sso': ['enterprise'],
@@ -90,6 +102,11 @@ const FEATURE_TIERS: Record<string, string[]> = {
   'dedicated_support': ['enterprise'],
   'white_label': ['enterprise'],
   'advanced_analytics': ['enterprise'],
+  // Property Enterprise features
+  'accounting_integration': ['enterprise'],
+  'bulk_operations': ['enterprise'],
+  'custom_lease_templates': ['enterprise'],
+  'unlimited_units': ['enterprise'],
 };
 
 // Get required tier for a feature
