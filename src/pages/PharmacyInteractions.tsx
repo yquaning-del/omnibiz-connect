@@ -127,142 +127,143 @@ const PharmacyInteractions = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-        {/* Medication Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Select Medications</CardTitle>
-            <CardDescription>Add medications to check for interactions</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search medications..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  searchMedications(e.target.value);
-                }}
-                className="pl-10"
-              />
-            </div>
-
-            {searching && (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-5 w-5 animate-spin" />
+          {/* Medication Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Select Medications</CardTitle>
+              <CardDescription>Add medications to check for interactions</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search medications..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    searchMedications(e.target.value);
+                  }}
+                  className="pl-10"
+                />
               </div>
-            )}
 
-            {searchResults.length > 0 && (
-              <div className="border rounded-lg divide-y max-h-48 overflow-auto">
-                {searchResults.map((med) => (
-                  <button
-                    key={med.id}
-                    onClick={() => addMedication(med)}
-                    className="w-full p-3 text-left hover:bg-muted transition-colors"
-                  >
-                    <p className="font-medium">{med.name}</p>
-                    {med.generic_name && (
-                      <p className="text-sm text-muted-foreground">{med.generic_name}</p>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
+              {searching && (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                </div>
+              )}
 
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Selected Medications ({selectedMedications.length})</p>
-              {selectedMedications.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No medications selected</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {selectedMedications.map((med) => (
-                    <Badge
+              {searchResults.length > 0 && (
+                <div className="border rounded-lg divide-y max-h-48 overflow-auto">
+                  {searchResults.map((med) => (
+                    <button
                       key={med.id}
-                      variant="secondary"
-                      className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
-                      onClick={() => removeMedication(med.id)}
+                      onClick={() => addMedication(med)}
+                      className="w-full p-3 text-left hover:bg-muted transition-colors"
                     >
-                      {med.name} ×
-                    </Badge>
+                      <p className="font-medium">{med.name}</p>
+                      {med.generic_name && (
+                        <p className="text-sm text-muted-foreground">{med.generic_name}</p>
+                      )}
+                    </button>
                   ))}
                 </div>
               )}
-            </div>
 
-            <Button
-              onClick={checkInteractions}
-              disabled={selectedMedications.length < 2 || checking}
-              className="w-full"
-            >
-              {checking ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Checking...
-                </>
-              ) : (
-                <>
-                  <Shield className="mr-2 h-4 w-4" />
-                  Check Interactions
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Selected Medications ({selectedMedications.length})</p>
+                {selectedMedications.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No medications selected</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedMedications.map((med) => (
+                      <Badge
+                        key={med.id}
+                        variant="secondary"
+                        className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={() => removeMedication(med.id)}
+                      >
+                        {med.name} ×
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-        {/* Results */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Interaction Results</CardTitle>
-            <CardDescription>Potential drug interactions detected</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!result ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Select at least 2 medications and click "Check Interactions"</p>
-              </div>
-            ) : result.interactions.length === 0 ? (
-              <div className="text-center py-8">
-                <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                <p className="font-medium text-green-600">No Interactions Found</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  The selected medications appear to be safe to use together
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Overall Risk Level:</span>
-                  {getRiskBadge(result.overallRisk)}
+              <Button
+                onClick={checkInteractions}
+                disabled={selectedMedications.length < 2 || checking}
+                className="w-full"
+              >
+                {checking ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    <Shield className="mr-2 h-4 w-4" />
+                    Check Interactions
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Results */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Interaction Results</CardTitle>
+              <CardDescription>Potential drug interactions detected</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!result ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Select at least 2 medications and click "Check Interactions"</p>
                 </div>
+              ) : result.interactions.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                  <p className="font-medium text-green-600">No Interactions Found</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    The selected medications appear to be safe to use together
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Overall Risk Level:</span>
+                    {getRiskBadge(result.overallRisk)}
+                  </div>
 
-                <div className="space-y-3">
-                  {result.interactions.map((interaction, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-2">
-                      <div className="flex items-start gap-3">
-                        {getSeverityIcon(interaction.severity)}
-                        <div className="flex-1">
-                          <p className="font-medium">
-                            {interaction.drug1} + {interaction.drug2}
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {interaction.description}
-                          </p>
-                          {interaction.recommendation && (
-                            <p className="text-sm text-primary mt-2">
-                              <strong>Recommendation:</strong> {interaction.recommendation}
+                  <div className="space-y-3">
+                    {result.interactions.map((interaction, index) => (
+                      <div key={index} className="border rounded-lg p-4 space-y-2">
+                        <div className="flex items-start gap-3">
+                          {getSeverityIcon(interaction.severity)}
+                          <div className="flex-1">
+                            <p className="font-medium">
+                              {interaction.drug1} + {interaction.drug2}
                             </p>
-                          )}
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {interaction.description}
+                            </p>
+                            {interaction.recommendation && (
+                              <p className="text-sm text-primary mt-2">
+                                <strong>Recommendation:</strong> {interaction.recommendation}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </FeatureGate>
   );

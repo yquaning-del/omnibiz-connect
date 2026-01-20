@@ -241,286 +241,287 @@ export default function GuestProfiles() {
             <p className="text-muted-foreground">Manage guest preferences and loyalty</p>
           </div>
           <div className="flex items-center gap-2">
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search guests..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Profile
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>{selectedProfile ? 'Edit' : 'Create'} Guest Profile</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Link to Customer</Label>
-                  <Select
-                    value={formData.customer_id}
-                    onValueChange={(v) => setFormData({ ...formData, customer_id: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.full_name} {c.email && `(${c.email})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search guests..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Profile
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>{selectedProfile ? 'Edit' : 'Create'} Guest Profile</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Loyalty Tier</Label>
+                    <Label>Link to Customer</Label>
                     <Select
-                      value={formData.loyalty_tier}
-                      onValueChange={(v) => setFormData({ ...formData, loyalty_tier: v })}
+                      value={formData.customer_id}
+                      onValueChange={(v) => setFormData({ ...formData, customer_id: v })}
                     >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Select customer" />
                       </SelectTrigger>
                       <SelectContent>
-                        {loyaltyTiers.map((t) => (
-                          <SelectItem key={t} value={t} className="capitalize">
-                            {t}
+                        {customers.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.full_name} {c.email && `(${c.email})`}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>VIP Status</Label>
-                    <Select
-                      value={formData.vip_status ? 'yes' : 'no'}
-                      onValueChange={(v) => setFormData({ ...formData, vip_status: v === 'yes' })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="no">No</SelectItem>
-                        <SelectItem value="yes">Yes</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>ID Type</Label>
-                    <Select
-                      value={formData.id_type}
-                      onValueChange={(v) => setFormData({ ...formData, id_type: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="passport">Passport</SelectItem>
-                        <SelectItem value="drivers_license">Driver's License</SelectItem>
-                        <SelectItem value="national_id">National ID</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Loyalty Tier</Label>
+                      <Select
+                        value={formData.loyalty_tier}
+                        onValueChange={(v) => setFormData({ ...formData, loyalty_tier: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {loyaltyTiers.map((t) => (
+                            <SelectItem key={t} value={t} className="capitalize">
+                              {t}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>VIP Status</Label>
+                      <Select
+                        value={formData.vip_status ? 'yes' : 'no'}
+                        onValueChange={(v) => setFormData({ ...formData, vip_status: v === 'yes' })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="no">No</SelectItem>
+                          <SelectItem value="yes">Yes</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>ID Type</Label>
+                      <Select
+                        value={formData.id_type}
+                        onValueChange={(v) => setFormData({ ...formData, id_type: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="passport">Passport</SelectItem>
+                          <SelectItem value="drivers_license">Driver's License</SelectItem>
+                          <SelectItem value="national_id">National ID</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>ID Number</Label>
+                      <Input
+                        value={formData.id_number}
+                        onChange={(e) => setFormData({ ...formData, id_number: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label>ID Number</Label>
+                    <Label>Nationality</Label>
                     <Input
-                      value={formData.id_number}
-                      onChange={(e) => setFormData({ ...formData, id_number: e.target.value })}
+                      value={formData.nationality}
+                      onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
                     />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label>Nationality</Label>
-                  <Input
-                    value={formData.nationality}
-                    onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label>Room Preferences (comma-separated)</Label>
+                    <Input
+                      value={formData.room_preferences}
+                      onChange={(e) => setFormData({ ...formData, room_preferences: e.target.value })}
+                      placeholder="High floor, King bed, City view"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Room Preferences (comma-separated)</Label>
-                  <Input
-                    value={formData.room_preferences}
-                    onChange={(e) => setFormData({ ...formData, room_preferences: e.target.value })}
-                    placeholder="High floor, King bed, City view"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label>Dietary Restrictions (comma-separated)</Label>
+                    <Input
+                      value={formData.dietary_restrictions}
+                      onChange={(e) => setFormData({ ...formData, dietary_restrictions: e.target.value })}
+                      placeholder="Vegetarian, Gluten-free"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Dietary Restrictions (comma-separated)</Label>
-                  <Input
-                    value={formData.dietary_restrictions}
-                    onChange={(e) => setFormData({ ...formData, dietary_restrictions: e.target.value })}
-                    placeholder="Vegetarian, Gluten-free"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label>Special Requests</Label>
+                    <Textarea
+                      value={formData.special_requests}
+                      onChange={(e) => setFormData({ ...formData, special_requests: e.target.value })}
+                      rows={2}
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Special Requests</Label>
-                  <Textarea
-                    value={formData.special_requests}
-                    onChange={(e) => setFormData({ ...formData, special_requests: e.target.value })}
-                    rows={2}
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label>Notes</Label>
+                    <Textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      rows={2}
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Notes</Label>
-                  <Textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    rows={2}
-                  />
-                </div>
-
-                <Button type="submit" className="w-full" disabled={saving}>
-                  {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                  {selectedProfile ? 'Update' : 'Create'} Profile
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <Button type="submit" className="w-full" disabled={saving}>
+                    {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                    {selectedProfile ? 'Update' : 'Create'} Profile
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-border/50 bg-card/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Guests</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="border-border/50 bg-card/50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Guests</p>
+                  <p className="text-2xl font-bold">{stats.total}</p>
+                </div>
+                <User className="h-8 w-8 text-primary" />
               </div>
-              <User className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50 bg-card/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">VIP Guests</p>
-                <p className="text-2xl font-bold">{stats.vip}</p>
-              </div>
-              <Crown className="h-8 w-8 text-yellow-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50 bg-card/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Gold+ Tier</p>
-                <p className="text-2xl font-bold">{stats.gold}</p>
-              </div>
-              <Star className="h-8 w-8 text-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50 bg-card/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Lifetime Revenue</p>
-                <p className="text-2xl font-bold">${(stats.totalRevenue / 1000).toFixed(1)}k</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Profiles Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredProfiles.length === 0 ? (
-          <Card className="col-span-full border-border/50 bg-card/50">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <User className="w-12 h-12 mb-4" />
-              <p>No guest profiles found</p>
             </CardContent>
           </Card>
-        ) : (
-          filteredProfiles.map((profile) => {
-            const TierIcon = tierIcons[profile.loyalty_tier] || Star;
-            return (
-              <Card key={profile.id} className="border-border/50 bg-card/50">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <Avatar className="w-12 h-12">
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {profile.customer?.full_name?.charAt(0) || 'G'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold truncate">{profile.customer?.full_name || 'Guest'}</p>
-                        {profile.vip_status && (
-                          <Crown className="h-4 w-4 text-yellow-500 shrink-0" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className={cn(tierColors[profile.loyalty_tier], 'text-xs capitalize')}>
-                          <TierIcon className="h-3 w-3 mr-1" />
-                          {profile.loyalty_tier}
-                        </Badge>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(profile)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
+          <Card className="border-border/50 bg-card/50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">VIP Guests</p>
+                  <p className="text-2xl font-bold">{stats.vip}</p>
+                </div>
+                <Crown className="h-8 w-8 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 bg-card/50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Gold+ Tier</p>
+                  <p className="text-2xl font-bold">{stats.gold}</p>
+                </div>
+                <Star className="h-8 w-8 text-orange-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 bg-card/50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Lifetime Revenue</p>
+                  <p className="text-2xl font-bold">${(stats.totalRevenue / 1000).toFixed(1)}k</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-                  <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-                    <div className="p-2 bg-muted/50 rounded-lg">
-                      <p className="text-lg font-bold">{profile.total_stays}</p>
-                      <p className="text-xs text-muted-foreground">Stays</p>
+        {/* Profiles Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredProfiles.length === 0 ? (
+            <Card className="col-span-full border-border/50 bg-card/50">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <User className="w-12 h-12 mb-4" />
+                <p>No guest profiles found</p>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredProfiles.map((profile) => {
+              const TierIcon = tierIcons[profile.loyalty_tier] || Star;
+              return (
+                <Card key={profile.id} className="border-border/50 bg-card/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="w-12 h-12">
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {profile.customer?.full_name?.charAt(0) || 'G'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold truncate">{profile.customer?.full_name || 'Guest'}</p>
+                          {profile.vip_status && (
+                            <Crown className="h-4 w-4 text-yellow-500 shrink-0" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className={cn(tierColors[profile.loyalty_tier], 'text-xs capitalize')}>
+                            <TierIcon className="h-3 w-3 mr-1" />
+                            {profile.loyalty_tier}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(profile)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <div className="p-2 bg-muted/50 rounded-lg">
-                      <p className="text-lg font-bold">{profile.total_nights}</p>
-                      <p className="text-xs text-muted-foreground">Nights</p>
-                    </div>
-                    <div className="p-2 bg-muted/50 rounded-lg">
-                      <p className="text-lg font-bold">${(profile.total_spent / 1000).toFixed(1)}k</p>
-                      <p className="text-xs text-muted-foreground">Spent</p>
-                    </div>
-                  </div>
 
-                  {(profile.room_preferences?.length > 0 || profile.dietary_restrictions?.length > 0) && (
-                    <div className="mt-3 pt-3 border-t border-border/50">
-                      <div className="flex flex-wrap gap-1">
-                        {profile.room_preferences?.slice(0, 2).map((pref, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs">
-                            {pref}
-                          </Badge>
-                        ))}
-                        {profile.dietary_restrictions?.slice(0, 2).map((diet, i) => (
-                          <Badge key={i} variant="outline" className="text-xs">
-                            {diet}
-                          </Badge>
-                        ))}
+                    <div className="grid grid-cols-3 gap-2 mt-4 text-center">
+                      <div className="p-2 bg-muted/50 rounded-lg">
+                        <p className="text-lg font-bold">{profile.total_stays}</p>
+                        <p className="text-xs text-muted-foreground">Stays</p>
+                      </div>
+                      <div className="p-2 bg-muted/50 rounded-lg">
+                        <p className="text-lg font-bold">{profile.total_nights}</p>
+                        <p className="text-xs text-muted-foreground">Nights</p>
+                      </div>
+                      <div className="p-2 bg-muted/50 rounded-lg">
+                        <p className="text-lg font-bold">${(profile.total_spent / 1000).toFixed(1)}k</p>
+                        <p className="text-xs text-muted-foreground">Spent</p>
                       </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
+
+                    {(profile.room_preferences?.length > 0 || profile.dietary_restrictions?.length > 0) && (
+                      <div className="mt-3 pt-3 border-t border-border/50">
+                        <div className="flex flex-wrap gap-1">
+                          {profile.room_preferences?.slice(0, 2).map((pref, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                              {pref}
+                            </Badge>
+                          ))}
+                          {profile.dietary_restrictions?.slice(0, 2).map((diet, i) => (
+                            <Badge key={i} variant="outline" className="text-xs">
+                              {diet}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </div>
       </div>
     </FeatureGate>
   );
