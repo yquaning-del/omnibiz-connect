@@ -2540,7 +2540,12 @@ export type Database = {
         | "staff"
         | "pharmacist"
         | "front_desk"
-      business_vertical: "restaurant" | "hotel" | "pharmacy" | "retail"
+      business_vertical:
+        | "restaurant"
+        | "hotel"
+        | "pharmacy"
+        | "retail"
+        | "property"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2677,7 +2682,13 @@ export const Constants = {
         "pharmacist",
         "front_desk",
       ],
-      business_vertical: ["restaurant", "hotel", "pharmacy", "retail"],
+      business_vertical: [
+        "restaurant",
+        "hotel",
+        "pharmacy",
+        "retail",
+        "property",
+      ],
     },
   },
 } as const
