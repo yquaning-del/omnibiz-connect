@@ -307,390 +307,391 @@ const Housekeeping = () => {
             </p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Task
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Create Housekeeping Task</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Room</Label>
-                <Select
-                  value={formData.room_id}
-                  onValueChange={(v) =>
-                    setFormData({ ...formData, room_id: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select room" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rooms.map((room) => (
-                      <SelectItem key={room.id} value={room.id}>
-                        Room {room.room_number} - {room.room_type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Assign To</Label>
-                <Select
-                  value={formData.assigned_to}
-                  onValueChange={(v) =>
-                    setFormData({ ...formData, assigned_to: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select staff member" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {staff.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Task
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create Housekeeping Task</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Task Type</Label>
+                  <Label>Room</Label>
                   <Select
-                    value={formData.task_type}
+                    value={formData.room_id}
                     onValueChange={(v) =>
-                      setFormData({ ...formData, task_type: v })
+                      setFormData({ ...formData, room_id: v })
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select room" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cleaning">Cleaning</SelectItem>
-                      <SelectItem value="deep_clean">Deep Clean</SelectItem>
-                      <SelectItem value="turnover">Room Turnover</SelectItem>
-                      <SelectItem value="inspection">Inspection</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                      {rooms.map((room) => (
+                        <SelectItem key={room.id} value={room.id}>
+                          Room {room.room_number} - {room.room_type}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Priority</Label>
+                  <Label>Assign To</Label>
                   <Select
-                    value={formData.priority}
+                    value={formData.assigned_to}
                     onValueChange={(v) =>
-                      setFormData({ ...formData, priority: v })
+                      setFormData({ ...formData, assigned_to: v })
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select staff member" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
+                      {staff.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.full_name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !formData.scheduled_date && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.scheduled_date
-                          ? format(formData.scheduled_date, "PPP")
-                          : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={formData.scheduled_date}
-                        onSelect={(date) =>
-                          date &&
-                          setFormData({ ...formData, scheduled_date: date })
-                        }
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Task Type</Label>
+                    <Select
+                      value={formData.task_type}
+                      onValueChange={(v) =>
+                        setFormData({ ...formData, task_type: v })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cleaning">Cleaning</SelectItem>
+                        <SelectItem value="deep_clean">Deep Clean</SelectItem>
+                        <SelectItem value="turnover">Room Turnover</SelectItem>
+                        <SelectItem value="inspection">Inspection</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Priority</Label>
+                    <Select
+                      value={formData.priority}
+                      onValueChange={(v) =>
+                        setFormData({ ...formData, priority: v })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !formData.scheduled_date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.scheduled_date
+                            ? format(formData.scheduled_date, "PPP")
+                            : "Pick a date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.scheduled_date}
+                          onSelect={(date) =>
+                            date &&
+                            setFormData({ ...formData, scheduled_date: date })
+                          }
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Time</Label>
+                    <Input
+                      type="time"
+                      value={formData.scheduled_time}
+                      onChange={(e) =>
+                        setFormData({ ...formData, scheduled_time: e.target.value })
+                      }
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Time</Label>
-                  <Input
-                    type="time"
-                    value={formData.scheduled_time}
+                  <Label>Notes</Label>
+                  <Textarea
+                    placeholder="Additional notes..."
+                    value={formData.notes}
                     onChange={(e) =>
-                      setFormData({ ...formData, scheduled_time: e.target.value })
+                      setFormData({ ...formData, notes: e.target.value })
                     }
                   />
                 </div>
+
+                <Button className="w-full" onClick={handleCreateTask}>
+                  Create Task
+                </Button>
               </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-              <div className="space-y-2">
-                <Label>Notes</Label>
-                <Textarea
-                  placeholder="Additional notes..."
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                />
-              </div>
-
-              <Button className="w-full" onClick={handleCreateTask}>
-                Create Task
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{taskStats.pending}</div>
-            <p className="text-xs text-muted-foreground">
-              awaiting action
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            <Sparkles className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{taskStats.inProgress}</div>
-            <p className="text-xs text-muted-foreground">
-              being worked on
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Today</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{taskStats.completed}</div>
-            <p className="text-xs text-muted-foreground">
-              tasks finished
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rooms Need Cleaning</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{roomStats.dirty}</div>
-            <p className="text-xs text-muted-foreground">
-              of {roomStats.total} total rooms
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Tasks List */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Tasks</CardTitle>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+              <Clock className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              {filteredTasks.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  No tasks found
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {filteredTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="flex items-center justify-between p-4 rounded-lg border bg-card"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <BedDouble className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {task.room
-                              ? `Room ${task.room.room_number}`
-                              : "General Task"}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className={getPriorityColor(task.priority)}
-                          >
-                            {task.priority}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="capitalize">
-                            {task.task_type.replace("_", " ")}
-                          </span>
-                          {task.assignee && (
-                            <span className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              {task.assignee.full_name}
-                            </span>
-                          )}
-                          <span>
-                            {format(new Date(task.scheduled_date), "MMM d")}
-                            {task.scheduled_time && ` at ${task.scheduled_time}`}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className={getStatusColor(task.status)}
-                        >
-                          {task.status.replace("_", " ")}
-                        </Badge>
-                        <Select
-                          value={task.status}
-                          onValueChange={(v) => handleUpdateStatus(task.id, v)}
-                        >
-                          <SelectTrigger className="w-28">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="in_progress">
-                              In Progress
-                            </SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="text-2xl font-bold">{taskStats.pending}</div>
+              <p className="text-xs text-muted-foreground">
+                awaiting action
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+              <Sparkles className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{taskStats.inProgress}</div>
+              <p className="text-xs text-muted-foreground">
+                being worked on
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed Today</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{taskStats.completed}</div>
+              <p className="text-xs text-muted-foreground">
+                tasks finished
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Rooms Need Cleaning</CardTitle>
+              <AlertCircle className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{roomStats.dirty}</div>
+              <p className="text-xs text-muted-foreground">
+                of {roomStats.total} total rooms
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Room Status Sidebar */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BedDouble className="h-5 w-5" />
-                Room Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {rooms.map((room) => (
-                  <div
-                    key={room.id}
-                    className="flex items-center justify-between p-3 rounded-lg border"
-                  >
-                    <div>
-                      <p className="font-medium">Room {room.room_number}</p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {room.room_type} · Floor {room.floor}
-                      </p>
-                    </div>
-                    <Select
-                      value={room.housekeeping_status}
-                      onValueChange={(v) => handleUpdateRoomStatus(room.id, v)}
-                    >
-                      <SelectTrigger
-                        className={cn(
-                          "w-24 h-8",
-                          getRoomStatusColor(room.housekeeping_status)
-                        )}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Tasks List */}
+          <div className="lg:col-span-2 space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Tasks</CardTitle>
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {filteredTasks.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    No tasks found
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="flex items-center justify-between p-4 rounded-lg border bg-card"
                       >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="clean">Clean</SelectItem>
-                        <SelectItem value="cleaning">Cleaning</SelectItem>
-                        <SelectItem value="dirty">Dirty</SelectItem>
-                        <SelectItem value="inspection">Inspection</SelectItem>
-                      </SelectContent>
-                    </Select>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <BedDouble className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">
+                              {task.room
+                                ? `Room ${task.room.room_number}`
+                                : "General Task"}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={getPriorityColor(task.priority)}
+                            >
+                              {task.priority}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="capitalize">
+                              {task.task_type.replace("_", " ")}
+                            </span>
+                            {task.assignee && (
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {task.assignee.full_name}
+                              </span>
+                            )}
+                            <span>
+                              {format(new Date(task.scheduled_date), "MMM d")}
+                              {task.scheduled_time && ` at ${task.scheduled_time}`}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className={getStatusColor(task.status)}
+                          >
+                            {task.status.replace("_", " ")}
+                          </Badge>
+                          <Select
+                            value={task.status}
+                            onValueChange={(v) => handleUpdateStatus(task.id, v)}
+                          >
+                            <SelectTrigger className="w-28">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="in_progress">
+                                In Progress
+                              </SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Quick Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Room Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Clean</span>
-                  <Badge variant="outline" className="bg-green-500/10 text-green-500">
-                    {roomStats.clean}
-                  </Badge>
+          {/* Room Status Sidebar */}
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BedDouble className="h-5 w-5" />
+                  Room Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {rooms.map((room) => (
+                    <div
+                      key={room.id}
+                      className="flex items-center justify-between p-3 rounded-lg border"
+                    >
+                      <div>
+                        <p className="font-medium">Room {room.room_number}</p>
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {room.room_type} · Floor {room.floor}
+                        </p>
+                      </div>
+                      <Select
+                        value={room.housekeeping_status}
+                        onValueChange={(v) => handleUpdateRoomStatus(room.id, v)}
+                      >
+                        <SelectTrigger
+                          className={cn(
+                            "w-24 h-8",
+                            getRoomStatusColor(room.housekeeping_status)
+                          )}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="clean">Clean</SelectItem>
+                          <SelectItem value="cleaning">Cleaning</SelectItem>
+                          <SelectItem value="dirty">Dirty</SelectItem>
+                          <SelectItem value="inspection">Inspection</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Cleaning</span>
-                  <Badge variant="outline" className="bg-blue-500/10 text-blue-500">
-                    {roomStats.cleaning}
-                  </Badge>
+              </CardContent>
+            </Card>
+
+            {/* Quick Stats */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Room Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Clean</span>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-500">
+                      {roomStats.clean}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Cleaning</span>
+                    <Badge variant="outline" className="bg-blue-500/10 text-blue-500">
+                      {roomStats.cleaning}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Dirty</span>
+                    <Badge variant="outline" className="bg-red-500/10 text-red-500">
+                      {roomStats.dirty}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Dirty</span>
-                  <Badge variant="outline" className="bg-red-500/10 text-red-500">
-                    {roomStats.dirty}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </FeatureGate>

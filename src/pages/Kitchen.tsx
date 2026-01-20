@@ -166,121 +166,122 @@ export default function Kitchen() {
         </div>
 
         {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        {Object.entries(columnLabels).map(([status, { title, icon: Icon }]) => (
-          <Card key={status} className={cn('border-border/50', statusColors[status].split(' ')[0])}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{title}</p>
-                  <p className="text-3xl font-bold">{ordersByStatus[status as keyof typeof ordersByStatus].length}</p>
+        <div className="grid grid-cols-3 gap-4">
+          {Object.entries(columnLabels).map(([status, { title, icon: Icon }]) => (
+            <Card key={status} className={cn('border-border/50', statusColors[status].split(' ')[0])}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{title}</p>
+                    <p className="text-3xl font-bold">{ordersByStatus[status as keyof typeof ordersByStatus].length}</p>
+                  </div>
+                  <Icon className="w-8 h-8 opacity-50" />
                 </div>
-                <Icon className="w-8 h-8 opacity-50" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Kanban Board */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {Object.entries(columnLabels).map(([status, { title, icon: Icon }]) => (
+            <div key={status} className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Icon className={cn('w-5 h-5', status === 'pending' ? 'text-warning' : status === 'preparing' ? 'text-info' : 'text-success')} />
+                <h2 className="font-semibold text-foreground">{title}</h2>
+                <Badge variant="outline" className="ml-auto">
+                  {ordersByStatus[status as keyof typeof ordersByStatus].length}
+                </Badge>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
 
-      {/* Kanban Board */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {Object.entries(columnLabels).map(([status, { title, icon: Icon }]) => (
-          <div key={status} className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Icon className={cn('w-5 h-5', status === 'pending' ? 'text-warning' : status === 'preparing' ? 'text-info' : 'text-success')} />
-              <h2 className="font-semibold text-foreground">{title}</h2>
-              <Badge variant="outline" className="ml-auto">
-                {ordersByStatus[status as keyof typeof ordersByStatus].length}
-              </Badge>
-            </div>
-
-            <div className="space-y-3 min-h-[400px]">
-              {ordersByStatus[status as keyof typeof ordersByStatus].map(order => (
-                <Card 
-                  key={order.id} 
-                  className={cn(
-                    'border-2 transition-all hover:shadow-lg',
-                    status === 'pending' && 'border-warning/50 animate-pulse',
-                    status === 'preparing' && 'border-info/50',
-                    status === 'ready' && 'border-success/50'
-                  )}
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg font-mono">
-                        #{order.order_number}
-                      </CardTitle>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {/* Order Items */}
-                    <div className="space-y-2 mb-4">
-                      {order.order_items.map(item => (
-                        <div key={item.id} className="flex items-center justify-between p-2 rounded bg-muted/30">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-primary">{item.quantity}x</span>
-                            <span className="text-foreground">{item.product_name}</span>
-                          </div>
-                          {item.notes && (
-                            <span className="text-xs text-warning">{item.notes}</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {order.notes && (
-                      <p className="text-sm text-warning bg-warning/10 p-2 rounded mb-4">
-                        Note: {order.notes}
-                      </p>
+              <div className="space-y-3 min-h-[400px]">
+                {ordersByStatus[status as keyof typeof ordersByStatus].map(order => (
+                  <Card 
+                    key={order.id} 
+                    className={cn(
+                      'border-2 transition-all hover:shadow-lg',
+                      status === 'pending' && 'border-warning/50 animate-pulse',
+                      status === 'preparing' && 'border-info/50',
+                      status === 'ready' && 'border-success/50'
                     )}
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg font-mono">
+                          #{order.order_number}
+                        </CardTitle>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Order Items */}
+                      <div className="space-y-2 mb-4">
+                        {order.order_items.map(item => (
+                          <div key={item.id} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-primary">{item.quantity}x</span>
+                              <span className="text-foreground">{item.product_name}</span>
+                            </div>
+                            {item.notes && (
+                              <span className="text-xs text-warning">{item.notes}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      {status === 'pending' && (
-                        <Button 
-                          className="flex-1 bg-info hover:bg-info/80"
-                          onClick={() => updateOrderStatus(order.id, 'preparing')}
-                        >
-                          <Play className="w-4 h-4 mr-2" />
-                          Start
-                        </Button>
+                      {order.notes && (
+                        <p className="text-sm text-warning bg-warning/10 p-2 rounded mb-4">
+                          Note: {order.notes}
+                        </p>
                       )}
-                      {status === 'preparing' && (
-                        <Button 
-                          className="flex-1 bg-success hover:bg-success/80"
-                          onClick={() => updateOrderStatus(order.id, 'ready')}
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Ready
-                        </Button>
-                      )}
-                      {status === 'ready' && (
-                        <Button 
-                          className="flex-1"
-                          variant="outline"
-                          onClick={() => updateOrderStatus(order.id, 'completed')}
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Complete
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
 
-              {ordersByStatus[status as keyof typeof ordersByStatus].length === 0 && (
-                <div className="flex items-center justify-center h-32 border-2 border-dashed border-border/50 rounded-xl text-muted-foreground">
-                  No orders
-                </div>
-              )}
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        {status === 'pending' && (
+                          <Button 
+                            className="flex-1 bg-info hover:bg-info/80"
+                            onClick={() => updateOrderStatus(order.id, 'preparing')}
+                          >
+                            <Play className="w-4 h-4 mr-2" />
+                            Start
+                          </Button>
+                        )}
+                        {status === 'preparing' && (
+                          <Button 
+                            className="flex-1 bg-success hover:bg-success/80"
+                            onClick={() => updateOrderStatus(order.id, 'ready')}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Ready
+                          </Button>
+                        )}
+                        {status === 'ready' && (
+                          <Button 
+                            className="flex-1"
+                            variant="outline"
+                            onClick={() => updateOrderStatus(order.id, 'completed')}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Complete
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {ordersByStatus[status as keyof typeof ordersByStatus].length === 0 && (
+                  <div className="flex items-center justify-center h-32 border-2 border-dashed border-border/50 rounded-xl text-muted-foreground">
+                    No orders
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </FeatureGate>
   );
