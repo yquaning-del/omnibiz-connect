@@ -260,6 +260,65 @@ const pricingData: Record<BusinessVertical, PlanData[]> = {
       ],
     },
   ],
+  property: [
+    {
+      name: 'Starter',
+      description: 'For small landlords',
+      priceMonthly: 59,
+      priceYearly: 590,
+      priceMonthlyGHS: 900,
+      priceYearlyGHS: 9000,
+      tier: 'starter',
+      features: [
+        'Up to 10 units',
+        'Tenant profiles',
+        'Basic lease tracking',
+        'Rent collection',
+        'Maintenance requests',
+        'Email support',
+        '1 property',
+      ],
+    },
+    {
+      name: 'Professional',
+      description: 'For growing portfolios',
+      priceMonthly: 129,
+      priceYearly: 1290,
+      priceMonthlyGHS: 1950,
+      priceYearlyGHS: 19500,
+      tier: 'professional',
+      isPopular: true,
+      features: [
+        'Everything in Starter',
+        'Up to 50 units',
+        'Tenant screening',
+        'Digital lease signing',
+        'Automated rent reminders',
+        'Financial reports',
+        'Multi-property support',
+        'Priority support',
+      ],
+    },
+    {
+      name: 'Enterprise',
+      description: 'For property managers',
+      priceMonthly: 249,
+      priceYearly: 2490,
+      priceMonthlyGHS: 3750,
+      priceYearlyGHS: 37500,
+      tier: 'enterprise',
+      features: [
+        'Everything in Professional',
+        'Unlimited units',
+        'API access',
+        'Accounting integration',
+        'Bulk operations',
+        'Custom lease templates',
+        'Dedicated account manager',
+        '24/7 phone support',
+      ],
+    },
+  ],
 };
 
 const verticalColors: Record<BusinessVertical, string> = {
@@ -267,6 +326,7 @@ const verticalColors: Record<BusinessVertical, string> = {
   hotel: 'text-hotel',
   pharmacy: 'text-pharmacy',
   retail: 'text-retail',
+  property: 'text-property',
 };
 
 const trustBadges = [

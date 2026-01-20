@@ -52,6 +52,12 @@ import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminAuditLogs from "./pages/admin/AdminAuditLogs";
+// Property Management
+import PropertyUnits from "./pages/property/Units";
+import PropertyTenants from "./pages/property/Tenants";
+import PropertyLeases from "./pages/property/Leases";
+import PropertyRent from "./pages/property/RentCollection";
+import PropertyApplications from "./pages/property/Applications";
 
 const queryClient = new QueryClient();
 
@@ -107,6 +113,12 @@ const App = () => (
                   <Route path="/billing" element={<Billing />} />
                   <Route path="/subscription" element={<Subscription />} />
                   <Route path="/settings" element={<Settings />} />
+                  {/* Property Management Routes */}
+                  <Route path="/property/units" element={<PropertyUnits />} />
+                  <Route path="/property/tenants" element={<PropertyTenants />} />
+                  <Route path="/property/leases" element={<PropertyLeases />} />
+                  <Route path="/property/rent" element={<PropertyRent />} />
+                  <Route path="/property/applications" element={<PropertyApplications />} />
                 </Route>
 
                 {/* Admin Routes */}

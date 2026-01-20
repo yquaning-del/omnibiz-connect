@@ -128,6 +128,19 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
         { title: 'Customers', href: '/customers', icon: Users, requiredFeature: 'customer_management' },
       ],
     },
+    property: {
+      main: [
+        { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { title: 'Units', href: '/property/units', icon: Building2 },
+        { title: 'Tenants', href: '/property/tenants', icon: Users },
+        { title: 'Leases', href: '/property/leases', icon: FileText },
+      ],
+      features: [
+        { title: 'Rent Collection', href: '/property/rent', icon: DollarSign },
+        { title: 'Applications', href: '/property/applications', icon: ClipboardList, requiredFeature: 'tenant_screening' },
+        { title: 'Maintenance', href: '/maintenance', icon: Wrench },
+      ],
+    },
   };
 
   const management: NavItem[] = [
