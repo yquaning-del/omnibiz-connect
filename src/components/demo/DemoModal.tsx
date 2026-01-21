@@ -114,6 +114,18 @@ const demoSteps = [
       'Export to PDF/Excel',
     ],
   },
+  {
+    title: 'Property Management',
+    description: 'Complete solution for managing apartments, tenants, leases, and rent collection.',
+    icon: Building2,
+    color: 'text-property',
+    features: [
+      'Unit & tenant management',
+      'Lease lifecycle tracking',
+      'Rent collection & reminders',
+      'Tenant application screening',
+    ],
+  },
 ];
 
 export function DemoModal({ open, onOpenChange }: DemoModalProps) {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Building2, Utensils, Hotel, Pill, ShoppingBag, CheckCircle2, Play, LayoutDashboard, Settings2 } from 'lucide-react';
+import { ArrowRight, Building2, Utensils, Hotel, Pill, ShoppingBag, Home, CheckCircle2, Play, LayoutDashboard, Settings2 } from 'lucide-react';
 import { DemoModal } from '@/components/demo/DemoModal';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -10,15 +10,16 @@ const features = [
   { icon: Hotel, label: 'Hotels', color: 'text-hotel' },
   { icon: Pill, label: 'Pharmacies', color: 'text-pharmacy' },
   { icon: ShoppingBag, label: 'Retail', color: 'text-retail' },
+  { icon: Home, label: 'Property', color: 'text-property' },
 ];
 
 const benefits = [
   'Unified POS & inventory management',
   'Real-time analytics & reporting',
   'Multi-location support',
-  'Staff scheduling & management',
+  'Lease & tenant management',
   'Kitchen display system',
-  'Housekeeping management',
+  'Housekeeping & maintenance',
 ];
 
 const Landing = () => {
@@ -84,10 +85,10 @@ const Landing = () => {
             <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight">
               <span className="text-foreground">All-in-One</span>
               <br />
-              <span className="text-gradient">Hospitality Platform</span>
+              <span className="text-gradient">Business Platform</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Streamline your operations with our unified platform for restaurants, hotels, pharmacies, and retail businesses.
+              Streamline your operations with our unified platform for restaurants, hotels, pharmacies, retail, and property management.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/auth">

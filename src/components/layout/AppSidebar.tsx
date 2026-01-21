@@ -138,7 +138,8 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
       features: [
         { title: 'Rent Collection', href: '/property/rent', icon: DollarSign },
         { title: 'Applications', href: '/property/applications', icon: ClipboardList, requiredFeature: 'tenant_screening' },
-        { title: 'Maintenance', href: '/maintenance', icon: Wrench },
+        { title: 'Maintenance', href: '/property/maintenance', icon: Wrench },
+        { title: 'Reports', href: '/property/reports', icon: BarChart3, requiredFeature: 'financial_reports' },
       ],
     },
   };
