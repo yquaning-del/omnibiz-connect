@@ -6,6 +6,7 @@ import RestaurantDashboard from './dashboards/RestaurantDashboard';
 import HotelDashboard from './dashboards/HotelDashboard';
 import PharmacyDashboard from './dashboards/PharmacyDashboard';
 import RetailDashboard from './dashboards/RetailDashboard';
+import PropertyDashboard from './dashboards/PropertyDashboard';
 
 function AdminBanner() {
   return (
@@ -43,6 +44,8 @@ export default function Dashboard() {
         return <HotelDashboard />;
       case 'pharmacy':
         return <PharmacyDashboard />;
+      case 'property':
+        return <PropertyDashboard />;
       case 'retail':
       default:
         return <RetailDashboard />;
