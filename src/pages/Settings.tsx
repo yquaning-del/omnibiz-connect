@@ -49,6 +49,14 @@ export default function Settings() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [lowStockAlerts, setLowStockAlerts] = useState(true);
   const [orderNotifications, setOrderNotifications] = useState(true);
+  // Property-specific notifications
+  const [rentDueReminders, setRentDueReminders] = useState(true);
+  const [overdueAlerts, setOverdueAlerts] = useState(true);
+  const [leaseExpiryAlerts, setLeaseExpiryAlerts] = useState(true);
+  const [newApplicationAlerts, setNewApplicationAlerts] = useState(true);
+  const [maintenanceUpdates, setMaintenanceUpdates] = useState(true);
+
+  const isPropertyVertical = currentOrganization?.primary_vertical === 'property';
 
   useEffect(() => {
     if (currentOrganization) {
@@ -379,6 +387,70 @@ export default function Settings() {
                     onCheckedChange={setOrderNotifications}
                   />
                 </div>
+
+                {/* Property-specific notifications */}
+                {isPropertyVertical && (
+                  <>
+                    <div className="pt-4 border-t border-border/50">
+                      <p className="text-sm font-medium text-muted-foreground mb-4">Property Management Alerts</p>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
+                      <div>
+                        <p className="font-medium text-foreground">Rent Due Reminders</p>
+                        <p className="text-sm text-muted-foreground">Notify tenants before rent is due</p>
+                      </div>
+                      <Switch
+                        checked={rentDueReminders}
+                        onCheckedChange={setRentDueReminders}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
+                      <div>
+                        <p className="font-medium text-foreground">Overdue Payment Alerts</p>
+                        <p className="text-sm text-muted-foreground">Get notified about overdue payments</p>
+                      </div>
+                      <Switch
+                        checked={overdueAlerts}
+                        onCheckedChange={setOverdueAlerts}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
+                      <div>
+                        <p className="font-medium text-foreground">Lease Expiry Alerts</p>
+                        <p className="text-sm text-muted-foreground">Notifications for expiring leases</p>
+                      </div>
+                      <Switch
+                        checked={leaseExpiryAlerts}
+                        onCheckedChange={setLeaseExpiryAlerts}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
+                      <div>
+                        <p className="font-medium text-foreground">New Application Alerts</p>
+                        <p className="text-sm text-muted-foreground">Get notified about new tenant applications</p>
+                      </div>
+                      <Switch
+                        checked={newApplicationAlerts}
+                        onCheckedChange={setNewApplicationAlerts}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
+                      <div>
+                        <p className="font-medium text-foreground">Maintenance Updates</p>
+                        <p className="text-sm text-muted-foreground">Updates on maintenance requests</p>
+                      </div>
+                      <Switch
+                        checked={maintenanceUpdates}
+                        onCheckedChange={setMaintenanceUpdates}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>

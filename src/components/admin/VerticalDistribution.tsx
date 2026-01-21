@@ -18,6 +18,7 @@ const VERTICAL_COLORS = {
   Hotel: "hsl(262, 83%, 58%)",
   Pharmacy: "hsl(142, 71%, 45%)",
   Retail: "hsl(199, 89%, 48%)",
+  Property: "hsl(280, 60%, 50%)",
 };
 
 export function VerticalDistribution({

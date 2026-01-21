@@ -58,6 +58,8 @@ import PropertyTenants from "./pages/property/Tenants";
 import PropertyLeases from "./pages/property/Leases";
 import PropertyRent from "./pages/property/RentCollection";
 import PropertyApplications from "./pages/property/Applications";
+import PropertyMaintenance from "./pages/property/Maintenance";
+import PropertyReports from "./pages/property/Reports";
 
 const queryClient = new QueryClient();
 
@@ -119,6 +121,8 @@ const App = () => (
                   <Route path="/property/leases" element={<PropertyLeases />} />
                   <Route path="/property/rent" element={<PropertyRent />} />
                   <Route path="/property/applications" element={<PropertyApplications />} />
+                  <Route path="/property/maintenance" element={<PropertyMaintenance />} />
+                  <Route path="/property/reports" element={<PropertyReports />} />
                 </Route>
 
                 {/* Admin Routes */}
