@@ -136,6 +136,7 @@ export default function AdminDashboard() {
         hotel: "hsl(262, 83%, 58%)",
         pharmacy: "hsl(142, 71%, 45%)",
         retail: "hsl(199, 89%, 48%)",
+        property: "hsl(280, 60%, 50%)",
       };
 
       setVerticalData(

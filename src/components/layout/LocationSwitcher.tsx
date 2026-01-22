@@ -162,8 +162,17 @@ export function LocationSwitcher({ collapsed }: LocationSwitcherProps) {
                 <span className="text-xs text-muted-foreground truncate max-w-[100px]">
                   {currentLocation?.name || verticalConfig.name}
                 </span>
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    "text-[10px] px-1.5 py-0 h-4 capitalize",
+                    `border-${verticalConfig.color}/50 text-${verticalConfig.color}`
+                  )}
+                >
+                  {currentVertical}
+                </Badge>
                 {isSuperAdmin && (
-                  <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
+                  <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-primary/50 text-primary">
                     Admin
                   </Badge>
                 )}
