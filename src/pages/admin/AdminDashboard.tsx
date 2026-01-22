@@ -18,9 +18,6 @@ import {
   TrendingUp,
   AlertCircle,
   ArrowRight,
-  FlaskConical,
-  Loader2,
-  CheckCircle2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -41,8 +38,6 @@ interface PlatformStats {
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [creatingTestUsers, setCreatingTestUsers] = useState(false);
-  const [testUsersCreated, setTestUsersCreated] = useState(false);
   const [stats, setStats] = useState<PlatformStats>({
     totalOrganizations: 0,
     totalUsers: 0,
@@ -56,28 +51,6 @@ export default function AdminDashboard() {
     wau: 0,
     mau: 0,
   });
-
-  const handleCreateTestUsers = async () => {
-    setCreatingTestUsers(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-test-users');
-      
-      if (error) {
-        throw error;
-      }
-      
-      toast.success(`Test environment created! ${data.totalCreated} users created.`);
-      setTestUsersCreated(true);
-      
-      // Refresh stats
-      fetchPlatformStats();
-    } catch (error) {
-      console.error('Error creating test users:', error);
-      toast.error('Failed to create test users. Check console for details.');
-    } finally {
-      setCreatingTestUsers(false);
-    }
-  };
 
   const [verticalData, setVerticalData] = useState<
     { name: string; value: number; color: string }[]
@@ -372,7 +345,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Bottom Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ActivityFeed activities={activities} loading={loading} />
 
           <Card>
@@ -424,53 +397,6 @@ export default function AdminDashboard() {
                 </span>
                 <ArrowRight className="h-4 w-4" />
               </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <FlaskConical className="h-5 w-5 text-primary" />
-                Test Environment
-              </CardTitle>
-              <CardDescription>
-                Create test users and sample data for all verticals and tiers
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {testUsersCreated ? (
-                <div className="flex items-center gap-2 text-success">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span className="font-medium">Test users created successfully!</span>
-                </div>
-              ) : (
-                <Button
-                  onClick={handleCreateTestUsers}
-                  disabled={creatingTestUsers}
-                  className="w-full"
-                >
-                  {creatingTestUsers ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Creating Test Users...
-                    </>
-                  ) : (
-                    <>
-                      <FlaskConical className="h-4 w-4 mr-2" />
-                      Create Test Users
-                    </>
-                  )}
-                </Button>
-              )}
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p className="font-medium">This will create:</p>
-                <ul className="list-disc list-inside space-y-0.5">
-                  <li>16 test users (4 verticals × 3 tiers + 4 roles)</li>
-                  <li>12 test organizations with subscriptions</li>
-                  <li>Sample products, customers, and data</li>
-                </ul>
-                <p className="mt-2 font-medium">Password for all: <code className="bg-muted px-1 rounded">Test123!</code></p>
-              </div>
             </CardContent>
           </Card>
         </div>
