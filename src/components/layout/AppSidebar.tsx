@@ -59,15 +59,6 @@ interface NavItem {
   requiredFeature?: string;
 }
 
-// All platform items for super admin view
-const getAllPlatformItems = (): NavItem[] => [
-  { title: 'Tables', href: '/tables', icon: UtensilsCrossed },
-  { title: 'Kitchen Display', href: '/kitchen', icon: ChefHat },
-  { title: 'Rooms', href: '/rooms', icon: BedDouble },
-  { title: 'Housekeeping', href: '/housekeeping', icon: ClipboardList },
-  { title: 'Reservations', href: '/reservations', icon: Calendar },
-  { title: 'Pharmacy', href: '/pharmacy', icon: Pill },
-];
 
 const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
   const verticalNav: Record<BusinessVertical, { main: NavItem[]; features: NavItem[] }> = {
@@ -156,9 +147,8 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
     : [];
 
   const nav = verticalNav[vertical];
-  const platformItems = isSuperAdmin ? getAllPlatformItems() : nav.features;
 
-  return { common: nav.main, verticalSpecific: platformItems, management, adminItems, isSuperAdmin };
+  return { common: nav.main, verticalSpecific: nav.features, management, adminItems, isSuperAdmin };
 };
 
 export function AppSidebar() {
@@ -251,7 +241,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>{isSuperAdmin ? 'All Platforms' : 'Features'}</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel>Features</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {verticalSpecific.map(renderNavItem)}
