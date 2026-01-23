@@ -1,13 +1,13 @@
 project_id = "kjkmoxoossrtvxlywhro"
 
 [functions.ai-insights]
-verify_jwt = false
+verify_jwt = true
 
 [functions.drug-interactions]
-verify_jwt = false
+verify_jwt = true
 
 [functions.paystack-payment]
-verify_jwt = false
+verify_jwt = true
 
 [functions.paystack-webhook]
 verify_jwt = false
