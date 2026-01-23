@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createHmac } from "node:crypto";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,7 +8,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -17,28 +17,47 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // PLACEHOLDER: Webhook secret would be used for verification
-    // const webhookSecret = Deno.env.get("PAYSTACK_WEBHOOK_SECRET");
-    // const signature = req.headers.get("x-paystack-signature");
+    // PLACEHOLDER: Webhook secret - add PAYSTACK_WEBHOOK_SECRET to secrets when ready
+    const webhookSecret = Deno.env.get("PAYSTACK_WEBHOOK_SECRET");
+    const isLiveMode = !!webhookSecret;
 
-    const body = await req.json();
+    const rawBody = await req.text();
+    const body = JSON.parse(rawBody);
     const { event, data } = body;
 
-    console.log("Received webhook event:", event);
+    console.log("Received webhook event:", event, "| Live mode:", isLiveMode);
 
-    // PLACEHOLDER: In production, verify the webhook signature
-    // const hash = crypto.createHmac("sha512", webhookSecret)
-    //   .update(JSON.stringify(body))
-    //   .digest("hex");
-    // if (hash !== signature) {
-    //   return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 401 });
-    // }
+    // Verify webhook signature in live mode
+    if (isLiveMode) {
+      const signature = req.headers.get("x-paystack-signature");
+      if (!signature) {
+        console.error("Missing webhook signature");
+        return new Response(
+          JSON.stringify({ error: "Missing signature" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const hash = createHmac("sha512", webhookSecret)
+        .update(rawBody)
+        .digest("hex");
+      
+      if (hash !== signature) {
+        console.error("Invalid webhook signature");
+        return new Response(
+          JSON.stringify({ error: "Invalid signature" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      console.log("Webhook signature verified");
+    } else {
+      console.log("PLACEHOLDER MODE: Skipping signature verification");
+    }
 
     switch (event) {
       case "charge.success": {
-        const { reference, amount, currency, customer } = data;
+        const { reference } = data;
 
-        // Update transaction status
         const { data: transaction, error: txError } = await supabase
           .from("payment_transactions")
           .update({
@@ -54,14 +73,12 @@ serve(async (req) => {
           break;
         }
 
-        // Get metadata from transaction
-        const metadata = transaction.metadata as any;
+        const metadata = transaction.metadata as Record<string, unknown>;
         const organizationId = transaction.organization_id;
-        const planId = metadata?.plan_id;
-        const billingCycle = metadata?.billing_cycle || "monthly";
+        const planId = metadata?.plan_id as string;
+        const billingCycle = (metadata?.billing_cycle as string) || "monthly";
 
         if (organizationId && planId) {
-          // Calculate period dates
           const now = new Date();
           const periodEnd = new Date(now);
           if (billingCycle === "yearly") {
@@ -70,7 +87,6 @@ serve(async (req) => {
             periodEnd.setMonth(periodEnd.getMonth() + 1);
           }
 
-          // Update or create subscription
           const { error: subError } = await supabase
             .from("organization_subscriptions")
             .upsert({
@@ -86,6 +102,8 @@ serve(async (req) => {
 
           if (subError) {
             console.error("Error updating subscription:", subError);
+          } else {
+            console.log("Subscription activated for org:", organizationId);
           }
         }
 
@@ -96,18 +114,17 @@ serve(async (req) => {
       case "charge.failed": {
         const { reference, gateway_response } = data;
 
-        // Update transaction status
-        await supabase
+        const { error } = await supabase
           .from("payment_transactions")
           .update({
             status: "failed",
-            metadata: supabase.rpc("jsonb_set", {
-              target: "metadata",
-              path: "{failure_reason}",
-              value: gateway_response,
-            }),
+            metadata: { failure_reason: gateway_response },
           })
           .eq("provider_reference", reference);
+
+        if (error) {
+          console.error("Error updating failed transaction:", error);
+        }
 
         console.log("Payment failed:", reference, gateway_response);
         break;

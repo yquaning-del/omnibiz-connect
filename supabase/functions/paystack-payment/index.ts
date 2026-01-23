@@ -19,18 +19,43 @@ interface PaymentRequest {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Validate auth
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // PLACEHOLDER: Paystack secret key would be used here
-    // const paystackSecretKey = Deno.env.get("PAYSTACK_SECRET_KEY");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
+    // Verify user
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claims, error: authError } = await supabaseAuth.auth.getClaims(token);
+    if (authError || !claims?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // PLACEHOLDER: Paystack secret key - add PAYSTACK_SECRET_KEY to secrets when ready
+    const paystackSecretKey = Deno.env.get("PAYSTACK_SECRET_KEY");
+    const isLiveMode = !!paystackSecretKey;
 
     const body: PaymentRequest = await req.json();
     const {
@@ -45,7 +70,6 @@ serve(async (req) => {
       mobilePhone,
     } = body;
 
-    // Validate required fields
     if (!email || !amount || !currency || !planId || !organizationId) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
@@ -53,10 +77,9 @@ serve(async (req) => {
       );
     }
 
-    // Generate a mock reference for placeholder
     const reference = `PSK_${Date.now()}_${crypto.randomUUID().split("-")[0]}`;
 
-    // Create a pending transaction record
+    // Create pending transaction
     const { data: transaction, error: txError } = await supabase
       .from("payment_transactions")
       .insert({
@@ -73,6 +96,7 @@ serve(async (req) => {
           plan_id: planId,
           billing_cycle: billingCycle,
           mobile_phone: mobilePhone,
+          is_placeholder: !isLiveMode,
         },
       })
       .select()
@@ -86,39 +110,61 @@ serve(async (req) => {
       );
     }
 
-    // PLACEHOLDER: In production, this would call Paystack API
-    // const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
-    //   method: "POST",
-    //   headers: {
-    //     Authorization: `Bearer ${paystackSecretKey}`,
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     email,
-    //     amount: amount * 100, // Paystack uses smallest currency unit
-    //     currency,
-    //     reference,
-    //     channels: paymentMethod === "mobile_money" ? ["mobile_money"] : ["card"],
-    //     metadata: {
-    //       plan_id: planId,
-    //       organization_id: organizationId,
-    //       billing_cycle: billingCycle,
-    //     },
-    //   }),
-    // });
+    let authorizationUrl: string;
+    let message: string;
 
-    // For placeholder, return mock authorization URL
-    const mockAuthorizationUrl = `https://checkout.paystack.com/mock/${reference}`;
+    if (isLiveMode) {
+      // LIVE MODE: Call actual Paystack API
+      console.log("Initializing Paystack payment (live mode)");
+      const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${paystackSecretKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          amount: amount * 100, // Paystack uses smallest currency unit
+          currency,
+          reference,
+          channels: paymentMethod === "mobile_money" ? ["mobile_money"] : ["card"],
+          metadata: {
+            plan_id: planId,
+            organization_id: organizationId,
+            billing_cycle: billingCycle,
+          },
+        }),
+      });
+
+      const paystackData = await paystackResponse.json();
+      
+      if (!paystackData.status) {
+        console.error("Paystack error:", paystackData);
+        return new Response(
+          JSON.stringify({ error: paystackData.message || "Payment initialization failed" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      authorizationUrl = paystackData.data.authorization_url;
+      message = "Payment initialized successfully";
+    } else {
+      // PLACEHOLDER MODE: Return mock URL
+      console.log("Initializing Paystack payment (placeholder mode)");
+      authorizationUrl = `https://checkout.paystack.com/mock/${reference}`;
+      message = "PLACEHOLDER MODE: Add PAYSTACK_SECRET_KEY to enable live payments";
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         data: {
           reference,
-          authorization_url: mockAuthorizationUrl,
+          authorization_url: authorizationUrl,
           transaction_id: transaction.id,
         },
-        message: "PLACEHOLDER: Paystack integration pending. Payment simulated.",
+        message,
+        isPlaceholder: !isLiveMode,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
