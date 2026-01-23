@@ -1569,6 +1569,45 @@ export type Database = {
           },
         ]
       }
+      phi_access_logs: {
+        Row: {
+          accessed_at: string
+          action: string
+          id: string
+          ip_address: string | null
+          location_id: string | null
+          organization_id: string
+          resource_id: string
+          resource_type: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accessed_at?: string
+          action: string
+          id?: string
+          ip_address?: string | null
+          location_id?: string | null
+          organization_id: string
+          resource_id: string
+          resource_type: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accessed_at?: string
+          action?: string
+          id?: string
+          ip_address?: string | null
+          location_id?: string | null
+          organization_id?: string
+          resource_id?: string
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_metrics: {
         Row: {
           created_at: string
