@@ -14,3 +14,18 @@ verify_jwt = false
 
 [functions.create-test-users]
 verify_jwt = false
+
+[functions.ai-demand-forecast]
+verify_jwt = true
+
+[functions.ai-dynamic-pricing]
+verify_jwt = true
+
+[functions.ai-customer-insights]
+verify_jwt = true
+
+[functions.ai-maintenance-predictor]
+verify_jwt = true
+
+[functions.ai-pharmacy-adherence]
+verify_jwt = true

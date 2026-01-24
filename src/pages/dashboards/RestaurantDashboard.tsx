@@ -10,6 +10,8 @@ import { DashboardSkeleton } from '@/components/ui/dashboard-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DemandForecastPanel } from '@/components/ai/DemandForecastPanel';
+import { CustomerInsightsPanel } from '@/components/ai/CustomerInsightsPanel';
 import { 
   UtensilsCrossed, 
   ChefHat, 
@@ -352,6 +354,12 @@ export default function RestaurantDashboard() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* AI Insights */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <DemandForecastPanel vertical="restaurant" />
+        <CustomerInsightsPanel vertical="restaurant" />
       </div>
 
       {/* Quick Actions */}

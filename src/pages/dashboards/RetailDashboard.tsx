@@ -10,6 +10,8 @@ import { DashboardSkeleton } from '@/components/ui/dashboard-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { CustomerInsightsPanel } from '@/components/ai/CustomerInsightsPanel';
+import { AIInsightsPanel } from '@/components/ai/AIInsightsPanel';
 import {
   ShoppingCart,
   Package,
@@ -453,6 +455,12 @@ export default function RetailDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* AI Insights */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <CustomerInsightsPanel vertical="retail" />
+        <AIInsightsPanel type="sales_forecast" title="Sales Forecast" />
+      </div>
 
       {/* Quick Actions */}
       <Card className="border-border/50 bg-card/50 backdrop-blur">
