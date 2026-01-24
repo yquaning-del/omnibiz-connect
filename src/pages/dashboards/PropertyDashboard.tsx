@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { DynamicPricingPanel } from '@/components/ai/DynamicPricingPanel';
+import { MaintenancePredictorPanel } from '@/components/ai/MaintenancePredictorPanel';
 import { 
   Building2, 
   Users, 
@@ -398,6 +400,12 @@ export default function PropertyDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* AI Insights */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <DynamicPricingPanel vertical="property" />
+        <MaintenancePredictorPanel vertical="property" />
+      </div>
     </div>
   );
 }

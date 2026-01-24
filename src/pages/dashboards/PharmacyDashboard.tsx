@@ -10,6 +10,7 @@ import { DashboardSkeleton } from '@/components/ui/dashboard-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { AdherencePanel } from '@/components/ai/AdherencePanel';
 import {
   Pill,
   FileText,
@@ -399,6 +400,9 @@ export default function PharmacyDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* AI Adherence Insights */}
+      <AdherencePanel />
 
       {/* Quick Actions */}
       <Card className="border-border/50 bg-card/50 backdrop-blur">

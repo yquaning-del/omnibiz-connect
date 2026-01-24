@@ -10,6 +10,9 @@ import { DashboardSkeleton } from '@/components/ui/dashboard-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DemandForecastPanel } from '@/components/ai/DemandForecastPanel';
+import { DynamicPricingPanel } from '@/components/ai/DynamicPricingPanel';
+import { MaintenancePredictorPanel } from '@/components/ai/MaintenancePredictorPanel';
 import {
   Building2,
   BedDouble,
@@ -446,6 +449,13 @@ export default function HotelDashboard() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* AI Insights */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        <DemandForecastPanel vertical="hotel" />
+        <DynamicPricingPanel vertical="hotel" />
+        <MaintenancePredictorPanel vertical="hotel" />
       </div>
     </div>
   );
