@@ -123,7 +123,7 @@ export function LeaseWizard({
         state: selectedUnit.state || prev.state || '',
         city: selectedUnit.city || prev.city || '',
         address: selectedUnit.address || prev.address || '',
-        monthlyRent: selectedUnit.base_rent?.toString() || prev.monthlyRent,
+        monthlyRent: selectedUnit.monthly_rent?.toString() || prev.monthlyRent,
       }));
     }
   }, [formData.unitId, units]);
@@ -132,7 +132,7 @@ export function LeaseWizard({
     if (!currentOrganization?.id) return;
     const { data } = await (supabase as any)
       .from('property_units')
-      .select('id, unit_number, address, city, state, country, unit_type, bedrooms, bathrooms, square_feet, base_rent')
+      .select('id, unit_number, address, city, state, country, unit_type, bedrooms, bathrooms, square_footage, monthly_rent')
       .eq('organization_id', currentOrganization.id)
       .eq('status', 'available');
     setUnits(data || []);
@@ -298,8 +298,8 @@ export function LeaseWizard({
                             {unit.country && <Badge variant="secondary">{unit.country}</Badge>}
                           </div>
                         </div>
-                        {unit.base_rent && (
-                          <p className="text-lg font-semibold text-property">${unit.base_rent}/mo</p>
+                        {unit.monthly_rent && (
+                          <p className="text-lg font-semibold text-property">${unit.monthly_rent}/mo</p>
                         )}
                       </div>
                     </CardContent>
