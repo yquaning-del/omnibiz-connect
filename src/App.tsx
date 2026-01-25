@@ -70,6 +70,8 @@ import TenantLeaseDetails from "./pages/tenant/TenantLeaseDetails";
 import TenantPayments from "./pages/tenant/TenantPayments";
 import TenantMaintenance from "./pages/tenant/TenantMaintenance";
 import TenantProfile from "./pages/tenant/TenantProfile";
+// Staff Portal
+import AcceptStaffInvite from "./pages/staff/AcceptStaffInvite";
 
 const queryClient = new QueryClient();
 
@@ -143,6 +145,9 @@ const App = () => (
                 <Route path="/admin/support" element={<AdminSupport />} />
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+
+                {/* Staff Invitation Route */}
+                <Route path="/staff/accept-invite/:token" element={<AcceptStaffInvite />} />
 
                 {/* Tenant Portal Routes */}
                 <Route path="/tenant/auth" element={<TenantAuth />} />
