@@ -21,6 +21,7 @@ interface AuthContextType {
   hasRole: (role: string) => boolean;
   isOrgAdmin: boolean;
   isSuperAdmin: boolean;
+  isTenant: boolean;
   refreshUserData: () => Promise<void>;
 }
 
@@ -215,6 +216,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isOrgAdmin = hasRole('org_admin') || hasRole('super_admin');
   const isSuperAdmin = hasRole('super_admin');
+  const isTenant = hasRole('tenant');
 
   const refreshUserData = async () => {
     if (user) {
@@ -242,6 +244,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hasRole,
         isOrgAdmin,
         isSuperAdmin,
+        isTenant,
         refreshUserData,
       }}
     >
