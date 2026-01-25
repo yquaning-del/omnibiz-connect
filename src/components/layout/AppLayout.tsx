@@ -108,7 +108,7 @@ function AppLayoutContent() {
 }
 
 export function AppLayout() {
-  const { user, loading, organizations } = useAuth();
+  const { user, loading, roles } = useAuth();
 
   if (loading) {
     return (
@@ -122,8 +122,8 @@ export function AppLayout() {
     return <Navigate to="/auth" replace />;
   }
 
-  // If user has no organizations, redirect to onboarding
-  if (organizations.length === 0 && !loading) {
+  // If user has no roles, redirect to onboarding (roles are more reliable than organizations)
+  if (roles.length === 0 && !loading) {
     return <Navigate to="/onboarding" replace />;
   }
 
