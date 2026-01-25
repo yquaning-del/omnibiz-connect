@@ -73,7 +73,7 @@ const verticals = [
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { user, loading, organizations } = useAuth();
+  const { user, loading, refreshUserData } = useAuth();
   const { toast } = useToast();
   
   const [step, setStep] = useState(1);
@@ -321,10 +321,11 @@ export default function Onboarding() {
           : 'Your business has been created. Redirecting to dashboard...',
       });
 
-      // Brief delay then navigate
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+      // Force refresh auth state to populate organizations/roles before navigating
+      await refreshUserData();
+
+      // Navigate to dashboard
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Onboarding error:', error);
       toast({
