@@ -29,3 +29,6 @@ verify_jwt = true
 
 [functions.ai-pharmacy-adherence]
 verify_jwt = true
+
+[functions.ai-lease-generator]
+verify_jwt = false

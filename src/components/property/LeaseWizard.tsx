@@ -19,8 +19,13 @@ import {
   Calendar, 
   CheckCircle2,
   ArrowLeft,
-  ArrowRight 
+  ArrowRight,
+  MapPin,
+  Sparkles
 } from 'lucide-react';
+import { LocationConfirmStep } from './LocationConfirmStep';
+import { LeaseGenerationStep, LeaseClausesData } from './LeaseGenerationStep';
+import { isLocationValid } from '@/lib/leaseLocations';
 
 interface LeaseWizardProps {
   open: boolean;
@@ -42,13 +47,20 @@ interface LeaseFormData {
   lateFeeAmount: string;
   gracePeriodDays: string;
   specialTerms: string;
+  // Location fields
+  country: string;
+  state: string;
+  city: string;
+  address: string;
 }
 
 const STEPS = [
   { id: 'unit', title: 'Select Unit', icon: Home },
+  { id: 'location', title: 'Confirm Location', icon: MapPin },
   { id: 'tenant', title: 'Select Tenant', icon: User },
   { id: 'terms', title: 'Lease Terms', icon: Calendar },
   { id: 'payment', title: 'Payment Details', icon: DollarSign },
+  { id: 'generate', title: 'Generate Lease', icon: Sparkles },
   { id: 'review', title: 'Review & Create', icon: CheckCircle2 },
 ];
 
@@ -64,6 +76,9 @@ export function LeaseWizard({
   const [loading, setLoading] = useState(false);
   const [units, setUnits] = useState<any[]>([]);
   const [tenants, setTenants] = useState<any[]>([]);
+  const [generatedClauses, setGeneratedClauses] = useState<LeaseClausesData | null>(null);
+  const [templateSource, setTemplateSource] = useState<string>('');
+  
   const [formData, setFormData] = useState<LeaseFormData>({
     unitId: preselectedUnit?.id || '',
     tenantId: preselectedTenant?.id || '',
@@ -76,6 +91,10 @@ export function LeaseWizard({
     lateFeeAmount: '50',
     gracePeriodDays: '5',
     specialTerms: '',
+    country: 'US',
+    state: '',
+    city: '',
+    address: '',
   });
 
   useEffect(() => {
@@ -94,11 +113,26 @@ export function LeaseWizard({
     }
   }, [preselectedUnit, preselectedTenant]);
 
+  // When unit is selected, auto-fill location from unit
+  useEffect(() => {
+    const selectedUnit = units.find(u => u.id === formData.unitId);
+    if (selectedUnit) {
+      setFormData(prev => ({
+        ...prev,
+        country: selectedUnit.country || prev.country || 'US',
+        state: selectedUnit.state || prev.state || '',
+        city: selectedUnit.city || prev.city || '',
+        address: selectedUnit.address || prev.address || '',
+        monthlyRent: selectedUnit.base_rent?.toString() || prev.monthlyRent,
+      }));
+    }
+  }, [formData.unitId, units]);
+
   const fetchUnits = async () => {
     if (!currentOrganization?.id) return;
     const { data } = await (supabase as any)
       .from('property_units')
-      .select('id, unit_number, address, unit_type, bedrooms, bathrooms, square_feet, base_rent')
+      .select('id, unit_number, address, city, state, country, unit_type, bedrooms, bathrooms, square_feet, base_rent')
       .eq('organization_id', currentOrganization.id)
       .eq('status', 'available');
     setUnits(data || []);
@@ -116,6 +150,10 @@ export function LeaseWizard({
 
   const updateFormData = (field: keyof LeaseFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const updateLocationData = (updates: Partial<{ country: string; state: string; city: string; address: string }>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
   };
 
   const generateLeaseNumber = () => {
@@ -149,6 +187,12 @@ export function LeaseWizard({
           grace_period_days: parseInt(formData.gracePeriodDays),
           special_terms: formData.specialTerms || null,
           status: 'active',
+          // New location fields
+          country: formData.country,
+          state: formData.state || null,
+          city: formData.city || null,
+          template_source: templateSource || null,
+          lease_document: generatedClauses || null,
         });
 
       if (error) throw error;
@@ -164,20 +208,7 @@ export function LeaseWizard({
       onSuccess?.();
       
       // Reset form
-      setCurrentStep(0);
-      setFormData({
-        unitId: '',
-        tenantId: '',
-        leaseType: 'fixed',
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        monthlyRent: '',
-        securityDeposit: '',
-        paymentDueDay: '1',
-        lateFeeAmount: '50',
-        gracePeriodDays: '5',
-        specialTerms: '',
-      });
+      resetForm();
     } catch (error) {
       console.error('Error creating lease:', error);
       toast.error('Failed to create lease');
@@ -186,19 +217,49 @@ export function LeaseWizard({
     }
   };
 
+  const resetForm = () => {
+    setCurrentStep(0);
+    setGeneratedClauses(null);
+    setTemplateSource('');
+    setFormData({
+      unitId: '',
+      tenantId: '',
+      leaseType: 'fixed',
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      monthlyRent: '',
+      securityDeposit: '',
+      paymentDueDay: '1',
+      lateFeeAmount: '50',
+      gracePeriodDays: '5',
+      specialTerms: '',
+      country: 'US',
+      state: '',
+      city: '',
+      address: '',
+    });
+  };
+
   const canProceed = () => {
     switch (currentStep) {
       case 0: return !!formData.unitId;
-      case 1: return !!formData.tenantId;
-      case 2: return !!formData.startDate && (formData.leaseType === 'month-to-month' || !!formData.endDate);
-      case 3: return !!formData.monthlyRent && !!formData.securityDeposit;
-      case 4: return true;
+      case 1: return isLocationValid(formData.country, formData.state, formData.city);
+      case 2: return !!formData.tenantId;
+      case 3: return !!formData.startDate && (formData.leaseType === 'month-to-month' || !!formData.endDate);
+      case 4: return !!formData.monthlyRent && !!formData.securityDeposit;
+      case 5: return !!generatedClauses;
+      case 6: return true;
       default: return false;
     }
   };
 
   const selectedUnit = units.find(u => u.id === formData.unitId);
   const selectedTenant = tenants.find(t => t.id === formData.tenantId);
+
+  const handleClausesGenerated = (clauses: LeaseClausesData, source: string) => {
+    setGeneratedClauses(clauses);
+    setTemplateSource(source);
+  };
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -224,22 +285,17 @@ export function LeaseWizard({
                         ? 'border-property ring-2 ring-property/20' 
                         : 'hover:border-property/50'
                     }`}
-                    onClick={() => {
-                      updateFormData('unitId', unit.id);
-                      if (unit.base_rent) {
-                        updateFormData('monthlyRent', unit.base_rent.toString());
-                      }
-                    }}
+                    onClick={() => updateFormData('unitId', unit.id)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">Unit {unit.unit_number}</p>
-                          <p className="text-sm text-muted-foreground">{unit.address}</p>
+                          <p className="text-sm text-muted-foreground">{unit.address || 'No address'}</p>
                           <div className="flex gap-2 mt-1">
                             <Badge variant="outline">{unit.unit_type}</Badge>
                             {unit.bedrooms && <Badge variant="secondary">{unit.bedrooms} BR</Badge>}
-                            {unit.square_feet && <Badge variant="secondary">{unit.square_feet} sqft</Badge>}
+                            {unit.country && <Badge variant="secondary">{unit.country}</Badge>}
                           </div>
                         </div>
                         {unit.base_rent && (
@@ -255,6 +311,20 @@ export function LeaseWizard({
         );
 
       case 1:
+        return (
+          <LocationConfirmStep
+            formData={{
+              country: formData.country,
+              state: formData.state,
+              city: formData.city,
+              address: formData.address,
+            }}
+            unitDetails={selectedUnit}
+            onFormDataChange={updateLocationData}
+          />
+        );
+
+      case 2:
         return (
           <div className="space-y-4">
             <p className="text-muted-foreground">Select a tenant for this lease</p>
@@ -296,7 +366,7 @@ export function LeaseWizard({
           </div>
         );
 
-      case 2:
+      case 3:
         return (
           <div className="space-y-4">
             <div className="space-y-2">
@@ -305,7 +375,7 @@ export function LeaseWizard({
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background">
                   <SelectItem value="fixed">Fixed Term</SelectItem>
                   <SelectItem value="month-to-month">Month-to-Month</SelectItem>
                 </SelectContent>
@@ -347,7 +417,7 @@ export function LeaseWizard({
           </div>
         );
 
-      case 3:
+      case 4:
         return (
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -378,7 +448,7 @@ export function LeaseWizard({
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background max-h-[200px]">
                     {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
                       <SelectItem key={day} value={day.toString()}>
                         {day}{day === 1 ? 'st' : day === 2 ? 'nd' : day === 3 ? 'rd' : 'th'}
@@ -409,7 +479,19 @@ export function LeaseWizard({
           </div>
         );
 
-      case 4:
+      case 5:
+        return (
+          <LeaseGenerationStep
+            formData={formData}
+            unitDetails={selectedUnit}
+            tenantName={selectedTenant ? `${selectedTenant.first_name} ${selectedTenant.last_name}` : undefined}
+            generatedClauses={generatedClauses}
+            onClausesGenerated={handleClausesGenerated}
+            onClausesUpdate={setGeneratedClauses}
+          />
+        );
+
+      case 6:
         return (
           <div className="space-y-4">
             <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
@@ -417,7 +499,10 @@ export function LeaseWizard({
                 <Home className="h-5 w-5 text-property mt-0.5" />
                 <div>
                   <p className="font-medium">Unit {selectedUnit?.unit_number}</p>
-                  <p className="text-sm text-muted-foreground">{selectedUnit?.address}</p>
+                  <p className="text-sm text-muted-foreground">{formData.address || selectedUnit?.address}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {[formData.city, formData.state, formData.country].filter(Boolean).join(', ')}
+                  </p>
                 </div>
               </div>
               
@@ -450,6 +535,18 @@ export function LeaseWizard({
                 </div>
               </div>
 
+              {templateSource && (
+                <div className="flex items-start gap-3">
+                  <FileText className="h-5 w-5 text-property mt-0.5" />
+                  <div>
+                    <p className="font-medium">Lease Template</p>
+                    <p className="text-sm text-muted-foreground">
+                      Using {templateSource} jurisdiction template
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {formData.specialTerms && (
                 <div className="flex items-start gap-3">
                   <FileText className="h-5 w-5 text-property mt-0.5" />
@@ -468,6 +565,8 @@ export function LeaseWizard({
     }
   };
 
+  const progressPercent = ((currentStep + 1) / STEPS.length) * 100;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -478,27 +577,34 @@ export function LeaseWizard({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Progress Indicator */}
-        <div className="space-y-4">
-          <Progress value={(currentStep / (STEPS.length - 1)) * 100} className="h-2" />
-          <div className="flex justify-between">
+        {/* Progress */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Step {currentStep + 1} of {STEPS.length}</span>
+            <span className="font-medium">{STEPS[currentStep].title}</span>
+          </div>
+          <Progress value={progressPercent} className="h-2" />
+          
+          {/* Step indicators */}
+          <div className="flex justify-between mt-2">
             {STEPS.map((step, index) => {
               const Icon = step.icon;
               return (
                 <div 
                   key={step.id}
-                  className={`flex flex-col items-center gap-1 ${
+                  className={`flex flex-col items-center ${
                     index <= currentStep ? 'text-property' : 'text-muted-foreground'
                   }`}
                 >
-                  <div className={`p-2 rounded-full ${
-                    index < currentStep ? 'bg-property text-property-foreground' :
-                    index === currentStep ? 'bg-property/20 text-property' :
-                    'bg-muted'
+                  <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                    index < currentStep 
+                      ? 'bg-property text-white' 
+                      : index === currentStep 
+                      ? 'bg-property/20 text-property border-2 border-property' 
+                      : 'bg-muted'
                   }`}>
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className="text-xs hidden sm:block">{step.title}</span>
                 </div>
               );
             })}
@@ -506,8 +612,7 @@ export function LeaseWizard({
         </div>
 
         {/* Step Content */}
-        <div className="py-4">
-          <h3 className="text-lg font-semibold mb-4">{STEPS[currentStep].title}</h3>
+        <div className="py-4 min-h-[300px]">
           {renderStepContent()}
         </div>
 
@@ -515,7 +620,7 @@ export function LeaseWizard({
         <div className="flex justify-between pt-4 border-t">
           <Button
             variant="outline"
-            onClick={() => setCurrentStep(prev => prev - 1)}
+            onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
             disabled={currentStep === 0}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -533,11 +638,9 @@ export function LeaseWizard({
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={loading}
-              className="bg-property hover:bg-property/90"
+              disabled={loading || !canProceed()}
             >
               {loading ? 'Creating...' : 'Create Lease'}
-              <CheckCircle2 className="h-4 w-4 ml-2" />
             </Button>
           )}
         </div>
