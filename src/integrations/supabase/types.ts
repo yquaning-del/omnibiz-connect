@@ -1009,13 +1009,66 @@ export type Database = {
           },
         ]
       }
+      lease_templates: {
+        Row: {
+          city: string | null
+          country: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          organization_id: string | null
+          required_clauses: string[] | null
+          state: string | null
+          template_content: Json
+          template_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string | null
+          country: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          organization_id?: string | null
+          required_clauses?: string[] | null
+          state?: string | null
+          template_content?: Json
+          template_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          organization_id?: string | null
+          required_clauses?: string[] | null
+          state?: string | null
+          template_content?: Json
+          template_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leases: {
         Row: {
+          city: string | null
+          country: string | null
           created_at: string
           end_date: string | null
           grace_period_days: number | null
           id: string
           late_fee_amount: number | null
+          lease_document: Json | null
           lease_type: string
           monthly_rent: number
           organization_id: string
@@ -1023,17 +1076,22 @@ export type Database = {
           security_deposit: number | null
           special_terms: string | null
           start_date: string
+          state: string | null
           status: string
+          template_source: string | null
           tenant_id: string | null
           unit_id: string | null
           updated_at: string
         }
         Insert: {
+          city?: string | null
+          country?: string | null
           created_at?: string
           end_date?: string | null
           grace_period_days?: number | null
           id?: string
           late_fee_amount?: number | null
+          lease_document?: Json | null
           lease_type?: string
           monthly_rent?: number
           organization_id: string
@@ -1041,17 +1099,22 @@ export type Database = {
           security_deposit?: number | null
           special_terms?: string | null
           start_date: string
+          state?: string | null
           status?: string
+          template_source?: string | null
           tenant_id?: string | null
           unit_id?: string | null
           updated_at?: string
         }
         Update: {
+          city?: string | null
+          country?: string | null
           created_at?: string
           end_date?: string | null
           grace_period_days?: number | null
           id?: string
           late_fee_amount?: number | null
+          lease_document?: Json | null
           lease_type?: string
           monthly_rent?: number
           organization_id?: string
@@ -1059,7 +1122,9 @@ export type Database = {
           security_deposit?: number | null
           special_terms?: string | null
           start_date?: string
+          state?: string | null
           status?: string
+          template_source?: string | null
           tenant_id?: string | null
           unit_id?: string | null
           updated_at?: string
@@ -2055,9 +2120,12 @@ export type Database = {
       }
       property_units: {
         Row: {
+          address: string | null
           amenities: string[] | null
           bathrooms: number
           bedrooms: number
+          city: string | null
+          country: string | null
           created_at: string
           current_tenant_id: string | null
           floor: number | null
@@ -2068,15 +2136,19 @@ export type Database = {
           organization_id: string
           security_deposit: number | null
           square_footage: number | null
+          state: string | null
           status: string
           unit_number: string
           unit_type: string
           updated_at: string
         }
         Insert: {
+          address?: string | null
           amenities?: string[] | null
           bathrooms?: number
           bedrooms?: number
+          city?: string | null
+          country?: string | null
           created_at?: string
           current_tenant_id?: string | null
           floor?: number | null
@@ -2087,15 +2159,19 @@ export type Database = {
           organization_id: string
           security_deposit?: number | null
           square_footage?: number | null
+          state?: string | null
           status?: string
           unit_number: string
           unit_type?: string
           updated_at?: string
         }
         Update: {
+          address?: string | null
           amenities?: string[] | null
           bathrooms?: number
           bedrooms?: number
+          city?: string | null
+          country?: string | null
           created_at?: string
           current_tenant_id?: string | null
           floor?: number | null
@@ -2106,6 +2182,7 @@ export type Database = {
           organization_id?: string
           security_deposit?: number | null
           square_footage?: number | null
+          state?: string | null
           status?: string
           unit_number?: string
           unit_type?: string

@@ -31,9 +31,11 @@ import {
   SquareIcon,
   DollarSign,
   Users,
-  Filter
+  Filter,
+  MapPin
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
+import { LEASE_COUNTRIES, getStatesForCountry, getCitiesForCountry } from '@/lib/leaseLocations';
 
 interface PropertyUnit {
   id: string;
@@ -81,7 +83,16 @@ export default function Units() {
     monthly_rent: '',
     security_deposit: '',
     notes: '',
+    // Location fields
+    address: '',
+    city: '',
+    state: '',
+    country: 'US',
   });
+
+  const states = getStatesForCountry(formData.country);
+  const cities = getCitiesForCountry(formData.country);
+  const selectedCountry = LEASE_COUNTRIES.find(c => c.code === formData.country);
 
   useEffect(() => {
     if (currentOrganization?.id) {
@@ -134,6 +145,11 @@ export default function Units() {
           security_deposit: parseFloat(formData.security_deposit) || 0,
           notes: formData.notes || null,
           status: 'available',
+          // Location fields
+          address: formData.address || null,
+          city: formData.city || null,
+          state: formData.state || null,
+          country: formData.country || 'US',
         });
 
       if (error) throw error;
@@ -154,6 +170,10 @@ export default function Units() {
         monthly_rent: '',
         security_deposit: '',
         notes: '',
+        address: '',
+        city: '',
+        state: '',
+        country: 'US',
       });
       fetchUnits();
     } catch (error: any) {
@@ -300,6 +320,97 @@ export default function Units() {
                   onChange={(e) => setFormData({ ...formData, square_footage: e.target.value })}
                   placeholder="e.g., 750"
                 />
+              </div>
+
+              {/* Location Section */}
+              <div className="border-t pt-4 mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="h-4 w-4 text-property" />
+                  <Label className="font-medium">Unit Location</Label>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      placeholder="123 Main Street, Apt 101"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="country">Country</Label>
+                      <Select 
+                        value={formData.country} 
+                        onValueChange={(v) => setFormData({ ...formData, country: v, state: '', city: '' })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background">
+                          {LEASE_COUNTRIES.map((country) => (
+                            <SelectItem key={country.code} value={country.code}>
+                              {country.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {selectedCountry?.requiresState && states.length > 0 ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="state">{formData.country === 'CA' ? 'Province' : 'State'}</Label>
+                        <Select 
+                          value={formData.state} 
+                          onValueChange={(v) => setFormData({ ...formData, state: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background max-h-[200px]">
+                            {states.map((state) => (
+                              <SelectItem key={state.code} value={state.code}>
+                                {state.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : selectedCountry?.requiresCity && cities.length > 0 ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City</Label>
+                        <Select 
+                          value={formData.city} 
+                          onValueChange={(v) => setFormData({ ...formData, city: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background max-h-[200px]">
+                            {cities.map((city) => (
+                              <SelectItem key={city.name} value={city.name}>
+                                {city.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City</Label>
+                        <Input
+                          id="city"
+                          value={formData.city}
+                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                          placeholder="City name"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
