@@ -12,10 +12,35 @@ serve(async (req) => {
   }
 
   try {
-    const { vertical, organizationId, locationId } = await req.json();
-    console.log(`AI Maintenance Predictor: ${vertical} for org ${organizationId}`);
+    // Validate JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claims, error: claimsError } = await supabase.auth.getUser(token);
+    if (claimsError || !claims?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { vertical, organizationId, locationId } = await req.json();
+    console.log(`AI Maintenance Predictor: ${vertical} for org ${organizationId}, user ${claims.user.id}`);
+
+    // Use service role for data queries
+    const adminSupabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
@@ -24,7 +49,7 @@ serve(async (req) => {
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
     // Fetch maintenance history
-    const { data: maintenanceData } = await supabase
+    const { data: maintenanceData } = await adminSupabase
       .from("maintenance_requests")
       .select("id, title, category, priority, status, created_at, completed_at, actual_cost, room_id")
       .eq("location_id", locationId)

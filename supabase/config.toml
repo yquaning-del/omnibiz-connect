@@ -1,13 +1,13 @@
 project_id = "kjkmoxoossrtvxlywhro"
 
 [functions.ai-insights]
-verify_jwt = true
+verify_jwt = false
 
 [functions.drug-interactions]
-verify_jwt = true
+verify_jwt = false
 
 [functions.paystack-payment]
-verify_jwt = true
+verify_jwt = false
 
 [functions.paystack-webhook]
 verify_jwt = false
@@ -16,22 +16,22 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.ai-demand-forecast]
-verify_jwt = true
+verify_jwt = false
 
 [functions.ai-dynamic-pricing]
-verify_jwt = true
+verify_jwt = false
 
 [functions.ai-customer-insights]
-verify_jwt = true
+verify_jwt = false
 
 [functions.ai-maintenance-predictor]
-verify_jwt = true
+verify_jwt = false
 
 [functions.ai-pharmacy-adherence]
-verify_jwt = true
+verify_jwt = false
 
 [functions.ai-lease-generator]
 verify_jwt = false
 
 [functions.send-lease-invitation]
-verify_jwt = true
+verify_jwt = false
