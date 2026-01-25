@@ -12,10 +12,35 @@ serve(async (req) => {
   }
 
   try {
-    const { vertical, organizationId, locationId } = await req.json();
-    console.log(`AI Dynamic Pricing: ${vertical} for org ${organizationId}`);
+    // Validate JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claims, error: claimsError } = await supabase.auth.getUser(token);
+    if (claimsError || !claims?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { vertical, organizationId, locationId } = await req.json();
+    console.log(`AI Dynamic Pricing: ${vertical} for org ${organizationId}, user ${claims.user.id}`);
+
+    // Use service role for data queries
+    const adminSupabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
@@ -27,18 +52,18 @@ serve(async (req) => {
     if (vertical === "hotel") {
       // Get current room inventory and rates
       const [roomsRes, reservationsRes, historicalRes] = await Promise.all([
-        supabase
+        adminSupabase
           .from("hotel_rooms")
           .select("id, room_number, room_type, base_rate, status")
           .eq("location_id", locationId),
-        supabase
+        adminSupabase
           .from("reservations")
           .select("room_id, check_in, check_out, status")
           .eq("location_id", locationId)
           .eq("reservation_type", "room")
           .gte("check_in", today)
           .lte("check_in", nextWeek),
-        supabase
+        adminSupabase
           .from("guest_folios")
           .select("total_amount, room_charges, created_at")
           .eq("location_id", locationId)
@@ -86,11 +111,11 @@ serve(async (req) => {
     } else if (vertical === "property") {
       // Get property units and lease data
       const [unitsRes, leasesRes] = await Promise.all([
-        (supabase as any)
+        adminSupabase
           .from("property_units")
           .select("id, unit_number, unit_type, bedrooms, bathrooms, monthly_rent, status")
           .eq("organization_id", organizationId),
-        (supabase as any)
+        adminSupabase
           .from("leases")
           .select("monthly_rent, start_date, end_date, status")
           .eq("organization_id", organizationId)
