@@ -3027,6 +3027,7 @@ export type Database = {
         | "staff"
         | "pharmacist"
         | "front_desk"
+        | "tenant"
       business_vertical:
         | "restaurant"
         | "hotel"
@@ -3168,6 +3169,7 @@ export const Constants = {
         "staff",
         "pharmacist",
         "front_desk",
+        "tenant",
       ],
       business_vertical: [
         "restaurant",
