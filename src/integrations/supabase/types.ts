@@ -1009,6 +1009,85 @@ export type Database = {
           },
         ]
       }
+      leases: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          grace_period_days: number | null
+          id: string
+          late_fee_amount: number | null
+          lease_type: string
+          monthly_rent: number
+          organization_id: string
+          payment_due_day: number | null
+          security_deposit: number | null
+          special_terms: string | null
+          start_date: string
+          status: string
+          tenant_id: string | null
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          grace_period_days?: number | null
+          id?: string
+          late_fee_amount?: number | null
+          lease_type?: string
+          monthly_rent?: number
+          organization_id: string
+          payment_due_day?: number | null
+          security_deposit?: number | null
+          special_terms?: string | null
+          start_date: string
+          status?: string
+          tenant_id?: string | null
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          grace_period_days?: number | null
+          id?: string
+          late_fee_amount?: number | null
+          lease_type?: string
+          monthly_rent?: number
+          organization_id?: string
+          payment_due_day?: number | null
+          security_deposit?: number | null
+          special_terms?: string | null
+          start_date?: string
+          status?: string
+          tenant_id?: string | null
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leases_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leases_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leases_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "property_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           address: string | null
@@ -2049,6 +2128,73 @@ export type Database = {
           },
         ]
       }
+      rent_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string | null
+          id: string
+          late_fee: number | null
+          lease_id: string | null
+          notes: string | null
+          organization_id: string
+          payment_date: string
+          payment_method: string | null
+          status: string
+          tenant_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          late_fee?: number | null
+          lease_id?: string | null
+          notes?: string | null
+          organization_id: string
+          payment_date?: string
+          payment_method?: string | null
+          status?: string
+          tenant_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          late_fee?: number | null
+          lease_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          payment_date?: string
+          payment_method?: string | null
+          status?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rent_payments_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_payments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations: {
         Row: {
           actual_check_in: string | null
@@ -2476,6 +2622,153 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      tenant_applications: {
+        Row: {
+          created_at: string
+          current_address: string | null
+          email: string | null
+          employer: string | null
+          first_name: string
+          id: string
+          last_name: string
+          monthly_income: number | null
+          move_in_date: string | null
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          status: string
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_address?: string | null
+          email?: string | null
+          employer?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          monthly_income?: number | null
+          move_in_date?: string | null
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          status?: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_address?: string | null
+          email?: string | null
+          employer?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          monthly_income?: number | null
+          move_in_date?: string | null
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          status?: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_applications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_applications_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "property_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          created_at: string
+          date_of_birth: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          first_name: string
+          id: string
+          id_number: string | null
+          id_type: string | null
+          last_name: string
+          location_id: string | null
+          move_in_date: string | null
+          move_out_date: string | null
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name: string
+          id?: string
+          id_number?: string | null
+          id_type?: string | null
+          last_name: string
+          location_id?: string | null
+          move_in_date?: string | null
+          move_out_date?: string | null
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name?: string
+          id?: string
+          id_number?: string | null
+          id_type?: string | null
+          last_name?: string
+          location_id?: string | null
+          move_in_date?: string | null
+          move_out_date?: string | null
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenants_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_achievements: {
         Row: {
