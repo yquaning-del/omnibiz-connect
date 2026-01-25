@@ -60,6 +60,16 @@ import PropertyRent from "./pages/property/RentCollection";
 import PropertyApplications from "./pages/property/Applications";
 import PropertyMaintenance from "./pages/property/Maintenance";
 import PropertyReports from "./pages/property/Reports";
+// Tenant Portal
+import { TenantLayout } from "./components/layout/TenantLayout";
+import TenantAuth from "./pages/tenant/TenantAuth";
+import AcceptInvite from "./pages/tenant/AcceptInvite";
+import TenantDashboard from "./pages/tenant/TenantDashboard";
+import TenantLeases from "./pages/tenant/TenantLeases";
+import TenantLeaseDetails from "./pages/tenant/TenantLeaseDetails";
+import TenantPayments from "./pages/tenant/TenantPayments";
+import TenantMaintenance from "./pages/tenant/TenantMaintenance";
+import TenantProfile from "./pages/tenant/TenantProfile";
 
 const queryClient = new QueryClient();
 
@@ -133,6 +143,18 @@ const App = () => (
                 <Route path="/admin/support" element={<AdminSupport />} />
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+
+                {/* Tenant Portal Routes */}
+                <Route path="/tenant/auth" element={<TenantAuth />} />
+                <Route path="/tenant/accept-invite/:token" element={<AcceptInvite />} />
+                <Route element={<TenantLayout />}>
+                  <Route path="/tenant/dashboard" element={<TenantDashboard />} />
+                  <Route path="/tenant/leases" element={<TenantLeases />} />
+                  <Route path="/tenant/leases/:id" element={<TenantLeaseDetails />} />
+                  <Route path="/tenant/payments" element={<TenantPayments />} />
+                  <Route path="/tenant/maintenance" element={<TenantMaintenance />} />
+                  <Route path="/tenant/profile" element={<TenantProfile />} />
+                </Route>
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

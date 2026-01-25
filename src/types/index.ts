@@ -1,6 +1,6 @@
 export type BusinessVertical = 'restaurant' | 'hotel' | 'pharmacy' | 'retail' | 'property';
 
-export type AppRole = 'super_admin' | 'org_admin' | 'location_manager' | 'department_lead' | 'staff';
+export type AppRole = 'super_admin' | 'org_admin' | 'location_manager' | 'department_lead' | 'staff' | 'tenant';
 
 export interface Organization {
   id: string;

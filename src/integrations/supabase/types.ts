@@ -1009,6 +1009,127 @@ export type Database = {
           },
         ]
       }
+      lease_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          lease_id: string | null
+          organization_id: string
+          sent_at: string
+          status: string
+          tenant_id: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          lease_id?: string | null
+          organization_id: string
+          sent_at?: string
+          status?: string
+          tenant_id?: string | null
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          lease_id?: string | null
+          organization_id?: string
+          sent_at?: string
+          status?: string
+          tenant_id?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_invitations_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_invitations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lease_signatures: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          lease_id: string
+          organization_id: string
+          signature_data: Json
+          signed_at: string
+          signer_id: string
+          signer_type: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          lease_id: string
+          organization_id: string
+          signature_data: Json
+          signed_at?: string
+          signer_id: string
+          signer_type: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          lease_id?: string
+          organization_id?: string
+          signature_data?: Json
+          signed_at?: string
+          signer_id?: string
+          signer_type?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_signatures_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_signatures_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lease_templates: {
         Row: {
           city: string | null
@@ -1067,6 +1188,7 @@ export type Database = {
           end_date: string | null
           grace_period_days: number | null
           id: string
+          landlord_signed_at: string | null
           late_fee_amount: number | null
           lease_document: Json | null
           lease_number: string | null
@@ -1075,12 +1197,14 @@ export type Database = {
           organization_id: string
           payment_due_day: number | null
           security_deposit: number | null
+          signed_lease_pdf: string | null
           special_terms: string | null
           start_date: string
           state: string | null
           status: string
           template_source: string | null
           tenant_id: string | null
+          tenant_signed_at: string | null
           unit_id: string | null
           updated_at: string
         }
@@ -1091,6 +1215,7 @@ export type Database = {
           end_date?: string | null
           grace_period_days?: number | null
           id?: string
+          landlord_signed_at?: string | null
           late_fee_amount?: number | null
           lease_document?: Json | null
           lease_number?: string | null
@@ -1099,12 +1224,14 @@ export type Database = {
           organization_id: string
           payment_due_day?: number | null
           security_deposit?: number | null
+          signed_lease_pdf?: string | null
           special_terms?: string | null
           start_date: string
           state?: string | null
           status?: string
           template_source?: string | null
           tenant_id?: string | null
+          tenant_signed_at?: string | null
           unit_id?: string | null
           updated_at?: string
         }
@@ -1115,6 +1242,7 @@ export type Database = {
           end_date?: string | null
           grace_period_days?: number | null
           id?: string
+          landlord_signed_at?: string | null
           late_fee_amount?: number | null
           lease_document?: Json | null
           lease_number?: string | null
@@ -1123,12 +1251,14 @@ export type Database = {
           organization_id?: string
           payment_due_day?: number | null
           security_deposit?: number | null
+          signed_lease_pdf?: string | null
           special_terms?: string | null
           start_date?: string
           state?: string | null
           status?: string
           template_source?: string | null
           tenant_id?: string | null
+          tenant_signed_at?: string | null
           unit_id?: string | null
           updated_at?: string
         }
@@ -1229,6 +1359,7 @@ export type Database = {
           room_id: string | null
           scheduled_date: string | null
           status: string
+          submitted_by_tenant: string | null
           title: string
           updated_at: string
         }
@@ -1248,6 +1379,7 @@ export type Database = {
           room_id?: string | null
           scheduled_date?: string | null
           status?: string
+          submitted_by_tenant?: string | null
           title: string
           updated_at?: string
         }
@@ -1267,6 +1399,7 @@ export type Database = {
           room_id?: string | null
           scheduled_date?: string | null
           status?: string
+          submitted_by_tenant?: string | null
           title?: string
           updated_at?: string
         }
@@ -1283,6 +1416,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "hotel_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_submitted_by_tenant_fkey"
+            columns: ["submitted_by_tenant"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -2792,6 +2932,7 @@ export type Database = {
           phone: string | null
           status: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -2812,6 +2953,7 @@ export type Database = {
           phone?: string | null
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -2832,6 +2974,7 @@ export type Database = {
           phone?: string | null
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -2983,6 +3126,7 @@ export type Database = {
           metric_value: number
         }[]
       }
+      get_tenant_id: { Args: { _user_id: string }; Returns: string }
       get_user_location_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
@@ -3017,6 +3161,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_tenant: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role:
