@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Loader2, Send, CheckCircle } from 'lucide-react';
+import { Mail, Loader2, Send, CheckCircle, Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,6 +36,7 @@ export function InviteTenantButton({
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [email, setEmail] = useState(initialEmail || '');
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
 
   const handleSendInvite = async () => {
     if (!email || !currentOrganization?.id) {
@@ -61,20 +62,28 @@ export function InviteTenantButton({
       if (error) throw error;
 
       setSent(true);
-      toast.success('Invitation sent successfully!');
+      setInviteUrl(data?.inviteUrl || null);
+      toast.success('Invitation created successfully!');
       onInviteSent?.();
-      
-      // Reset after a delay
-      setTimeout(() => {
-        setOpen(false);
-        setSent(false);
-      }, 2000);
     } catch (error) {
       console.error('Error sending invitation:', error);
-      toast.error('Failed to send invitation. Please try again.');
+      toast.error('Failed to create invitation. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopyUrl = async () => {
+    if (inviteUrl) {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success('Invite link copied to clipboard!');
+    }
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setSent(false);
+    setInviteUrl(null);
   };
 
   return (
@@ -88,7 +97,7 @@ export function InviteTenantButton({
         {size === 'icon' ? '' : 'Invite to Sign'}
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -96,17 +105,46 @@ export function InviteTenantButton({
               Invite Tenant to Sign Lease
             </DialogTitle>
             <DialogDescription>
-              Send an email invitation to the tenant to create an account and sign the lease electronically.
+              Create an invitation link for the tenant to sign the lease electronically.
             </DialogDescription>
           </DialogHeader>
 
           {sent ? (
-            <div className="py-8 text-center">
-              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-              <p className="text-lg font-medium">Invitation Sent!</p>
-              <p className="text-muted-foreground mt-1">
-                {tenantName || 'The tenant'} will receive an email with instructions to sign the lease.
-              </p>
+            <div className="py-4 space-y-4">
+              <div className="text-center">
+                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                <p className="text-lg font-medium">Invitation Created!</p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  Share this link with {tenantName || 'the tenant'} to sign the lease.
+                </p>
+              </div>
+
+              {inviteUrl && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={inviteUrl}
+                      readOnly
+                      className="text-xs bg-muted"
+                    />
+                    <Button variant="outline" size="icon" onClick={handleCopyUrl}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" asChild>
+                      <a href={inviteUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    This link expires in 7 days. The tenant will need to create an account to sign.
+                  </p>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button onClick={handleClose} className="w-full">Done</Button>
+              </DialogFooter>
             </div>
           ) : (
             <>
@@ -131,7 +169,7 @@ export function InviteTenantButton({
                     onChange={(e) => setEmail(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    The tenant will receive an invitation to create an account and sign the lease.
+                    The tenant will use this email to create an account and sign the lease.
                   </p>
                 </div>
 
@@ -149,7 +187,7 @@ export function InviteTenantButton({
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
+                <Button variant="outline" onClick={handleClose}>
                   Cancel
                 </Button>
                 <Button onClick={handleSendInvite} disabled={loading || !email}>
@@ -158,7 +196,7 @@ export function InviteTenantButton({
                   ) : (
                     <Send className="h-4 w-4 mr-2" />
                   )}
-                  Send Invitation
+                  Create Invitation
                 </Button>
               </DialogFooter>
             </>
