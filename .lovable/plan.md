@@ -1,314 +1,240 @@
 
-# Module-Specific Roles and Permissions System
 
-## Problem Analysis
+# Staff Roles & Permissions Enhancement Plan
 
-The current permissions system has these limitations:
-1. **Generic roles** - Roles like "staff" or "location_manager" are the same across all verticals
-2. **No granular control** - Admins cannot specify which exact pages/features a user can access
-3. **Property Module mismatch** - The Property vertical has specific features (Units, Tenants, Leases, Rent Collection, Maintenance) but the role permissions don't reflect this
-4. **No admin UI for customization** - There's no way to click/toggle specific permissions
+## Assessment Summary
 
----
-
-## Solution Overview
-
-Create a **module-specific, checkbox-based permission system** where admins can:
-1. See permissions grouped by the current module (vertical)
-2. Toggle individual feature access for each staff member
-3. Store granular permissions in the database
-4. Enforce permissions at runtime (navigation + API level)
+The current system is **functional and well-structured** with module-specific permissions for all 5 verticals. Each business module (Property, Restaurant, Hotel, Pharmacy, Retail) has its own permission set, and admins can customize individual staff access via checkboxes.
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│                    Staff Permissions                          │
-├──────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │ User: John Smith (location_manager)                      │ │
-│  └─────────────────────────────────────────────────────────┘ │
-│                                                              │
-│  Property Module Permissions:                                │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │ ☑ Dashboard          ☑ Units           ☑ Tenants       │ │
-│  │ ☑ Leases             ☐ Rent Collection ☐ Applications  │ │
-│  │ ☐ Maintenance        ☐ Reports                          │ │
-│  └─────────────────────────────────────────────────────────┘ │
-│                                                              │
-│  Management Permissions:                                     │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │ ☐ Staff Management   ☐ Settings       ☐ Billing        │ │
-│  └─────────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     CURRENT PERMISSION ARCHITECTURE                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                    │
+│   │ AppRole     │    │ Vertical    │    │ user_       │                    │
+│   │ (hierarchy) │ +  │ Permissions │ +  │ permissions │ = Final Access     │
+│   │             │    │ (defaults)  │    │ (overrides) │                    │
+│   └─────────────┘    └─────────────┘    └─────────────┘                    │
+│                                                                             │
+│   Roles: super_admin > org_admin > location_manager > department_lead > staff│
+│                                                                             │
+│   Verticals: Property | Restaurant | Hotel | Pharmacy | Retail             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Database Schema
+## Module Permission Coverage (Verified)
 
-### New Table: `user_permissions`
-
-Stores granular feature access per user:
-
-```sql
-CREATE TABLE public.user_permissions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_role_id UUID NOT NULL REFERENCES user_roles(id) ON DELETE CASCADE,
-  permission_key TEXT NOT NULL,
-  granted BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(user_role_id, permission_key)
-);
-```
-
-### Permission Keys Structure
-
-Permission keys will be namespaced by vertical:
-
-| Vertical | Permission Keys |
-|----------|-----------------|
-| **Property** | `property.dashboard`, `property.units`, `property.tenants`, `property.leases`, `property.rent_collection`, `property.applications`, `property.maintenance`, `property.reports` |
-| **Restaurant** | `restaurant.dashboard`, `restaurant.pos`, `restaurant.tables`, `restaurant.kitchen`, `restaurant.orders`, `restaurant.reservations`, `restaurant.products`, `restaurant.inventory`, `restaurant.customers` |
-| **Hotel** | `hotel.dashboard`, `hotel.front_desk`, `hotel.rooms`, `hotel.reservations`, `hotel.housekeeping`, `hotel.maintenance`, `hotel.guest_services`, `hotel.guest_profiles`, `hotel.billing` |
-| **Pharmacy** | `pharmacy.dashboard`, `pharmacy.prescriptions`, `pharmacy.patients`, `pharmacy.medications`, `pharmacy.insurance`, `pharmacy.controlled`, `pharmacy.interactions`, `pharmacy.inventory`, `pharmacy.pos` |
-| **Retail** | `retail.dashboard`, `retail.pos`, `retail.products`, `retail.orders`, `retail.inventory`, `retail.customers` |
-| **Common** | `common.reports`, `common.staff`, `common.settings` |
+| Vertical | Permission Keys | Status |
+|----------|-----------------|--------|
+| **Property** | dashboard, units, tenants, leases, rent_collection, applications, maintenance, reports | Complete |
+| **Restaurant** | dashboard, pos, tables, kitchen, orders, reservations, products, inventory, customers | Complete |
+| **Hotel** | dashboard, front_desk, rooms, reservations, housekeeping, maintenance, guest_services, guest_profiles, billing | Complete |
+| **Pharmacy** | dashboard, prescriptions, patients, medications, insurance, controlled, interactions, inventory, pos | Complete |
+| **Retail** | dashboard, pos, products, orders, inventory, customers | Complete |
+| **Common** | reports, staff, settings | All verticals |
 
 ---
 
-## Role Permission Defaults
+## Identified Gaps & AI Recommendations
 
-When a staff member is assigned a role, they receive default permissions based on their role level. Admins can then customize:
+### Gap 1: No Page-Level Permission Guards
 
-### Property Vertical Defaults
+**Issue:** Sidebar hides navigation, but users can still access pages via direct URL.
 
-| Permission | Super Admin | Org Admin | Location Manager | Staff |
-|------------|-------------|-----------|------------------|-------|
-| Dashboard | ✓ | ✓ | ✓ | ✓ |
-| Units | ✓ | ✓ | ✓ | Read |
-| Tenants | ✓ | ✓ | ✓ | Read |
-| Leases | ✓ | ✓ | ✓ | Read |
-| Rent Collection | ✓ | ✓ | ✓ | ✗ |
-| Applications | ✓ | ✓ | ✓ | ✗ |
-| Maintenance | ✓ | ✓ | ✓ | ✓ |
-| Reports | ✓ | ✓ | ✓ | ✗ |
-| Staff Management | ✓ | ✓ | ✗ | ✗ |
-| Settings | ✓ | ✓ | ✗ | ✗ |
-
----
-
-## Implementation Components
-
-### Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/lib/verticalPermissions.ts` | Module-specific permission definitions per vertical |
-| `src/components/staff/StaffPermissionsEditor.tsx` | Checkbox-based UI for editing permissions |
-| `src/hooks/usePermissions.ts` | Hook to check if current user has a specific permission |
-
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/lib/rolePermissions.ts` | Add vertical-specific permission definitions |
-| `src/pages/Staff.tsx` | Add "Edit Permissions" action for each staff member |
-| `src/components/staff/RolePermissionsCard.tsx` | Show vertical-specific permissions, not generic ones |
-| `src/components/layout/AppSidebar.tsx` | Filter nav items based on user's granted permissions |
-| `src/components/staff/InviteStaffDialog.tsx` | Show permission checkboxes during invite |
-
----
-
-## Vertical Permission Definitions
-
-### Property Module
+**Recommendation:** Create a reusable `<PermissionGate>` component for page protection.
 
 ```typescript
-export const PROPERTY_PERMISSIONS = {
-  'property.dashboard': {
-    label: 'Dashboard',
-    description: 'View property overview and KPIs',
-    icon: 'LayoutDashboard',
-    route: '/dashboard',
-    defaultRoles: ['super_admin', 'org_admin', 'location_manager', 'department_lead', 'staff']
-  },
-  'property.units': {
-    label: 'Units',
-    description: 'Manage property units and vacancies',
-    icon: 'Building2',
-    route: '/property/units',
-    defaultRoles: ['super_admin', 'org_admin', 'location_manager']
-  },
-  'property.tenants': {
-    label: 'Tenants',
-    description: 'View and manage tenant profiles',
-    icon: 'Users',
-    route: '/property/tenants',
-    defaultRoles: ['super_admin', 'org_admin', 'location_manager']
-  },
-  'property.leases': {
-    label: 'Leases',
-    description: 'Create and manage lease agreements',
-    icon: 'FileText',
-    route: '/property/leases',
-    defaultRoles: ['super_admin', 'org_admin', 'location_manager']
-  },
-  'property.rent_collection': {
-    label: 'Rent Collection',
-    description: 'Track and record rent payments',
-    icon: 'DollarSign',
-    route: '/property/rent',
-    defaultRoles: ['super_admin', 'org_admin', 'location_manager']
-  },
-  'property.applications': {
-    label: 'Applications',
-    description: 'Review tenant applications',
-    icon: 'ClipboardList',
-    route: '/property/applications',
-    defaultRoles: ['super_admin', 'org_admin', 'location_manager']
-  },
-  'property.maintenance': {
-    label: 'Maintenance',
-    description: 'Handle maintenance requests',
-    icon: 'Wrench',
-    route: '/property/maintenance',
-    defaultRoles: ['super_admin', 'org_admin', 'location_manager', 'staff']
-  },
-  'property.reports': {
-    label: 'Reports',
-    description: 'View financial and occupancy reports',
-    icon: 'BarChart3',
-    route: '/property/reports',
-    defaultRoles: ['super_admin', 'org_admin', 'location_manager']
-  }
-};
+// Usage in page components
+<PermissionGate permission="property.leases" fallback={<AccessDenied />}>
+  <LeasesPage />
+</PermissionGate>
 ```
 
-### Similar definitions for Restaurant, Hotel, Pharmacy, and Retail modules...
+**Files to Create:**
+- `src/components/auth/PermissionGate.tsx`
+
+**Files to Modify:**
+- All protected page components (wrap content with PermissionGate)
 
 ---
 
-## UI Components
+### Gap 2: Missing Specialized Roles
 
-### Staff Permissions Editor
+**Issue:** `pharmacist` and `front_desk` exist in `SPECIALIZED_ROLES` but aren't part of the `AppRole` enum.
 
-A modal/sheet that opens when clicking "Edit Permissions" on a staff member:
+**Recommendation:** Keep current generic roles but enhance permission defaults for vertical context:
 
-1. **Header**: Shows staff name and current role
-2. **Permission Groups**: 
-   - Module-specific permissions (based on current vertical)
-   - Management permissions (common across verticals)
-3. **Checkboxes**: Toggle individual permissions on/off
-4. **Role Preset Buttons**: Quick reset to role defaults
-5. **Save Button**: Saves custom permissions
+- In **Pharmacy**, `staff` role should default to pharmacist-like permissions
+- In **Hotel**, `staff` role should default to front_desk-like permissions
 
-### Role Permissions Card (Enhanced)
-
-Instead of showing generic features, show:
-- Current vertical's specific pages/features
-- Which roles have access by default
-- Visual permission matrix
+**Files to Modify:**
+- `src/lib/verticalPermissions.ts` - Adjust `defaultRoles` to be smarter about vertical context
 
 ---
 
-## Permission Enforcement
+### Gap 3: No Read vs. Write Distinction
 
-### Sidebar Navigation
+**Issue:** Permissions are binary - either full access or no access.
 
-Update `AppSidebar.tsx` to check permissions:
-
-```typescript
-const renderNavItem = (item: NavItem) => {
-  // Check if user has permission for this route
-  const permissionKey = getPermissionKeyForRoute(vertical, item.href);
-  if (permissionKey && !hasPermission(permissionKey)) {
-    return null; // Don't render this nav item
-  }
-  // ... existing render logic
-};
-```
-
-### Page Protection
-
-Wrap protected pages with permission checks:
+**Recommendation:** Add permission levels for sensitive operations:
 
 ```typescript
-// In page component
-const { hasPermission } = usePermissions();
-
-if (!hasPermission('property.leases')) {
-  return <AccessDenied message="You don't have permission to view leases" />;
+interface PermissionDefinition {
+  // ... existing fields
+  levels?: ('read' | 'write' | 'delete')[];
+  defaultLevel?: Record<AppRole, 'read' | 'write' | 'delete' | 'none'>;
 }
 ```
 
+**Implementation Priority:** Low (current binary system is functional)
+
 ---
 
-## Database Migration
+### Gap 4: No Permission Change Audit Trail
+
+**Issue:** No logging when admins change staff permissions.
+
+**Recommendation:** Log permission changes to `admin_audit_logs`:
 
 ```sql
--- User permissions table for granular access control
-CREATE TABLE public.user_permissions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_role_id UUID NOT NULL REFERENCES user_roles(id) ON DELETE CASCADE,
-  permission_key TEXT NOT NULL,
-  granted BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(user_role_id, permission_key)
+-- When permissions are saved, log the action
+INSERT INTO admin_audit_logs (
+  admin_user_id, action_type, target_type, target_id, details
+) VALUES (
+  auth.uid(), 'permission_update', 'user_role', $userRoleId, 
+  jsonb_build_object('added', $added, 'removed', $removed)
 );
+```
 
--- Enable RLS
-ALTER TABLE public.user_permissions ENABLE ROW LEVEL SECURITY;
+**Files to Modify:**
+- `src/hooks/usePermissions.ts` - Add audit logging to `savePermissions`
 
--- Index for faster lookups
-CREATE INDEX idx_user_permissions_role ON user_permissions(user_role_id);
-CREATE INDEX idx_user_permissions_key ON user_permissions(permission_key);
+---
 
--- RLS Policies
-CREATE POLICY "Users can view their own permissions"
-ON public.user_permissions FOR SELECT
-USING (
-  user_role_id IN (SELECT id FROM user_roles WHERE user_id = auth.uid())
-);
+### Gap 5: No Permission Templates
 
-CREATE POLICY "Org admins can manage permissions in their org"
-ON public.user_permissions FOR ALL
-USING (
-  user_role_id IN (
-    SELECT ur.id FROM user_roles ur
-    WHERE ur.organization_id IN (
-      SELECT organization_id FROM user_roles 
-      WHERE user_id = auth.uid() 
-      AND role IN ('super_admin', 'org_admin')
-    )
-  )
-);
+**Issue:** Admins must configure each staff member individually.
+
+**Recommendation:** Add quick-apply templates:
+
+```typescript
+const PERMISSION_TEMPLATES = {
+  property: {
+    'Leasing Agent': ['property.dashboard', 'property.units', 'property.leases', 'property.applications'],
+    'Maintenance Tech': ['property.dashboard', 'property.maintenance'],
+    'Collections': ['property.dashboard', 'property.rent_collection', 'property.tenants'],
+  },
+  pharmacy: {
+    'Pharmacy Tech': ['pharmacy.dashboard', 'pharmacy.prescriptions', 'pharmacy.patients', 'pharmacy.pos'],
+    'Inventory Manager': ['pharmacy.dashboard', 'pharmacy.medications', 'pharmacy.inventory'],
+  },
+  // ... other verticals
+};
+```
+
+**Files to Create:**
+- `src/lib/permissionTemplates.ts`
+
+**Files to Modify:**
+- `src/components/staff/StaffPermissionsEditor.tsx` - Add template dropdown
+
+---
+
+## Implementation Plan
+
+### Phase 1: Page Protection (High Priority)
+
+| Step | Task | Files |
+|------|------|-------|
+| 1 | Create `PermissionGate` component | `src/components/auth/PermissionGate.tsx` |
+| 2 | Create `AccessDenied` component | `src/components/auth/AccessDenied.tsx` |
+| 3 | Wrap protected pages with PermissionGate | All vertical page components |
+
+### Phase 2: Enhanced Defaults (Medium Priority)
+
+| Step | Task | Files |
+|------|------|-------|
+| 1 | Add vertical-aware default adjustments | `src/lib/verticalPermissions.ts` |
+| 2 | Create permission templates | `src/lib/permissionTemplates.ts` |
+| 3 | Add template selector to editor | `src/components/staff/StaffPermissionsEditor.tsx` |
+
+### Phase 3: Audit & Compliance (Medium Priority)
+
+| Step | Task | Files |
+|------|------|-------|
+| 1 | Add permission change logging | `src/hooks/usePermissions.ts` |
+| 2 | Create permission audit view | `src/components/staff/PermissionAuditLog.tsx` |
+
+---
+
+## Technical Details
+
+### PermissionGate Component
+
+```typescript
+interface PermissionGateProps {
+  permission: string;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+  requireAll?: boolean; // For multiple permissions
+}
+
+export function PermissionGate({ permission, children, fallback }: PermissionGateProps) {
+  const { hasPermission, loading } = usePermissions();
+  
+  if (loading) return <LoadingSpinner />;
+  if (!hasPermission(permission)) return fallback || <AccessDenied />;
+  
+  return <>{children}</>;
+}
+```
+
+### Permission Template Integration
+
+Add to StaffPermissionsEditor:
+
+```typescript
+const templates = getTemplatesForVertical(vertical);
+
+// In UI
+<Select onValueChange={applyTemplate}>
+  <SelectTrigger>
+    <SelectValue placeholder="Apply template..." />
+  </SelectTrigger>
+  <SelectContent>
+    {Object.keys(templates).map(name => (
+      <SelectItem key={name} value={name}>{name}</SelectItem>
+    ))}
+  </SelectContent>
+</Select>
 ```
 
 ---
 
-## Implementation Order
+## Expected Outcomes
 
-| Step | Task | Priority |
-|------|------|----------|
-| 1 | Create `user_permissions` table with RLS | High |
-| 2 | Create `src/lib/verticalPermissions.ts` with all vertical definitions | High |
-| 3 | Update `src/lib/rolePermissions.ts` to include vertical awareness | High |
-| 4 | Create `src/hooks/usePermissions.ts` hook | High |
-| 5 | Create `StaffPermissionsEditor.tsx` component | High |
-| 6 | Update `Staff.tsx` with "Edit Permissions" action | High |
-| 7 | Update `RolePermissionsCard.tsx` to be vertical-aware | Medium |
-| 8 | Update `AppSidebar.tsx` to enforce permissions | High |
-| 9 | Update `InviteStaffDialog.tsx` with permission selection | Medium |
+After implementation:
+
+1. Direct URL access to restricted pages shows "Access Denied" message
+2. Admins can quickly apply permission templates during staff onboarding
+3. Permission changes are logged for compliance audits
+4. Each vertical's staff see only relevant permissions in the editor
+5. Role defaults are smarter about vertical context
 
 ---
 
-## Expected Outcome
+## No Action Required (Already Working)
 
-After implementation:
-1. Admins see module-specific permissions based on current vertical (Property, Hotel, etc.)
-2. Clicking a staff member shows editable permission checkboxes
-3. Permissions are stored per-user in the database
-4. Navigation automatically hides pages the user cannot access
-5. Role defaults provide sensible starting permissions
-6. Property module shows: Dashboard, Units, Tenants, Leases, Rent Collection, Applications, Maintenance, Reports
+The following are already functional:
+
+- Module-specific permission definitions for all 5 verticals
+- Checkbox-based permission editor with customization
+- Sidebar navigation enforcement via `usePermissions` hook
+- Role hierarchy with level-based access control
+- Custom permission storage in `user_permissions` table
+- Default permission inheritance with override capability
+
