@@ -1,340 +1,227 @@
 
-# Tenant Portal and PDF Lease Export Implementation
+# Lease Management Actions Implementation
 
-## Overview
+## Problem Summary
 
-This plan adds three major capabilities to the Property Management vertical:
+The Leases page currently displays lease cards without any actionable features. Users cannot:
+1. Download leases as PDF or Word documents
+2. Send invitations to tenants for electronic signing
+3. Edit/revise leases
+4. Delete leases
+5. Change lease status (e.g., mark as expired)
 
-1. **PDF Export** - Download generated leases as formatted PDF documents
-2. **Email Invitations** - Send lease signing invitations to tenants
-3. **Tenant Portal** - A dedicated portal where tenants can sign leases, make payments, submit maintenance requests, and manage their account
+The components `LeaseExportButton` and `InviteTenantButton` exist but are not integrated into the Leases page.
 
 ---
 
-## Architecture Summary
+## Solution Architecture
 
 ```text
-+------------------+     Email Invite     +------------------+
-|   Landlord/PM    | ------------------> |     Tenant       |
-|   (Existing)     |                      |   (New Portal)   |
-+------------------+                      +------------------+
-        |                                         |
-        v                                         v
-+------------------+                      +------------------+
-| Lease Wizard     |                      | /tenant Routes   |
-| - Generate PDF   |                      | - Dashboard      |
-| - Send Invite    |                      | - Sign Lease     |
-+------------------+                      | - Payments       |
-                                          | - Maintenance    |
-                                          +------------------+
++------------------+     Click Lease     +---------------------+
+|   Leases List    | ------------------> |   LeaseDetailPanel  |
+|   (Existing)     |                     |   (New Component)   |
++------------------+                     +---------------------+
+                                                  |
+                            +---------------------+---------------------+
+                            |                     |                     |
+                            v                     v                     v
+                    +-------------+       +---------------+      +-----------+
+                    | Actions     |       | Export        |      | Invite    |
+                    | (Edit/Del)  |       | (PDF/Word)    |      | Tenant    |
+                    +-------------+       +---------------+      +-----------+
 ```
 
 ---
 
-## Phase 1: PDF Export for Leases
+## Phase 1: Lease Detail Panel (Slide-over)
 
-### New Dependencies
-- `jspdf` - PDF generation library
-- `jspdf-autotable` - Table support for jspdf
+### New Component: `LeaseDetailPanel.tsx`
+**Location:** `src/components/property/LeaseDetailPanel.tsx`
 
-### New Component: `LeaseExportButton.tsx`
-**Location:** `src/components/property/LeaseExportButton.tsx`
-
-Renders a "Download PDF" button that:
-- Takes lease data, tenant info, unit info, and clauses as props
-- Generates a professional PDF with:
-  - Header with property logo/name
-  - Lease agreement title and number
-  - Parties section (Landlord & Tenant info)
-  - Property details section
-  - All clause sections with proper formatting
-  - Signature blocks for both parties
-  - Footer with date and page numbers
-
-### Integration Points
-- Add to `LeaseGenerationStep.tsx` (after clauses generated)
-- Add to `Leases.tsx` page (for existing leases)
-- Add to future `LeaseDetails` component
+A slide-over panel that appears when clicking a lease card, showing:
+- Full lease details (dates, rent, deposit, terms)
+- Tenant and unit information
+- Status badge with option to change
+- All generated clauses (if available from `lease_document`)
+- Action buttons (edit, delete, export, invite)
 
 ---
 
-## Phase 2: Database Schema Updates
+## Phase 2: Action Buttons Integration
 
-### New Role: `tenant`
-Add `tenant` to the `app_role` enum to support tenant-specific access.
+### Export Options
+Integrate existing `LeaseExportButton` for PDF export and add Word export capability:
 
-### New Table: `lease_invitations`
-Tracks email invitations sent to tenants for lease signing.
+1. **PDF Export** - Already built, needs integration with lease data from database
+2. **Word Export** - New functionality using a library like `docx` to generate .docx files
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| lease_id | uuid | FK to leases |
-| tenant_id | uuid | FK to tenants |
-| organization_id | uuid | FK to organizations |
-| email | text | Tenant's email |
-| token | text | Unique invitation token |
-| status | text | pending, accepted, expired |
-| sent_at | timestamp | When invitation was sent |
-| expires_at | timestamp | Token expiry (7 days) |
-| accepted_at | timestamp | When tenant signed up |
+### Invite to Sign
+Integrate existing `InviteTenantButton` with:
+- Tenant email from lease/tenant relationship
+- Property address from unit
+- Monthly rent from lease
 
-### New Table: `lease_signatures`
-Records electronic signatures on leases.
+### Status Management
+Add ability to:
+- Mark lease as "expired"
+- Mark lease as "terminated"
+- Revert to "active" if within date range
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| lease_id | uuid | FK to leases |
-| signer_type | text | landlord, tenant |
-| signer_id | uuid | User ID who signed |
-| signature_data | jsonb | Signature image/metadata |
-| signed_at | timestamp | Signing timestamp |
-| ip_address | text | IP for audit |
+### Edit Lease
+- Open lease wizard in edit mode with pre-filled data
+- Allow updating terms, dates, rent, special terms
+- Regenerate clauses if location/terms change
 
-### Updates to `tenants` Table
-Add `user_id` column to link tenants to auth users.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| user_id | uuid | FK to auth.users (nullable) |
-
-### Updates to `leases` Table
-Add signature tracking columns.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| landlord_signed_at | timestamp | When landlord signed |
-| tenant_signed_at | timestamp | When tenant signed |
-| signed_lease_pdf | text | Storage URL for signed PDF |
-
-### Updates to `maintenance_requests` Table
-Add tenant submission tracking.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| submitted_by_tenant | uuid | FK to tenants (if tenant-submitted) |
+### Delete Lease
+- Confirmation dialog before deletion
+- Only allow deletion of draft or expired leases
+- Active leases require termination first
 
 ---
 
-## Phase 3: Email Invitation System
+## Phase 3: Email Invitation Setup
 
-### New Edge Function: `send-lease-invitation`
-**Location:** `supabase/functions/send-lease-invitation/index.ts`
-
-Features:
-- Generates unique invitation token
-- Creates `lease_invitations` record
-- Sends branded email via Resend with:
-  - Property name and address
-  - Lease summary (rent, dates, terms)
-  - "Sign Your Lease" CTA button
-  - Link to tenant portal sign-up
-
-### New Component: `InviteTenantButton.tsx`
-**Location:** `src/components/property/InviteTenantButton.tsx`
-
-Button that triggers invitation email flow.
-
-### Integration
-- Add to `LeaseWizard.tsx` Step 7 (Review & Create)
-- Add to `Leases.tsx` for existing unsigned leases
+### Required Secret
+The email invitation system requires `RESEND_API_KEY` to be configured. This will be requested from the user before the invitation feature works.
 
 ---
 
-## Phase 4: Tenant Portal
+## Implementation Details
 
-### New Routes (Under `/tenant/*`)
+### Files to Create
 
-| Route | Component | Description |
-|-------|-----------|-------------|
-| `/tenant/auth` | TenantAuth | Login/signup for tenants |
-| `/tenant/accept-invite/:token` | AcceptInvite | Token validation and account creation |
-| `/tenant/dashboard` | TenantDashboard | Tenant home with summary |
-| `/tenant/leases` | TenantLeases | View and sign leases |
-| `/tenant/leases/:id` | TenantLeaseDetails | View specific lease, sign |
-| `/tenant/payments` | TenantPayments | Make payments, view history |
-| `/tenant/maintenance` | TenantMaintenance | Submit and track requests |
-| `/tenant/profile` | TenantProfile | Manage account details |
+| File | Purpose |
+|------|---------|
+| `src/components/property/LeaseDetailPanel.tsx` | Slide-over panel for viewing lease details and actions |
+| `src/components/property/LeaseWordExport.tsx` | Word document export button |
+| `src/components/property/LeaseStatusManager.tsx` | Status change dropdown |
+| `src/components/property/DeleteLeaseDialog.tsx` | Confirmation dialog for deletion |
 
-### New Layout: `TenantLayout.tsx`
-Simplified layout for tenant portal with:
-- Tenant-specific sidebar navigation
-- Profile dropdown
-- Notification center
-- Property branding
+### Files to Modify
 
-### Authentication Flow
-1. Landlord creates lease and invites tenant
-2. Tenant receives email with unique link
-3. Tenant clicks link, lands on `/tenant/accept-invite/:token`
-4. If new user: Creates account with tenant's email
-5. If existing: Links to existing profile
-6. System creates `user_roles` entry with `tenant` role
-7. Links `tenants.user_id` to the auth user
-8. Redirects to `/tenant/dashboard`
+| File | Changes |
+|------|---------|
+| `src/pages/property/Leases.tsx` | Add click handler on lease cards, integrate detail panel |
+| `src/components/property/LeaseWizard.tsx` | Support edit mode with existing lease data |
+| `src/components/property/LeaseExportButton.tsx` | Accept lease data directly from database format |
+| `package.json` | Add `docx` library for Word export |
 
 ---
 
-## Phase 5: Tenant Portal Pages
+## Technical Details
 
-### TenantDashboard.tsx
-Summary cards showing:
-- Active lease(s) overview
-- Next payment due date and amount
-- Open maintenance requests
-- Recent activity feed
+### Lease Detail Panel Features
 
-### TenantLeases.tsx / TenantLeaseDetails.tsx
-Features:
-- View all lease documents (PDF viewer)
-- Sign lease electronically with:
-  - Checkbox agreement flow
-  - Signature pad (draw or type name)
-  - Legal attestation text
-- Download signed PDF
-- View lease history
+1. **Header Section**
+   - Lease number and status badge
+   - Close button
 
-### TenantPayments.tsx
-Features:
-- View upcoming payments
-- Payment history
-- Make payment (integrates with existing Paystack)
-- Set up auto-pay (future enhancement)
-- Download receipts
+2. **Overview Cards**
+   - Property info (unit, address, type)
+   - Tenant info (name, email, phone)
+   - Dates (start, end, signing status)
+   - Financials (rent, deposit, late fee)
 
-### TenantMaintenance.tsx
-Features:
-- Submit new maintenance request
-  - Title, description, category, priority
-  - Photo upload capability
-- View request status and history
-- Communication thread with property manager
+3. **Action Bar**
+   - Download PDF / Download Word buttons
+   - Invite Tenant button (if not signed)
+   - Edit button (opens wizard in edit mode)
+   - More menu (status change, delete)
 
-### TenantProfile.tsx
-Features:
-- Update contact information
-- Update emergency contacts
-- Change password
-- Email preferences
+4. **Clauses Section**
+   - Accordion of all clause sections from `lease_document`
+   - Read-only view of generated content
 
----
+### Word Export Implementation
 
-## Phase 6: RLS Policies
+Using the `docx` library to create professional Word documents:
+- Same structure as PDF export
+- Editable format for offline modifications
+- Headers, paragraphs, signature blocks
 
-### Tenant Access Policies
+### Edit Mode for Lease Wizard
 
-**lease_invitations:**
-- Tenants can view their own invitations (by email)
-- Managers can manage invitations for their org
+Modify `LeaseWizard` to accept an `existingLease` prop:
+- Pre-populate all form fields
+- Skip steps with existing data (or show as read-only)
+- Update instead of insert on submit
+- Preserve or regenerate clauses based on changes
 
-**lease_signatures:**
-- Users can insert their own signatures
-- Users can view signatures on leases they're party to
+### Status Transitions
 
-**leases (tenant access):**
-- Tenants can view leases where `tenant_id` matches their linked tenant record
-
-**rent_payments (tenant access):**
-- Tenants can view/insert their own payments
-
-**maintenance_requests (tenant access):**
-- Tenants can insert requests for their unit
-- Tenants can view their own submitted requests
+| Current Status | Allowed Transitions |
+|----------------|---------------------|
+| draft | active, delete |
+| active | expired, terminated |
+| pending_signature | active, expired, terminated |
+| expired | (no transitions, archived) |
+| terminated | (no transitions, archived) |
 
 ---
 
-## Phase 7: Security Considerations
+## Database Queries Needed
 
-1. **Token Security:**
-   - Invitation tokens expire after 7 days
-   - Tokens are single-use (marked as accepted)
-   - Cryptographically random generation
+### Fetch Lease with Related Data
+```sql
+SELECT 
+  l.*,
+  t.first_name, t.last_name, t.email, t.phone,
+  u.unit_number, u.address, u.city, u.state, u.country
+FROM leases l
+LEFT JOIN tenants t ON l.tenant_id = t.id
+LEFT JOIN property_units u ON l.unit_id = u.id
+WHERE l.id = :leaseId
+```
 
-2. **Tenant Isolation:**
-   - Tenants only see their own data
-   - Cannot access other units or tenants
-   - RLS enforces at database level
+### Update Lease Status
+```sql
+UPDATE leases 
+SET status = :newStatus, updated_at = now()
+WHERE id = :leaseId AND organization_id = :orgId
+```
 
-3. **Signature Audit Trail:**
-   - All signatures include IP address
-   - Timestamps are immutable
-   - PDF is stored with hash for integrity
+### Delete Lease
+```sql
+DELETE FROM leases 
+WHERE id = :leaseId 
+  AND organization_id = :orgId 
+  AND status IN ('draft', 'expired', 'terminated')
+```
 
-4. **Email Verification:**
-   - Tenant email must match invitation email
-   - Auto-confirm enabled for faster onboarding
+---
+
+## UI/UX Considerations
+
+1. **Lease Card Click** - Opens detail panel from right side (Sheet component)
+2. **Action Grouping** - Primary actions visible, secondary in dropdown
+3. **Status Colors** - Keep existing color scheme for consistency
+4. **Confirmation** - Required for destructive actions (delete, terminate)
+5. **Loading States** - Show skeleton while fetching full lease details
 
 ---
 
 ## Implementation Order
 
-| Phase | Components | Priority |
-|-------|------------|----------|
-| 1 | PDF Export (jspdf, LeaseExportButton) | High |
-| 2 | Database migrations (tenant role, tables) | High |
-| 3 | Email invitation edge function | High |
-| 4 | Tenant auth flow (accept-invite, auth) | High |
-| 5 | Tenant layout and routing | Medium |
-| 6 | Tenant dashboard and lease signing | Medium |
-| 7 | Tenant payments and maintenance | Medium |
-| 8 | RLS policies for tenant access | High |
+| Step | Components | Priority |
+|------|------------|----------|
+| 1 | LeaseDetailPanel with basic info display | High |
+| 2 | Integrate existing export/invite buttons | High |
+| 3 | Status management dropdown | High |
+| 4 | Delete confirmation dialog | Medium |
+| 5 | Word export functionality | Medium |
+| 6 | Edit mode for LeaseWizard | Medium |
+| 7 | Request RESEND_API_KEY for invitations | High |
 
 ---
 
-## Files to Create
+## Dependencies
 
-| File | Purpose |
-|------|---------|
-| `src/components/property/LeaseExportButton.tsx` | PDF export button component |
-| `src/components/property/InviteTenantButton.tsx` | Email invitation trigger |
-| `src/components/property/SignaturePad.tsx` | Electronic signature capture |
-| `src/components/layout/TenantLayout.tsx` | Tenant portal layout |
-| `src/components/layout/TenantSidebar.tsx` | Tenant navigation |
-| `src/pages/tenant/TenantAuth.tsx` | Tenant login/signup |
-| `src/pages/tenant/AcceptInvite.tsx` | Invitation acceptance flow |
-| `src/pages/tenant/TenantDashboard.tsx` | Tenant home page |
-| `src/pages/tenant/TenantLeases.tsx` | Lease list |
-| `src/pages/tenant/TenantLeaseDetails.tsx` | View/sign lease |
-| `src/pages/tenant/TenantPayments.tsx` | Payment management |
-| `src/pages/tenant/TenantMaintenance.tsx` | Maintenance requests |
-| `src/pages/tenant/TenantProfile.tsx` | Profile management |
-| `supabase/functions/send-lease-invitation/index.ts` | Email invitation |
-| `supabase/functions/generate-lease-pdf/index.ts` | Server-side PDF (optional) |
+### New Package
+- `docx` - For Word document generation
 
----
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/types/index.ts` | Add `tenant` to AppRole, new interfaces |
-| `src/App.tsx` | Add tenant routes |
-| `src/contexts/AuthContext.tsx` | Add `isTenant` check |
-| `src/components/property/LeaseWizard.tsx` | Add invite button |
-| `src/components/property/LeaseGenerationStep.tsx` | Add PDF export |
-| `src/pages/property/Leases.tsx` | Add invite/export actions |
-| `src/pages/property/Maintenance.tsx` | Support tenant submissions |
-
----
-
-## Technical Notes
-
-### PDF Generation Approach
-Using client-side `jspdf` for simplicity:
-- No server costs
-- Instant generation
-- Works offline
-- Fallback: Edge function for server-side generation if needed
-
-### Signature Implementation
-- Canvas-based signature pad
-- Stores as base64 PNG in database
-- Typed signature option as fallback
-- Legal attestation checkbox required
-
-### Email Service Requirement
-This feature requires configuring Resend:
-- User needs RESEND_API_KEY secret
-- Verified domain for professional emails
-- Will prompt user to set up if not configured
+### Existing Components to Reuse
+- `LeaseExportButton` - PDF generation
+- `InviteTenantButton` - Email invitations
+- `Sheet` from shadcn/ui - Slide-over panel
+- `AlertDialog` - Confirmation dialogs
+- `DropdownMenu` - Status change and more actions
