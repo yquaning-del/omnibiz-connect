@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Loader2, UserCog, Calendar, Trash2, MoreVertical, Shield } from 'lucide-react';
+import { Loader2, UserCog, Calendar, Trash2, MoreVertical, Shield, KeyRound } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
@@ -17,8 +17,9 @@ import { useLimitChecker, formatLimitDisplay } from '@/hooks/useLimitChecker';
 import { InviteStaffDialog } from '@/components/staff/InviteStaffDialog';
 import { PendingInvitations } from '@/components/staff/PendingInvitations';
 import { RolePermissionsCard } from '@/components/staff/RolePermissionsCard';
+import { StaffPermissionsEditor } from '@/components/staff/StaffPermissionsEditor';
 import { ROLE_PERMISSIONS } from '@/lib/rolePermissions';
-import { AppRole } from '@/types';
+import { AppRole, BusinessVertical } from '@/types';
 
 interface StaffMember {
   id: string;
@@ -72,6 +73,11 @@ export default function Staff() {
   const [saving, setSaving] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [inviteRefresh, setInviteRefresh] = useState(0);
+  const [permissionsEditorOpen, setPermissionsEditorOpen] = useState(false);
+  const [editingPermissionsFor, setEditingPermissionsFor] = useState<StaffMember | null>(null);
+
+  // Get vertical for permissions
+  const vertical = (currentLocation?.vertical || currentOrganization?.primary_vertical || 'retail') as BusinessVertical;
 
   // Schedule form
   const [scheduleDate, setScheduleDate] = useState('');
@@ -148,6 +154,11 @@ export default function Staff() {
       toast({ title: 'Staff member removed' });
       fetchStaff();
     }
+  };
+
+  const openPermissionsEditor = (member: StaffMember) => {
+    setEditingPermissionsFor(member);
+    setPermissionsEditorOpen(true);
   };
 
   const openScheduleDialog = (member: StaffMember) => {
@@ -271,6 +282,10 @@ export default function Staff() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openPermissionsEditor(member)}>
+                                <KeyRound className="w-4 h-4 mr-2" />
+                                Edit Permissions
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => openScheduleDialog(member)}>
                                 <Calendar className="w-4 h-4 mr-2" />
                                 Add Schedule
@@ -283,7 +298,7 @@ export default function Staff() {
                                 <Shield className="w-4 h-4 mr-2" />
                                 Set as Manager
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => removeStaff(member.id)}
                                 className="text-destructive"
                               >
@@ -348,7 +363,7 @@ export default function Staff() {
           </Card>
 
           {/* Role Permissions */}
-          <RolePermissionsCard />
+          <RolePermissionsCard vertical={vertical} />
         </div>
       </div>
 
@@ -403,6 +418,19 @@ export default function Staff() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Permissions Editor Sheet */}
+      {editingPermissionsFor && (
+        <StaffPermissionsEditor
+          open={permissionsEditorOpen}
+          onOpenChange={setPermissionsEditorOpen}
+          userRoleId={editingPermissionsFor.id}
+          staffName={editingPermissionsFor.profile?.full_name || 'Staff Member'}
+          staffRole={editingPermissionsFor.role as AppRole}
+          vertical={vertical}
+          onSaved={fetchStaff}
+        />
+      )}
       </div>
     </FeatureGate>
   );
