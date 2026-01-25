@@ -1,360 +1,194 @@
 
+# Investigation and Fix Plan for Property Vertical Issues
 
-# AI Enhancement Implementation Plan
+## Executive Summary
 
-This plan implements 5 new AI-powered features across all verticals: **Demand Forecasting**, **Dynamic Pricing**, **Customer Insights**, **Predictive Maintenance**, and **Pharmacy Adherence Prediction**.
+I've identified two issues in the Property vertical:
 
----
-
-## Overview
-
-Each feature follows the established pattern from `ai-insights` and `drug-interactions`:
-- Backend Edge Function using Lovable AI Gateway (no external API keys needed)
-- Frontend component for user interaction
-- Integration into relevant dashboards
+1. **Missing GHS currency plans for Property** - Ghana users selecting Property vertical during onboarding see no plans
+2. **Race condition causing redirect back to onboarding** - After successfully completing onboarding, users are redirected back because the auth state hasn't refreshed yet
 
 ---
 
-## Phase 1: New Edge Functions
+## Issue 1: Missing Property Plans for GHS Currency
 
-### 1.1 AI Demand Forecast (`ai-demand-forecast`)
+### Root Cause
+The database query confirms that the "property" vertical only has USD currency plans. All other verticals (restaurant, hotel, pharmacy, retail) have both GHS and USD plans.
 
-Predicts customer demand for Restaurant and Hotel verticals.
+**Current state:**
+- restaurant: GHS, USD
+- hotel: GHS, USD
+- pharmacy: GHS, USD
+- retail: GHS, USD
+- property: USD only (missing GHS)
 
-**Location:** `supabase/functions/ai-demand-forecast/index.ts`
+### Impact
+When a user from Ghana (using GHS currency) selects the Property vertical during onboarding:
+1. `PlanSelectionStep.tsx` queries plans with `.eq('currency', selectedCountry.currency)`
+2. For Ghana, this filters to `currency = 'GHS'`
+3. No property plans match, so the plans array is empty
+4. Users see no plans to select
 
-**Functionality:**
-- Analyzes historical reservation/order patterns
-- Factors in day-of-week, seasonality, special events
-- Returns staffing recommendations and prep quantities
-- Supports both `restaurant` and `hotel` modes
+### Fix
+Insert GHS currency plans for the Property vertical in the database (migration):
 
-**Data Sources:**
-- `reservations` table (check_in dates, guest counts)
-- `orders` table (timestamps, amounts)
-- Historical patterns from last 30-90 days
+| Plan Name | Tier | Monthly (GHS) | Yearly (GHS) |
+|-----------|------|---------------|--------------|
+| Property Starter | starter | 900 | 9000 |
+| Property Professional | professional | 1950 | 19500 |
+| Property Enterprise | enterprise | 3750 | 37500 |
 
-**Response Format:**
+---
+
+## Issue 2: Redirect to Onboarding After Trial Selection
+
+### Root Cause
+After `handlePlanSelect` in `Onboarding.tsx` completes successfully:
+1. New organization, location, and subscription records are created
+2. `navigate('/dashboard')` is called
+3. `AppLayout.tsx` renders and checks `organizations.length === 0`
+4. But `AuthContext` still has the old state (empty organizations array)
+5. User is immediately redirected back to `/onboarding`
+
+The auth state doesn't automatically refresh when database records change.
+
+### Technical Flow
 ```text
-{
-  "demandLevel": "high" | "medium" | "low",
-  "predictedCovers": number,
-  "peakHours": ["12:00", "19:00"],
-  "staffingRecommendation": "Schedule 2 additional servers",
-  "prepRecommendations": ["Increase prep for popular items"],
-  "confidence": "high" | "medium" | "low"
-}
+Onboarding (handlePlanSelect)
+    ↓
+Creates org + location + subscription
+    ↓
+navigate('/dashboard')
+    ↓
+AppLayout checks organizations.length
+    ↓
+Still 0 (stale state)
+    ↓
+Navigate to /onboarding
 ```
 
----
+### Fix
+Two complementary solutions:
 
-### 1.2 AI Dynamic Pricing (`ai-dynamic-pricing`)
+**A. Trigger AuthContext refresh after onboarding**
+Add a mechanism to force-refresh the auth state after successfully creating the organization. This ensures `organizations` is populated before navigating.
 
-Optimizes room rates for Hotel and unit pricing for Property.
-
-**Location:** `supabase/functions/ai-dynamic-pricing/index.ts`
-
-**Functionality:**
-- Analyzes current occupancy and booking velocity
-- Considers competitor pricing signals (simulated)
-- Adjusts recommendations based on lead time
-- Provides rate suggestions per room type
-
-**Data Sources:**
-- `hotel_rooms` table (current rates, occupancy)
-- `reservations` table (booking patterns)
-- `property_units` table (for property mode)
-
-**Response Format:**
-```text
-{
-  "recommendations": [
-    {
-      "roomType": "Standard",
-      "currentRate": 120,
-      "suggestedRate": 145,
-      "changePercent": 21,
-      "reason": "High demand detected"
-    }
-  ],
-  "overallStrategy": "Increase rates by 15-20%",
-  "demandOutlook": "Strong bookings expected",
-  "confidence": "high"
-}
-```
+**B. Improve AppLayout's redirect logic**
+Instead of immediately redirecting when `organizations.length === 0`, check if the user is coming from onboarding or if we just haven't loaded data yet. Add a short delay or use a more robust check.
 
 ---
 
-### 1.3 AI Customer Insights (`ai-customer-insights`)
+## Implementation Plan
 
-Generates customer behavior analysis for Retail and Restaurant.
+### Step 1: Database Migration - Add GHS Property Plans
 
-**Location:** `supabase/functions/ai-customer-insights/index.ts`
+Create a migration to insert the three missing Property vertical plans for Ghana/GHS currency.
 
-**Functionality:**
-- Segments customers by purchase behavior
-- Identifies high-value and at-risk customers
-- Suggests personalized offers
-- Predicts churn likelihood
+### Step 2: Update AuthContext
 
-**Data Sources:**
-- `customers` table
-- `orders` table (purchase history)
-- `reservations` table (visit frequency)
+Add a `refreshUserData` function that can be called after onboarding to force-reload organizations and locations.
 
-**Response Format:**
-```text
-{
-  "segments": [
-    { "name": "VIP", "count": 45, "avgSpend": 250 },
-    { "name": "Regular", "count": 180, "avgSpend": 75 }
-  ],
-  "atRiskCustomers": 12,
-  "reactivationSuggestions": ["Send 10% discount to dormant customers"],
-  "topPerformers": [{ "name": "John Doe", "totalSpend": 2500 }],
-  "insights": "Customer retention is strong at 78%"
-}
-```
+### Step 3: Update Onboarding.tsx
 
----
+After successfully creating the subscription:
+1. Call `refreshUserData()` or manually fetch the new organization
+2. Wait for the data to be available
+3. Then navigate to dashboard
 
-### 1.4 AI Predictive Maintenance (`ai-maintenance-predictor`)
+### Step 4: Improve AppLayout Redirect Logic
 
-Predicts equipment failures for Hotel and Property.
-
-**Location:** `supabase/functions/ai-maintenance-predictor/index.ts`
-
-**Functionality:**
-- Analyzes maintenance request patterns
-- Identifies units/rooms with recurring issues
-- Predicts upcoming failures
-- Prioritizes preventive maintenance
-
-**Data Sources:**
-- `maintenance_requests` table (history, categories)
-- `hotel_rooms` / `property_units` (equipment age)
-
-**Response Format:**
-```text
-{
-  "predictions": [
-    {
-      "location": "Room 205 HVAC",
-      "riskLevel": "high",
-      "predictedFailure": "Within 2 weeks",
-      "preventiveAction": "Schedule HVAC inspection"
-    }
-  ],
-  "costSavingPotential": "$2,400 avoided repairs",
-  "maintenanceSchedule": ["HVAC checks due", "Plumbing inspection"],
-  "insights": "HVAC issues spike in summer months"
-}
-```
-
----
-
-### 1.5 AI Pharmacy Adherence (`ai-pharmacy-adherence`)
-
-Predicts patient medication adherence and refill likelihood.
-
-**Location:** `supabase/functions/ai-pharmacy-adherence/index.ts`
-
-**Functionality:**
-- Analyzes prescription fill patterns
-- Identifies patients with adherence gaps
-- Predicts refill dates
-- Suggests intervention timing
-
-**Data Sources:**
-- `prescriptions` table (fill dates, quantities)
-- `patient_profiles` table
-- `prescription_items` table
-
-**Response Format:**
-```text
-{
-  "adherenceRate": 72,
-  "patientsAtRisk": [
-    {
-      "patientName": "Jane Smith",
-      "medication": "Metformin",
-      "daysOverdue": 5,
-      "riskLevel": "high"
-    }
-  ],
-  "upcomingRefills": 23,
-  "interventionRecommendations": ["Call patients 3 days before refill"],
-  "insights": "Adherence improves with reminder calls"
-}
-```
-
----
-
-## Phase 2: Frontend Components
-
-### 2.1 Generic AI Panel Component Enhancement
-
-**File:** `src/components/ai/AIInsightsPanel.tsx`
-
-Extend the existing component to support new insight types:
-- `demand_forecast`
-- `dynamic_pricing`
-- `customer_insights`
-- `maintenance_prediction`
-- `adherence_prediction`
-
-Add visual renderers for each response type.
-
----
-
-### 2.2 Specialized AI Components
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `DemandForecastPanel` | `src/components/ai/DemandForecastPanel.tsx` | Shows predicted covers, staffing needs |
-| `DynamicPricingPanel` | `src/components/ai/DynamicPricingPanel.tsx` | Rate recommendations with apply button |
-| `CustomerInsightsPanel` | `src/components/ai/CustomerInsightsPanel.tsx` | Segment visualization, at-risk alerts |
-| `MaintenancePredictorPanel` | `src/components/ai/MaintenancePredictorPanel.tsx` | Risk timeline, preventive actions |
-| `AdherencePanel` | `src/components/ai/AdherencePanel.tsx` | Patient adherence dashboard |
-
----
-
-## Phase 3: Dashboard Integration
-
-### 3.1 Restaurant Dashboard
-
-Add to `src/pages/dashboards/RestaurantDashboard.tsx`:
-- **DemandForecastPanel** - Predicted covers and staffing
-- **CustomerInsightsPanel** - Diner behavior patterns
-
-### 3.2 Hotel Dashboard
-
-Add to `src/pages/dashboards/HotelDashboard.tsx`:
-- **DemandForecastPanel** - Occupancy predictions
-- **DynamicPricingPanel** - Rate optimization
-- **MaintenancePredictorPanel** - Equipment health
-
-### 3.3 Pharmacy Dashboard
-
-Add to `src/pages/dashboards/PharmacyDashboard.tsx`:
-- **AdherencePanel** - Patient compliance tracking
-- Link from existing Drug Interaction alerts
-
-### 3.4 Retail Dashboard
-
-Add to `src/pages/dashboards/RetailDashboard.tsx`:
-- **CustomerInsightsPanel** - Shopper segmentation
-- **AIInsightsPanel** (sales_forecast) - Already supported
-
-### 3.5 Property Dashboard
-
-Add to `src/pages/dashboards/PropertyDashboard.tsx`:
-- **DynamicPricingPanel** - Rent optimization
-- **MaintenancePredictorPanel** - Building maintenance
-
----
-
-## Phase 4: Configuration Updates
-
-### 4.1 Edge Function Config
-
-Update `supabase/config.toml`:
-
-```text
-[functions.ai-demand-forecast]
-verify_jwt = true
-
-[functions.ai-dynamic-pricing]
-verify_jwt = true
-
-[functions.ai-customer-insights]
-verify_jwt = true
-
-[functions.ai-maintenance-predictor]
-verify_jwt = true
-
-[functions.ai-pharmacy-adherence]
-verify_jwt = true
-```
+Add a safeguard to prevent race condition:
+- Check if coming from a fresh session
+- Allow a brief moment for data to load before redirecting
+- Or check `roles.length > 0` instead (more reliable since we create a role in onboarding)
 
 ---
 
 ## Technical Details
 
-### Edge Function Pattern
-
-All functions follow this structure:
-
-1. **CORS handling** - Standard headers for browser access
-2. **Authentication** - JWT verification via config
-3. **Data fetching** - Query relevant tables using service role
-4. **AI prompt** - Structured prompt with JSON response format
-5. **Lovable AI Gateway** - Uses `google/gemini-2.5-flash` model
-6. **Response parsing** - Extract JSON from AI response
-7. **Error handling** - Graceful fallbacks
-
-### Model Selection
-
-Using `google/gemini-2.5-flash` for:
-- Fast response times (user-facing)
-- Cost efficiency
-- Good reasoning for structured analysis
-- Reliable JSON output
-
-### Security Considerations
-
-- All functions require JWT authentication
-- Service role used only for data access
-- No PHI/PII included in AI prompts (only aggregated stats)
-- Audit logging for pharmacy-related insights
-
----
-
-## Implementation Order
-
-1. **Edge Functions** (Day 1)
-   - Create all 5 new edge functions
-   - Update config.toml
-   - Test with curl
-
-2. **Frontend Components** (Day 2)
-   - Build AI panel components
-   - Create visualizations for each type
-
-3. **Dashboard Integration** (Day 3)
-   - Add panels to each vertical dashboard
-   - Ensure responsive layout
-
-4. **Testing & Polish** (Day 4)
-   - End-to-end testing
-   - Loading states and error handling
-   - Performance optimization
-
----
-
-## Files to Create
-
-| File | Type |
-|------|------|
-| `supabase/functions/ai-demand-forecast/index.ts` | Edge Function |
-| `supabase/functions/ai-dynamic-pricing/index.ts` | Edge Function |
-| `supabase/functions/ai-customer-insights/index.ts` | Edge Function |
-| `supabase/functions/ai-maintenance-predictor/index.ts` | Edge Function |
-| `supabase/functions/ai-pharmacy-adherence/index.ts` | Edge Function |
-| `src/components/ai/DemandForecastPanel.tsx` | React Component |
-| `src/components/ai/DynamicPricingPanel.tsx` | React Component |
-| `src/components/ai/CustomerInsightsPanel.tsx` | React Component |
-| `src/components/ai/MaintenancePredictorPanel.tsx` | React Component |
-| `src/components/ai/AdherencePanel.tsx` | React Component |
-
-## Files to Modify
+### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `supabase/config.toml` | Add 5 new function configs |
-| `src/pages/dashboards/RestaurantDashboard.tsx` | Add AI panels |
-| `src/pages/dashboards/HotelDashboard.tsx` | Add AI panels |
-| `src/pages/dashboards/PharmacyDashboard.tsx` | Add adherence panel |
-| `src/pages/dashboards/RetailDashboard.tsx` | Add customer insights |
-| `src/pages/dashboards/PropertyDashboard.tsx` | Add pricing & maintenance |
+| `supabase/migrations/[new].sql` | Insert 3 GHS property plans |
+| `src/contexts/AuthContext.tsx` | Add `refreshUserData()` export |
+| `src/pages/Onboarding.tsx` | Call refresh after subscription creation |
+| `src/components/layout/AppLayout.tsx` | Use roles check instead of organizations |
 
+### Database Insert Statement
+
+```sql
+INSERT INTO subscription_plans (name, vertical, tier, price_monthly, price_yearly, currency, country_code, max_locations, max_users, features, is_active)
+VALUES
+  ('Property Starter', 'property', 'starter', 900, 9000, 'GHS', 'GH', 1, 5, '["Up to 10 units","Tenant profiles","Basic lease tracking","Rent collection","Maintenance requests","Email support","1 property"]', true),
+  ('Property Professional', 'property', 'professional', 1950, 19500, 'GHS', 'GH', 5, 20, '["Everything in Starter","Up to 50 units","Tenant screening","Digital lease signing","Automated rent reminders","Financial reports","Multi-property support","Priority support"]', true),
+  ('Property Enterprise', 'property', 'enterprise', 3750, 37500, 'GHS', 'GH', NULL, NULL, '["Everything in Professional","Unlimited units","API access","Accounting integration","Bulk operations","Custom lease templates","Dedicated account manager","24/7 phone support"]', true);
+```
+
+### AuthContext Changes
+
+```typescript
+// Add to AuthContext
+const refreshUserData = async () => {
+  if (user) {
+    await fetchUserData(user.id, false);
+  }
+};
+
+// Export in context value
+value={{
+  ...existingValues,
+  refreshUserData,
+}}
+```
+
+### Onboarding.tsx Changes
+
+```typescript
+// After successful subscription creation
+toast({
+  title: 'Setup complete!',
+  description: 'Your 14-day free trial has started.',
+});
+
+// Force refresh auth state before navigating
+await refreshUserData();
+
+// Then navigate
+navigate('/dashboard');
+```
+
+### AppLayout.tsx Changes
+
+```typescript
+// Change from organizations check to roles check
+// This is more reliable because roles are created in onboarding
+
+if (roles.length === 0 && !loading) {
+  return <Navigate to="/onboarding" replace />;
+}
+```
+
+---
+
+## Testing Checklist
+
+After implementation:
+
+- [ ] Create new user with Ghana/GHS and Property vertical - verify plans appear
+- [ ] Complete onboarding and verify redirect to dashboard works
+- [ ] Test with Restaurant/Hotel verticals to ensure no regression
+- [ ] Test resume flow (partial onboarding) still works
+- [ ] Verify existing users aren't affected
+
+---
+
+## Risk Assessment
+
+| Change | Risk Level | Mitigation |
+|--------|------------|------------|
+| Adding GHS plans | Low | Read-only insert, no existing data affected |
+| Auth refresh | Low | Additive change, doesn't break existing flow |
+| AppLayout redirect logic | Medium | Test thoroughly, roles check is more specific |
+
+The fixes are isolated and don't affect existing functionality for other verticals.
