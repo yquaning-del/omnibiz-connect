@@ -6,15 +6,19 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Loader2, Plus, UserCog, Shield, Calendar, Edit, Trash2, MoreVertical } from 'lucide-react';
+import { Loader2, UserCog, Calendar, Trash2, MoreVertical, Shield } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { useLimitChecker, formatLimitDisplay } from '@/hooks/useLimitChecker';
+import { InviteStaffDialog } from '@/components/staff/InviteStaffDialog';
+import { PendingInvitations } from '@/components/staff/PendingInvitations';
+import { RolePermissionsCard } from '@/components/staff/RolePermissionsCard';
+import { ROLE_PERMISSIONS } from '@/lib/rolePermissions';
+import { AppRole } from '@/types';
 
 interface StaffMember {
   id: string;
@@ -64,10 +68,10 @@ export default function Staff() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  const [inviteRefresh, setInviteRefresh] = useState(0);
 
   // Schedule form
   const [scheduleDate, setScheduleDate] = useState('');
@@ -200,11 +204,20 @@ export default function Staff() {
             <p className="text-muted-foreground">Manage team roles and schedules</p>
           </div>
           <div className="flex items-center gap-3">
+            {isOrgAdmin && (
+              <InviteStaffDialog onInviteSent={() => {
+                fetchStaff();
+                setInviteRefresh(prev => prev + 1);
+              }} />
+            )}
             <Badge variant="outline" className="text-xs">
               {formatLimitDisplay(limits.currentUsers, limits.maxUsers)} users
             </Badge>
           </div>
         </div>
+
+        {/* Pending Invitations */}
+        {isOrgAdmin && <PendingInvitations refreshTrigger={inviteRefresh} />}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Staff List */}
@@ -334,24 +347,8 @@ export default function Staff() {
             </CardContent>
           </Card>
 
-          {/* Role Legend */}
-          <Card className="border-border/50 bg-card/50">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Role Permissions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {Object.entries(roleLabels).map(([role, label]) => (
-                <div key={role} className="flex items-center gap-3">
-                  <Badge variant="outline" className={cn('text-xs', roleColors[role])}>
-                    {label}
-                  </Badge>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          {/* Role Permissions */}
+          <RolePermissionsCard />
         </div>
       </div>
 
