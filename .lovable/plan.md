@@ -1,194 +1,163 @@
 
-# Investigation and Fix Plan for Property Vertical Issues
+# Fix Property Vertical Setup Checklist
 
-## Executive Summary
+## Problem
 
-I've identified two issues in the Property vertical:
+The "Getting Started" checklist in the Property vertical shows incorrect retail-focused steps:
+- "Add your first product" → Should be "Add your first unit"
+- "Create a customer profile" → Should be "Create a tenant profile"  
+- "Make your first sale" → Should be "Create your first lease"
+- "Invite a team member" → Keep as is (universal)
+- "Explore reports" → Keep as is (universal)
 
-1. **Missing GHS currency plans for Property** - Ghana users selecting Property vertical during onboarding see no plans
-2. **Race condition causing redirect back to onboarding** - After successfully completing onboarding, users are redirected back because the auth state hasn't refreshed yet
+## Solution
 
----
+Update `SetupChecklist.tsx` to follow the same vertical-aware pattern as `ProductTour.tsx`:
 
-## Issue 1: Missing Property Plans for GHS Currency
+1. Define vertical-specific checklist items for each business type
+2. Select the appropriate checklist based on `currentOrganization?.primary_vertical`
+3. Use correct database tables for completion checks
 
-### Root Cause
-The database query confirms that the "property" vertical only has USD currency plans. All other verticals (restaurant, hotel, pharmacy, retail) have both GHS and USD plans.
+## Implementation
 
-**Current state:**
-- restaurant: GHS, USD
-- hotel: GHS, USD
-- pharmacy: GHS, USD
-- retail: GHS, USD
-- property: USD only (missing GHS)
+### File to Modify
+- `src/components/onboarding/SetupChecklist.tsx`
 
-### Impact
-When a user from Ghana (using GHS currency) selects the Property vertical during onboarding:
-1. `PlanSelectionStep.tsx` queries plans with `.eq('currency', selectedCountry.currency)`
-2. For Ghana, this filters to `currency = 'GHS'`
-3. No property plans match, so the plans array is empty
-4. Users see no plans to select
+### Changes
 
-### Fix
-Insert GHS currency plans for the Property vertical in the database (migration):
-
-| Plan Name | Tier | Monthly (GHS) | Yearly (GHS) |
-|-----------|------|---------------|--------------|
-| Property Starter | starter | 900 | 9000 |
-| Property Professional | professional | 1950 | 19500 |
-| Property Enterprise | enterprise | 3750 | 37500 |
-
----
-
-## Issue 2: Redirect to Onboarding After Trial Selection
-
-### Root Cause
-After `handlePlanSelect` in `Onboarding.tsx` completes successfully:
-1. New organization, location, and subscription records are created
-2. `navigate('/dashboard')` is called
-3. `AppLayout.tsx` renders and checks `organizations.length === 0`
-4. But `AuthContext` still has the old state (empty organizations array)
-5. User is immediately redirected back to `/onboarding`
-
-The auth state doesn't automatically refresh when database records change.
-
-### Technical Flow
-```text
-Onboarding (handlePlanSelect)
-    ↓
-Creates org + location + subscription
-    ↓
-navigate('/dashboard')
-    ↓
-AppLayout checks organizations.length
-    ↓
-Still 0 (stale state)
-    ↓
-Navigate to /onboarding
+**1. Add new imports for icons:**
+```typescript
+import { 
+  // ...existing imports
+  Building2,
+  FileText,
+  Wallet,
+  Hotel,
+  BedDouble,
+  ClipboardList,
+  Pill,
+  Stethoscope,
+  Utensils
+} from "lucide-react";
 ```
 
-### Fix
-Two complementary solutions:
+**2. Define vertical-specific checklist items:**
 
-**A. Trigger AuthContext refresh after onboarding**
-Add a mechanism to force-refresh the auth state after successfully creating the organization. This ensures `organizations` is populated before navigating.
+| Vertical | Step 1 | Step 2 | Step 3 | Step 4 | Step 5 |
+|----------|--------|--------|--------|--------|--------|
+| Property | Add first unit | Create tenant profile | Create first lease | Invite team | Explore reports |
+| Hotel | Add first room | Create guest profile | Create reservation | Invite team | Explore reports |
+| Restaurant | Add first product | Create first table | Make first sale | Invite team | Explore reports |
+| Pharmacy | Add first medication | Create patient profile | Process prescription | Invite team | Explore reports |
+| Retail | Add first product | Create customer | Make first sale | Invite team | Explore reports |
 
-**B. Improve AppLayout's redirect logic**
-Instead of immediately redirecting when `organizations.length === 0`, check if the user is coming from onboarding or if we just haven't loaded data yet. Add a short delay or use a more robust check.
+**3. Property-specific checklist items:**
 
----
+```typescript
+const propertyChecklistItems: ChecklistItem[] = [
+  {
+    id: "add_unit",
+    title: "Add your first unit",
+    description: "Create a property unit to start managing",
+    icon: Building2,
+    path: "/units",
+    checkFn: async () => {
+      if (!currentOrganization) return false;
+      const { count } = await supabase
+        .from("property_units")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", currentOrganization.id);
+      return (count || 0) > 0;
+    },
+  },
+  {
+    id: "add_tenant",
+    title: "Create a tenant profile",
+    description: "Add your first tenant to track leases",
+    icon: Users,
+    path: "/tenants",
+    checkFn: async () => {
+      if (!currentOrganization) return false;
+      const { count } = await supabase
+        .from("tenants")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", currentOrganization.id);
+      return (count || 0) > 0;
+    },
+  },
+  {
+    id: "create_lease",
+    title: "Create your first lease",
+    description: "Set up a lease agreement for a unit",
+    icon: FileText,
+    path: "/leases",
+    checkFn: async () => {
+      if (!currentOrganization) return false;
+      const { count } = await supabase
+        .from("leases")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", currentOrganization.id);
+      return (count || 0) > 0;
+    },
+  },
+  // ... invite_team and view_reports (same as retail)
+];
+```
 
-## Implementation Plan
+**4. Select checklist based on vertical:**
 
-### Step 1: Database Migration - Add GHS Property Plans
+```typescript
+const vertical = currentOrganization?.primary_vertical || 'retail';
 
-Create a migration to insert the three missing Property vertical plans for Ghana/GHS currency.
-
-### Step 2: Update AuthContext
-
-Add a `refreshUserData` function that can be called after onboarding to force-reload organizations and locations.
-
-### Step 3: Update Onboarding.tsx
-
-After successfully creating the subscription:
-1. Call `refreshUserData()` or manually fetch the new organization
-2. Wait for the data to be available
-3. Then navigate to dashboard
-
-### Step 4: Improve AppLayout Redirect Logic
-
-Add a safeguard to prevent race condition:
-- Check if coming from a fresh session
-- Allow a brief moment for data to load before redirecting
-- Or check `roles.length > 0` instead (more reliable since we create a role in onboarding)
+const checklistItems = React.useMemo(() => {
+  switch (vertical) {
+    case 'property':
+      return propertyChecklistItems;
+    case 'hotel':
+      return hotelChecklistItems;
+    case 'restaurant':
+      return restaurantChecklistItems;
+    case 'pharmacy':
+      return pharmacyChecklistItems;
+    default:
+      return retailChecklistItems;
+  }
+}, [vertical, currentOrganization]);
+```
 
 ---
 
 ## Technical Details
 
-### Files to Modify
+### Database Tables Used Per Vertical
 
-| File | Changes |
-|------|---------|
-| `supabase/migrations/[new].sql` | Insert 3 GHS property plans |
-| `src/contexts/AuthContext.tsx` | Add `refreshUserData()` export |
-| `src/pages/Onboarding.tsx` | Call refresh after subscription creation |
-| `src/components/layout/AppLayout.tsx` | Use roles check instead of organizations |
+| Vertical | Tables Checked |
+|----------|----------------|
+| Property | `property_units`, `tenants`, `leases` |
+| Hotel | `rooms`, `guest_profiles`, `reservations` |
+| Restaurant | `products`, `restaurant_tables`, `orders` |
+| Pharmacy | `medications`, `pharmacy_patients`, `prescriptions` |
+| Retail | `products`, `customers`, `orders` |
 
-### Database Insert Statement
+### Navigation Paths Per Vertical
 
-```sql
-INSERT INTO subscription_plans (name, vertical, tier, price_monthly, price_yearly, currency, country_code, max_locations, max_users, features, is_active)
-VALUES
-  ('Property Starter', 'property', 'starter', 900, 9000, 'GHS', 'GH', 1, 5, '["Up to 10 units","Tenant profiles","Basic lease tracking","Rent collection","Maintenance requests","Email support","1 property"]', true),
-  ('Property Professional', 'property', 'professional', 1950, 19500, 'GHS', 'GH', 5, 20, '["Everything in Starter","Up to 50 units","Tenant screening","Digital lease signing","Automated rent reminders","Financial reports","Multi-property support","Priority support"]', true),
-  ('Property Enterprise', 'property', 'enterprise', 3750, 37500, 'GHS', 'GH', NULL, NULL, '["Everything in Professional","Unlimited units","API access","Accounting integration","Bulk operations","Custom lease templates","Dedicated account manager","24/7 phone support"]', true);
-```
-
-### AuthContext Changes
-
-```typescript
-// Add to AuthContext
-const refreshUserData = async () => {
-  if (user) {
-    await fetchUserData(user.id, false);
-  }
-};
-
-// Export in context value
-value={{
-  ...existingValues,
-  refreshUserData,
-}}
-```
-
-### Onboarding.tsx Changes
-
-```typescript
-// After successful subscription creation
-toast({
-  title: 'Setup complete!',
-  description: 'Your 14-day free trial has started.',
-});
-
-// Force refresh auth state before navigating
-await refreshUserData();
-
-// Then navigate
-navigate('/dashboard');
-```
-
-### AppLayout.tsx Changes
-
-```typescript
-// Change from organizations check to roles check
-// This is more reliable because roles are created in onboarding
-
-if (roles.length === 0 && !loading) {
-  return <Navigate to="/onboarding" replace />;
-}
-```
+| Vertical | Paths |
+|----------|-------|
+| Property | `/units`, `/tenants`, `/leases`, `/staff`, `/property/reports` |
+| Hotel | `/rooms`, `/guest-profiles`, `/reservations`, `/staff`, `/reports` |
+| Restaurant | `/products`, `/tables`, `/pos`, `/staff`, `/reports` |
+| Pharmacy | `/pharmacy/medications`, `/pharmacy/patients`, `/pharmacy/prescriptions`, `/staff`, `/reports` |
+| Retail | `/products`, `/customers`, `/pos`, `/staff`, `/reports` |
 
 ---
 
 ## Testing Checklist
 
 After implementation:
-
-- [ ] Create new user with Ghana/GHS and Property vertical - verify plans appear
-- [ ] Complete onboarding and verify redirect to dashboard works
-- [ ] Test with Restaurant/Hotel verticals to ensure no regression
-- [ ] Test resume flow (partial onboarding) still works
-- [ ] Verify existing users aren't affected
-
----
-
-## Risk Assessment
-
-| Change | Risk Level | Mitigation |
-|--------|------------|------------|
-| Adding GHS plans | Low | Read-only insert, no existing data affected |
-| Auth refresh | Low | Additive change, doesn't break existing flow |
-| AppLayout redirect logic | Medium | Test thoroughly, roles check is more specific |
-
-The fixes are isolated and don't affect existing functionality for other verticals.
+- [ ] Property vertical shows: Add unit → Add tenant → Create lease → Invite team → Reports
+- [ ] Hotel vertical shows room/guest/reservation steps
+- [ ] Restaurant vertical shows product/table/sale steps
+- [ ] Pharmacy vertical shows medication/patient/prescription steps
+- [ ] Retail vertical continues to work as before
+- [ ] Completion checks work correctly for each vertical
+- [ ] Navigation paths are correct for each step
