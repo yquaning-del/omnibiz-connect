@@ -81,7 +81,7 @@ export function SetupChecklist() {
       title: "Add your first unit",
       description: "Create a property unit to start managing",
       icon: Building2,
-      path: "/units",
+      path: "/property/units",
       checkFn: async () => {
         if (!currentOrganization) return false;
         const { count } = await supabase
@@ -96,7 +96,7 @@ export function SetupChecklist() {
       title: "Create a tenant profile",
       description: "Add your first tenant to track leases",
       icon: Users,
-      path: "/tenants",
+      path: "/property/tenants",
       checkFn: async () => {
         if (!currentOrganization) return false;
         const { count } = await supabase
@@ -111,7 +111,7 @@ export function SetupChecklist() {
       title: "Create your first lease",
       description: "Set up a lease agreement for a unit",
       icon: FileText,
-      path: "/leases",
+      path: "/property/leases",
       checkFn: async () => {
         if (!currentOrganization) return false;
         const { count } = await supabase
