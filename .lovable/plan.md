@@ -1,171 +1,306 @@
 
-# Fix Lease Creation Failure and Enhance Lease Detail Generation
+# Tenant Portal and PDF Lease Export Implementation
 
-## Problem Summary
+## Overview
 
-The "Create Lease" button fails at Step 7 because the database insert includes a column (`lease_number`) that doesn't exist in the `leases` table. Additionally, the AI-generated lease clauses could be more detailed and comprehensive.
+This plan adds three major capabilities to the Property Management vertical:
 
-## Root Cause Analysis
-
-### Issue 1: Non-Existent Column in Insert
-
-The `handleSubmit` function in `LeaseWizard.tsx` (line 179) attempts to insert a `lease_number` column:
-
-```typescript
-const { error } = await (supabase as any)
-  .from('leases')
-  .insert({
-    // ...
-    lease_number: leaseNumber,  // ← This column doesn't exist!
-    // ...
-  });
-```
-
-However, querying the database schema confirms there is **no `lease_number` column** in the `leases` table:
-
-| Existing Columns | Missing |
-|------------------|---------|
-| id, organization_id, unit_id, tenant_id, lease_type, start_date, end_date, monthly_rent, security_deposit, payment_due_day, late_fee_amount, grace_period_days, special_terms, status, created_at, updated_at, country, state, city, template_source, lease_document | **lease_number** |
-
-This causes a Supabase error that silently fails the insert.
-
-### Issue 2: AI Prompt Could Be More Detailed
-
-The current AI prompt generates basic clauses, but they could be significantly more comprehensive with:
-- Utilities and services responsibilities
-- Pet policies
-- Noise and disturbance rules
-- Insurance requirements
-- Entry and inspection rights
-- Alterations and modifications
-- Subletting policies
-- Emergency contact procedures
+1. **PDF Export** - Download generated leases as formatted PDF documents
+2. **Email Invitations** - Send lease signing invitations to tenants
+3. **Tenant Portal** - A dedicated portal where tenants can sign leases, make payments, submit maintenance requests, and manage their account
 
 ---
 
-## Solution
+## Architecture Summary
 
-### Phase 1: Fix Database Insert
-
-**Option A: Remove the lease_number field from the insert** (Simpler)
-
-Remove the `lease_number` line from the insert statement since the column doesn't exist.
-
-**Option B: Add lease_number column via migration** (More complete)
-
-Add the `lease_number` column to the database to enable lease tracking by number.
-
-**Recommended: Option B** - A lease number is useful for reference and legal documentation.
-
-### Phase 2: Enhance AI-Generated Lease Clauses
-
-Update the `LeaseClausesData` interface and AI prompt to generate more comprehensive clauses:
-
-| Current Clause | Enhanced Additions |
-|----------------|-------------------|
-| legalNotices | Keep as-is |
-| rentTerms | Add payment methods, prorated rent info |
-| securityDepositRules | Add itemization, interest, walkthrough |
-| lateFeePolicy | Add cure periods, escalation |
-| maintenanceResponsibilities | Add emergency repairs, HVAC, appliances |
-| terminationConditions | Add early termination fees, buyout options |
-| **NEW** utilitiesAndServices | Who pays for what utilities |
-| **NEW** petPolicy | Pet deposits, restrictions, violations |
-| **NEW** noiseAndConduct | Quiet hours, nuisance behavior |
-| **NEW** entryAndInspection | Landlord access rights, notice periods |
-| **NEW** insuranceRequirements | Renter's insurance requirements |
-| **NEW** alterationsPolicy | What modifications require approval |
-| **NEW** sublettingPolicy | Rules for subletting or assignment |
+```text
++------------------+     Email Invite     +------------------+
+|   Landlord/PM    | ------------------> |     Tenant       |
+|   (Existing)     |                      |   (New Portal)   |
++------------------+                      +------------------+
+        |                                         |
+        v                                         v
++------------------+                      +------------------+
+| Lease Wizard     |                      | /tenant Routes   |
+| - Generate PDF   |                      | - Dashboard      |
+| - Send Invite    |                      | - Sign Lease     |
++------------------+                      | - Payments       |
+                                          | - Maintenance    |
+                                          +------------------+
+```
 
 ---
 
-## Implementation Details
+## Phase 1: PDF Export for Leases
 
-### Step 1: Database Migration
+### New Dependencies
+- `jspdf` - PDF generation library
+- `jspdf-autotable` - Table support for jspdf
 
-Add `lease_number` column to `leases` table:
+### New Component: `LeaseExportButton.tsx`
+**Location:** `src/components/property/LeaseExportButton.tsx`
 
-```sql
-ALTER TABLE public.leases 
-  ADD COLUMN lease_number TEXT;
+Renders a "Download PDF" button that:
+- Takes lease data, tenant info, unit info, and clauses as props
+- Generates a professional PDF with:
+  - Header with property logo/name
+  - Lease agreement title and number
+  - Parties section (Landlord & Tenant info)
+  - Property details section
+  - All clause sections with proper formatting
+  - Signature blocks for both parties
+  - Footer with date and page numbers
 
--- Add index for faster lookups
-CREATE INDEX idx_leases_lease_number ON public.leases(lease_number);
-```
+### Integration Points
+- Add to `LeaseGenerationStep.tsx` (after clauses generated)
+- Add to `Leases.tsx` page (for existing leases)
+- Add to future `LeaseDetails` component
 
-### Step 2: Update LeaseClausesData Interface
+---
 
-**File:** `src/components/property/LeaseGenerationStep.tsx`
+## Phase 2: Database Schema Updates
 
-```typescript
-export interface LeaseClausesData {
-  // Existing
-  legalNotices: string[];
-  rentTerms: string;
-  securityDepositRules: string;
-  lateFeePolicy: string;
-  maintenanceResponsibilities: string;
-  terminationConditions: string;
-  additionalClauses: string[];
-  
-  // New enhanced clauses
-  utilitiesAndServices: string;
-  petPolicy: string;
-  noiseAndConduct: string;
-  entryAndInspection: string;
-  insuranceRequirements: string;
-  alterationsPolicy: string;
-  sublettingPolicy: string;
-}
-```
+### New Role: `tenant`
+Add `tenant` to the `app_role` enum to support tenant-specific access.
 
-### Step 3: Update AI Edge Function Prompt
+### New Table: `lease_invitations`
+Tracks email invitations sent to tenants for lease signing.
 
-**File:** `supabase/functions/ai-lease-generator/index.ts`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| lease_id | uuid | FK to leases |
+| tenant_id | uuid | FK to tenants |
+| organization_id | uuid | FK to organizations |
+| email | text | Tenant's email |
+| token | text | Unique invitation token |
+| status | text | pending, accepted, expired |
+| sent_at | timestamp | When invitation was sent |
+| expires_at | timestamp | Token expiry (7 days) |
+| accepted_at | timestamp | When tenant signed up |
 
-Enhance the prompt to request more detailed clauses:
+### New Table: `lease_signatures`
+Records electronic signatures on leases.
 
-```typescript
-const userPrompt = `Generate comprehensive lease clauses for a residential property...
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| lease_id | uuid | FK to leases |
+| signer_type | text | landlord, tenant |
+| signer_id | uuid | User ID who signed |
+| signature_data | jsonb | Signature image/metadata |
+| signed_at | timestamp | Signing timestamp |
+| ip_address | text | IP for audit |
 
-Generate the following lease clauses in JSON format. Each clause should be:
-1. Jurisdiction-appropriate with specific law references
-2. Detailed and comprehensive (2-3 paragraphs per section)
-3. Legally sound and enforceable
+### Updates to `tenants` Table
+Add `user_id` column to link tenants to auth users.
 
-{
-  "legalNotices": ["array of 3-4 legal notice statements with specific law citations"],
-  "rentTerms": "Comprehensive paragraph covering: payment amount, due dates, accepted payment methods, prorated rent calculations, and consequences of bounced checks",
-  "securityDepositRules": "Detailed section covering: deposit amount, where held, interest requirements, itemized deductions allowed, walkthrough procedures, and return timeline per local law",
-  "lateFeePolicy": "Clear statement covering: grace period, fee amount, calculation method, cure period, and escalation procedures",
-  "maintenanceResponsibilities": "Thorough division covering: landlord duties (structural, plumbing, HVAC, appliances), tenant duties (routine upkeep, filters, light bulbs), emergency repair procedures, and reporting requirements",
-  "terminationConditions": "Complete coverage of: lease end procedures, early termination options/fees, buyout provisions, notice requirements, and holdover terms",
-  "utilitiesAndServices": "Specify: which utilities landlord provides vs tenant, meter transfer requirements, and trash/recycling responsibilities",
-  "petPolicy": "Cover: whether pets allowed, breed/size restrictions, pet deposit amount, monthly pet rent, violation consequences, and service animal exceptions",
-  "noiseAndConduct": "Include: quiet hours, prohibited activities, guest policies, and nuisance behavior definitions",
-  "entryAndInspection": "Specify: landlord's right to enter, required notice period, emergency access rights, and inspection schedules",
-  "insuranceRequirements": "Cover: renter's insurance requirements, minimum coverage amounts, and proof of insurance requirements",
-  "alterationsPolicy": "Explain: what modifications require written approval, reversibility requirements, and landlord's right to approve/deny",
-  "sublettingPolicy": "Cover: whether subletting/assignment allowed, approval process, and fees if applicable",
-  "additionalClauses": ["array of any other jurisdiction-specific required clauses such as mold disclosure, lead paint, etc."]
-}
-```
+| Column | Type | Description |
+|--------|------|-------------|
+| user_id | uuid | FK to auth.users (nullable) |
 
-### Step 4: Update LeaseGenerationStep UI
+### Updates to `leases` Table
+Add signature tracking columns.
 
-Add accordion sections for the new clause types:
+| Column | Type | Description |
+|--------|------|-------------|
+| landlord_signed_at | timestamp | When landlord signed |
+| tenant_signed_at | timestamp | When tenant signed |
+| signed_lease_pdf | text | Storage URL for signed PDF |
 
-- Utilities & Services (with Zap icon)
-- Pet Policy (with PawPrint icon)
-- Noise & Conduct (with Volume icon)
-- Entry & Inspection (with Key icon)
-- Insurance Requirements (with Shield icon)
-- Alterations Policy (with Hammer icon)
-- Subletting Policy (with Users icon)
+### Updates to `maintenance_requests` Table
+Add tenant submission tracking.
 
-### Step 5: Update Fallback Clauses
+| Column | Type | Description |
+|--------|------|-------------|
+| submitted_by_tenant | uuid | FK to tenants (if tenant-submitted) |
 
-Update the fallback clause generation to include sensible defaults for all new fields.
+---
+
+## Phase 3: Email Invitation System
+
+### New Edge Function: `send-lease-invitation`
+**Location:** `supabase/functions/send-lease-invitation/index.ts`
+
+Features:
+- Generates unique invitation token
+- Creates `lease_invitations` record
+- Sends branded email via Resend with:
+  - Property name and address
+  - Lease summary (rent, dates, terms)
+  - "Sign Your Lease" CTA button
+  - Link to tenant portal sign-up
+
+### New Component: `InviteTenantButton.tsx`
+**Location:** `src/components/property/InviteTenantButton.tsx`
+
+Button that triggers invitation email flow.
+
+### Integration
+- Add to `LeaseWizard.tsx` Step 7 (Review & Create)
+- Add to `Leases.tsx` for existing unsigned leases
+
+---
+
+## Phase 4: Tenant Portal
+
+### New Routes (Under `/tenant/*`)
+
+| Route | Component | Description |
+|-------|-----------|-------------|
+| `/tenant/auth` | TenantAuth | Login/signup for tenants |
+| `/tenant/accept-invite/:token` | AcceptInvite | Token validation and account creation |
+| `/tenant/dashboard` | TenantDashboard | Tenant home with summary |
+| `/tenant/leases` | TenantLeases | View and sign leases |
+| `/tenant/leases/:id` | TenantLeaseDetails | View specific lease, sign |
+| `/tenant/payments` | TenantPayments | Make payments, view history |
+| `/tenant/maintenance` | TenantMaintenance | Submit and track requests |
+| `/tenant/profile` | TenantProfile | Manage account details |
+
+### New Layout: `TenantLayout.tsx`
+Simplified layout for tenant portal with:
+- Tenant-specific sidebar navigation
+- Profile dropdown
+- Notification center
+- Property branding
+
+### Authentication Flow
+1. Landlord creates lease and invites tenant
+2. Tenant receives email with unique link
+3. Tenant clicks link, lands on `/tenant/accept-invite/:token`
+4. If new user: Creates account with tenant's email
+5. If existing: Links to existing profile
+6. System creates `user_roles` entry with `tenant` role
+7. Links `tenants.user_id` to the auth user
+8. Redirects to `/tenant/dashboard`
+
+---
+
+## Phase 5: Tenant Portal Pages
+
+### TenantDashboard.tsx
+Summary cards showing:
+- Active lease(s) overview
+- Next payment due date and amount
+- Open maintenance requests
+- Recent activity feed
+
+### TenantLeases.tsx / TenantLeaseDetails.tsx
+Features:
+- View all lease documents (PDF viewer)
+- Sign lease electronically with:
+  - Checkbox agreement flow
+  - Signature pad (draw or type name)
+  - Legal attestation text
+- Download signed PDF
+- View lease history
+
+### TenantPayments.tsx
+Features:
+- View upcoming payments
+- Payment history
+- Make payment (integrates with existing Paystack)
+- Set up auto-pay (future enhancement)
+- Download receipts
+
+### TenantMaintenance.tsx
+Features:
+- Submit new maintenance request
+  - Title, description, category, priority
+  - Photo upload capability
+- View request status and history
+- Communication thread with property manager
+
+### TenantProfile.tsx
+Features:
+- Update contact information
+- Update emergency contacts
+- Change password
+- Email preferences
+
+---
+
+## Phase 6: RLS Policies
+
+### Tenant Access Policies
+
+**lease_invitations:**
+- Tenants can view their own invitations (by email)
+- Managers can manage invitations for their org
+
+**lease_signatures:**
+- Users can insert their own signatures
+- Users can view signatures on leases they're party to
+
+**leases (tenant access):**
+- Tenants can view leases where `tenant_id` matches their linked tenant record
+
+**rent_payments (tenant access):**
+- Tenants can view/insert their own payments
+
+**maintenance_requests (tenant access):**
+- Tenants can insert requests for their unit
+- Tenants can view their own submitted requests
+
+---
+
+## Phase 7: Security Considerations
+
+1. **Token Security:**
+   - Invitation tokens expire after 7 days
+   - Tokens are single-use (marked as accepted)
+   - Cryptographically random generation
+
+2. **Tenant Isolation:**
+   - Tenants only see their own data
+   - Cannot access other units or tenants
+   - RLS enforces at database level
+
+3. **Signature Audit Trail:**
+   - All signatures include IP address
+   - Timestamps are immutable
+   - PDF is stored with hash for integrity
+
+4. **Email Verification:**
+   - Tenant email must match invitation email
+   - Auto-confirm enabled for faster onboarding
+
+---
+
+## Implementation Order
+
+| Phase | Components | Priority |
+|-------|------------|----------|
+| 1 | PDF Export (jspdf, LeaseExportButton) | High |
+| 2 | Database migrations (tenant role, tables) | High |
+| 3 | Email invitation edge function | High |
+| 4 | Tenant auth flow (accept-invite, auth) | High |
+| 5 | Tenant layout and routing | Medium |
+| 6 | Tenant dashboard and lease signing | Medium |
+| 7 | Tenant payments and maintenance | Medium |
+| 8 | RLS policies for tenant access | High |
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/property/LeaseExportButton.tsx` | PDF export button component |
+| `src/components/property/InviteTenantButton.tsx` | Email invitation trigger |
+| `src/components/property/SignaturePad.tsx` | Electronic signature capture |
+| `src/components/layout/TenantLayout.tsx` | Tenant portal layout |
+| `src/components/layout/TenantSidebar.tsx` | Tenant navigation |
+| `src/pages/tenant/TenantAuth.tsx` | Tenant login/signup |
+| `src/pages/tenant/AcceptInvite.tsx` | Invitation acceptance flow |
+| `src/pages/tenant/TenantDashboard.tsx` | Tenant home page |
+| `src/pages/tenant/TenantLeases.tsx` | Lease list |
+| `src/pages/tenant/TenantLeaseDetails.tsx` | View/sign lease |
+| `src/pages/tenant/TenantPayments.tsx` | Payment management |
+| `src/pages/tenant/TenantMaintenance.tsx` | Maintenance requests |
+| `src/pages/tenant/TenantProfile.tsx` | Profile management |
+| `supabase/functions/send-lease-invitation/index.ts` | Email invitation |
+| `supabase/functions/generate-lease-pdf/index.ts` | Server-side PDF (optional) |
 
 ---
 
@@ -173,26 +308,33 @@ Update the fallback clause generation to include sensible defaults for all new f
 
 | File | Changes |
 |------|---------|
-| Database Migration | Add `lease_number` column |
-| `src/components/property/LeaseGenerationStep.tsx` | Expand interface, add new accordion sections, update fallback |
-| `supabase/functions/ai-lease-generator/index.ts` | Enhance prompt for more detailed clauses |
-| `src/components/property/LeaseWizard.tsx` | No change needed (lease_number insert will work after migration) |
+| `src/types/index.ts` | Add `tenant` to AppRole, new interfaces |
+| `src/App.tsx` | Add tenant routes |
+| `src/contexts/AuthContext.tsx` | Add `isTenant` check |
+| `src/components/property/LeaseWizard.tsx` | Add invite button |
+| `src/components/property/LeaseGenerationStep.tsx` | Add PDF export |
+| `src/pages/property/Leases.tsx` | Add invite/export actions |
+| `src/pages/property/Maintenance.tsx` | Support tenant submissions |
 
 ---
 
-## Expected Results
+## Technical Notes
 
-After implementation:
-1. **Create Lease button works** - No more database error
-2. **Lease number tracking** - Each lease gets a unique identifier like "LS-2026-0042"
-3. **Comprehensive lease documents** - AI generates detailed clauses covering:
-   - All legal requirements
-   - Utility responsibilities
-   - Pet policies
-   - Conduct rules
-   - Entry rights
-   - Insurance requirements
-   - Modification policies
-   - Subletting rules
-4. **Editable clauses** - All sections remain fully editable before saving
-5. **Jurisdiction-specific content** - Clauses reference actual local laws (e.g., Ghana Rent Control Act, California Civil Code)
+### PDF Generation Approach
+Using client-side `jspdf` for simplicity:
+- No server costs
+- Instant generation
+- Works offline
+- Fallback: Edge function for server-side generation if needed
+
+### Signature Implementation
+- Canvas-based signature pad
+- Stores as base64 PNG in database
+- Typed signature option as fallback
+- Legal attestation checkbox required
+
+### Email Service Requirement
+This feature requires configuring Resend:
+- User needs RESEND_API_KEY secret
+- Verified domain for professional emails
+- Will prompt user to set up if not configured
