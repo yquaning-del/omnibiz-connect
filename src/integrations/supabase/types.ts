@@ -1974,6 +1974,81 @@ export type Database = {
         }
         Relationships: []
       }
+      property_units: {
+        Row: {
+          amenities: string[] | null
+          bathrooms: number
+          bedrooms: number
+          created_at: string
+          current_tenant_id: string | null
+          floor: number | null
+          id: string
+          location_id: string | null
+          monthly_rent: number
+          notes: string | null
+          organization_id: string
+          security_deposit: number | null
+          square_footage: number | null
+          status: string
+          unit_number: string
+          unit_type: string
+          updated_at: string
+        }
+        Insert: {
+          amenities?: string[] | null
+          bathrooms?: number
+          bedrooms?: number
+          created_at?: string
+          current_tenant_id?: string | null
+          floor?: number | null
+          id?: string
+          location_id?: string | null
+          monthly_rent?: number
+          notes?: string | null
+          organization_id: string
+          security_deposit?: number | null
+          square_footage?: number | null
+          status?: string
+          unit_number: string
+          unit_type?: string
+          updated_at?: string
+        }
+        Update: {
+          amenities?: string[] | null
+          bathrooms?: number
+          bedrooms?: number
+          created_at?: string
+          current_tenant_id?: string | null
+          floor?: number | null
+          id?: string
+          location_id?: string | null
+          monthly_rent?: number
+          notes?: string | null
+          organization_id?: string
+          security_deposit?: number | null
+          square_footage?: number | null
+          status?: string
+          unit_number?: string
+          unit_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_units_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_units_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations: {
         Row: {
           actual_check_in: string | null
