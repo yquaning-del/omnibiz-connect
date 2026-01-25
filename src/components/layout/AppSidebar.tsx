@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 import {
   Sidebar,
@@ -51,12 +52,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LocationSwitcher } from './LocationSwitcher';
 import { BusinessVertical } from '@/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { getPermissionKeyFromRoute } from '@/lib/verticalPermissions';
 
 interface NavItem {
   title: string;
   href: string;
   icon: LucideIcon;
   requiredFeature?: string;
+  permissionKey?: string;
 }
 
 
@@ -157,23 +160,41 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const { profile, signOut, hasRole, currentOrganization, currentLocation } = useAuth();
   const { canAccess, isExpired } = useSubscription();
+  const { hasPermission, isSuperAdmin } = usePermissions();
 
-  const isSuperAdmin = hasRole('super_admin');
+  const isSuperAdminRole = hasRole('super_admin');
   const vertical = (currentLocation?.vertical || currentOrganization?.primary_vertical || 'retail') as BusinessVertical;
-  const { common, verticalSpecific, management, adminItems } = getNavItems(vertical, isSuperAdmin);
+  const { common, verticalSpecific, management, adminItems } = getNavItems(vertical, isSuperAdminRole);
 
   const isActive = (path: string) => location.pathname === path;
   
   // Check if a nav item is locked based on feature requirement
-  const isLocked = (item: NavItem) => {
+  const isFeatureLocked = (item: NavItem) => {
     if (!item.requiredFeature) return false;
     if (isExpired) return true;
     return !canAccess(item.requiredFeature);
   };
 
-  // Render a nav item (regular or locked)
+  // Check if user has permission for nav item
+  const hasNavPermission = (item: NavItem) => {
+    // Super admins have all permissions
+    if (isSuperAdmin) return true;
+    
+    // Get permission key from route
+    const permissionKey = getPermissionKeyFromRoute(vertical, item.href);
+    if (!permissionKey) return true; // No permission mapping = allow
+    
+    return hasPermission(permissionKey);
+  };
+
+  // Render a nav item (regular, locked, or hidden by permission)
   const renderNavItem = (item: NavItem) => {
-    const locked = isLocked(item);
+    // Check permission first - hide if no permission
+    if (!hasNavPermission(item)) {
+      return null;
+    }
+
+    const locked = isFeatureLocked(item);
     
     if (locked) {
       return (
