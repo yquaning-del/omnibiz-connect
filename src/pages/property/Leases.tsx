@@ -17,6 +17,7 @@ import {
   Users
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
+import { LeaseWizard } from '@/components/property/LeaseWizard';
 
 interface Lease {
   id: string;
@@ -46,6 +47,7 @@ export default function Leases() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('active');
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   useEffect(() => {
     if (currentOrganization?.id) {
@@ -109,7 +111,7 @@ export default function Leases() {
           <h1 className="text-3xl font-bold tracking-tight">Leases</h1>
           <p className="text-muted-foreground">Manage rental agreements</p>
         </div>
-        <Button>
+        <Button onClick={() => setWizardOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Lease
         </Button>
@@ -200,7 +202,7 @@ export default function Leases() {
               {searchTerm ? 'Try adjusting your search' : 'Get started by creating your first lease'}
             </p>
             {!searchTerm && (
-              <Button>
+              <Button onClick={() => setWizardOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Lease
               </Button>
@@ -246,6 +248,12 @@ export default function Leases() {
           ))}
         </div>
       )}
+
+      <LeaseWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onSuccess={fetchLeases}
+      />
     </div>
   );
 }
