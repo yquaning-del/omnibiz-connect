@@ -26,6 +26,7 @@ import {
   Zap,
   FileText,
 } from 'lucide-react';
+import { PermissionGate } from '@/components/auth/PermissionGate';
 
 interface Reservation {
   id: string;
@@ -261,6 +262,7 @@ export default function FrontDesk() {
   }
 
   return (
+    <PermissionGate permission="hotel.front_desk">
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -589,5 +591,6 @@ export default function FrontDesk() {
         </DialogContent>
       </Dialog>
     </div>
+    </PermissionGate>
   );
 }

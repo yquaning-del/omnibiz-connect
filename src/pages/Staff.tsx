@@ -18,8 +18,10 @@ import { InviteStaffDialog } from '@/components/staff/InviteStaffDialog';
 import { PendingInvitations } from '@/components/staff/PendingInvitations';
 import { RolePermissionsCard } from '@/components/staff/RolePermissionsCard';
 import { StaffPermissionsEditor } from '@/components/staff/StaffPermissionsEditor';
+import { PermissionAuditLog } from '@/components/staff/PermissionAuditLog';
 import { ROLE_PERMISSIONS } from '@/lib/rolePermissions';
 import { AppRole, BusinessVertical } from '@/types';
+import { PermissionGate } from '@/components/auth/PermissionGate';
 
 interface StaffMember {
   id: string;
