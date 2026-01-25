@@ -30,17 +30,17 @@ interface LeaseGenerationRequest {
 
 function getJurisdictionContext(country: string, state?: string, city?: string): string {
   const contexts: Record<string, string> = {
-    'US-CA': 'California Civil Code Section 1950.5 limits security deposits to 2 months rent for unfurnished units. Landlords must return deposits within 21 days. California has strict rent control in some cities.',
-    'US-NY': 'New York requires landlords to place security deposits in interest-bearing accounts. Security deposits are limited to one month rent for rent-stabilized apartments.',
-    'US-TX': 'Texas Property Code Chapter 92 governs landlord-tenant relationships. Security deposits must be returned within 30 days. No statewide rent control.',
-    'US-FL': 'Florida Statute 83 requires 15-60 days notice for non-payment eviction. Security deposits must be held in a Florida bank and returned within 15-60 days.',
-    'GH': 'Ghana Rent Control Act 1963 (Act 220) governs tenancy. Rent Advance should not exceed 6 months for residential properties. Tenants have 3 months notice rights.',
-    'GH-ACCRA': 'In Accra, the Rent Control Department handles disputes. Maximum advance rent is 6 months. Landlords must provide receipts for all payments.',
-    'NG': 'Nigerian Tenancy Law varies by state. Lagos State Tenancy Law 2011 requires proper notice periods. Rent is typically paid annually in advance.',
-    'KE': 'Kenya Rent Restriction Act applies to older properties. The Rent Restriction Tribunal handles disputes. Security deposits are typically 1-2 months rent.',
-    'ZA': 'South African Rental Housing Act 50 of 1999 governs. Security deposits limited to 2 months rent. Rental Housing Tribunals handle disputes.',
-    'GB': 'UK Tenant Fees Act 2019 limits deposits to 5 weeks rent. Deposits must be protected in government scheme. Section 21 notices require 2 months notice.',
-    'CA': 'Canadian tenancy laws vary by province. Most provinces limit security deposits to one month rent. Rent increases are regulated in Ontario and BC.',
+    'US-CA': 'California Civil Code Section 1950.5 limits security deposits to 2 months rent for unfurnished units. Landlords must return deposits within 21 days with itemized deductions. California has strict rent control in some cities. AB 1482 caps annual rent increases at 5% plus inflation. 24-hour notice required for landlord entry.',
+    'US-NY': 'New York requires landlords to place security deposits in interest-bearing accounts. Security deposits are limited to one month rent for rent-stabilized apartments. Housing Stability and Tenant Protection Act of 2019 provides strong tenant protections. 24-hour notice required for non-emergency entry.',
+    'US-TX': 'Texas Property Code Chapter 92 governs landlord-tenant relationships. Security deposits must be returned within 30 days with itemized deductions. No statewide rent control. Landlords must provide written lease. Reasonable notice required for entry.',
+    'US-FL': 'Florida Statute 83 requires 15-60 days notice for non-payment eviction. Security deposits must be held in a Florida bank (interest-bearing optional) and returned within 15-60 days depending on claims. No rent control. 12-hour notice for entry except emergencies.',
+    'GH': 'Ghana Rent Control Act 1963 (Act 220) governs tenancy. Rent Advance should not exceed 6 months for residential properties. Tenants have 3 months notice rights. Rent Control Department handles disputes. Landlord must provide receipts.',
+    'GH-ACCRA': 'In Accra, the Rent Control Department actively handles disputes. Maximum advance rent is 6 months per Rent Act 220. Landlords must provide receipts for all payments. Tenancy agreements should be in writing.',
+    'NG': 'Nigerian Tenancy Law varies by state. Lagos State Tenancy Law 2011 requires proper notice periods (one month for monthly tenancies). Rent is typically paid annually in advance. Written agreements recommended. Recovery of Premises Act applies.',
+    'KE': 'Kenya Rent Restriction Act applies to older properties in certain areas. The Rent Restriction Tribunal handles disputes. Security deposits are typically 1-2 months rent. Landlord and Tenant Act governs commercial properties.',
+    'ZA': 'South African Rental Housing Act 50 of 1999 governs residential tenancies. Security deposits limited to 2 months rent and must earn interest. Rental Housing Tribunals handle disputes. Consumer Protection Act also applies. Written lease required.',
+    'GB': 'UK Tenant Fees Act 2019 limits deposits to 5 weeks rent (or 6 weeks if annual rent exceeds £50,000). Deposits must be protected in government scheme within 30 days. Section 21 notices require 2 months notice. Right to Rent checks required.',
+    'CA': 'Canadian tenancy laws vary by province. Most provinces limit security deposits to one month rent (half month in some). Rent increases are regulated in Ontario and BC. Residential Tenancies Acts provide tenant protections. Written notice periods vary by province.',
   };
 
   // Try specific state/city match first
@@ -55,7 +55,7 @@ function getJurisdictionContext(country: string, state?: string, city?: string):
   }
 
   // Fall back to country level
-  return contexts[country] || 'Standard landlord-tenant laws apply. Ensure compliance with local regulations.';
+  return contexts[country] || 'Standard landlord-tenant laws apply. Ensure compliance with local regulations. Written agreements are recommended. Both parties should understand their rights and obligations under applicable tenancy laws.';
 }
 
 serve(async (req) => {
@@ -72,7 +72,7 @@ serve(async (req) => {
     const request: LeaseGenerationRequest = await req.json();
     const { country, state, city, unitDetails, leaseTerms, tenantInfo } = request;
 
-    console.log("Generating lease for:", { country, state, city });
+    console.log("Generating comprehensive lease for:", { country, state, city });
 
     const jurisdictionContext = getJurisdictionContext(country, state, city);
     const templateSource = country === 'US' && state 
@@ -81,9 +81,9 @@ serve(async (req) => {
       ? `GH-${city.toUpperCase()}`
       : country;
 
-    const systemPrompt = `You are a legal document assistant specializing in residential lease agreements. Generate legally appropriate lease clauses based on the jurisdiction provided. Always include relevant local law references where applicable. Keep language clear and professional.`;
+    const systemPrompt = `You are an expert legal document assistant specializing in residential lease agreements. Generate comprehensive, legally appropriate lease clauses based on the jurisdiction provided. Always include relevant local law references where applicable. Use clear, professional, and enforceable language. Provide detailed clauses that protect both landlord and tenant interests.`;
 
-    const userPrompt = `Generate lease clauses for a residential property with these details:
+    const userPrompt = `Generate comprehensive lease clauses for a residential property with these details:
 
 JURISDICTION: ${country}${state ? `, ${state}` : ''}${city ? `, ${city}` : ''}
 LEGAL CONTEXT: ${jurisdictionContext}
@@ -104,16 +104,27 @@ LEASE TERMS:
 
 TENANT: ${tenantInfo.name}
 
-Generate the following lease clauses in JSON format. Each clause should be jurisdiction-appropriate and legally sound:
+Generate the following lease clauses in JSON format. Each clause should be:
+1. Jurisdiction-appropriate with specific law references where applicable
+2. Detailed and comprehensive (2-3 paragraphs per section minimum)
+3. Legally sound and enforceable
+4. Clear and professional in language
 
 {
-  "legalNotices": ["array of 2-3 legal notice statements specific to this jurisdiction"],
-  "rentTerms": "Detailed paragraph about rent payment terms, due dates, and accepted payment methods",
-  "securityDepositRules": "Paragraph about security deposit handling, limits, and return conditions per local law",
-  "lateFeePolicy": "Statement about late fees and grace period per local regulations",
-  "maintenanceResponsibilities": "Clear division of landlord vs tenant maintenance duties",
-  "terminationConditions": "How and when the lease can be terminated by either party",
-  "additionalClauses": ["array of any other jurisdiction-specific required clauses"]
+  "legalNotices": ["array of 3-4 legal notice statements specific to this jurisdiction, including any required disclosures such as lead paint (pre-1978 US), mold, or bed bugs"],
+  "rentTerms": "Comprehensive paragraph covering: exact payment amount (${leaseTerms.monthlyRent}), due date (1st of each month), accepted payment methods (check, money order, electronic transfer), prorated rent calculations for partial months, consequences of bounced checks or failed payments, and how payments should be delivered",
+  "securityDepositRules": "Detailed section covering: deposit amount (${leaseTerms.securityDeposit}), where the deposit will be held, interest requirements per local law, itemized list of what deductions are allowed (unpaid rent, damages beyond normal wear and tear, cleaning costs), move-in/move-out walkthrough procedures, and exact timeline for return per local regulations",
+  "lateFeePolicy": "Clear statement covering: grace period (${leaseTerms.gracePeriod} days), late fee amount (${leaseTerms.lateFee}), how fee is calculated (flat or percentage), cure period requirements, whether fees compound, and how partial payments are applied",
+  "maintenanceResponsibilities": "Thorough division covering: LANDLORD responsibilities (structural repairs, roof, plumbing, electrical, HVAC servicing, appliance repairs if provided, pest control, common areas), TENANT responsibilities (routine cleaning, light bulbs, smoke detector batteries, HVAC filter changes, lawn care if applicable, prompt reporting of issues), emergency repair procedures with contact information, and timelines for addressing maintenance requests",
+  "terminationConditions": "Complete coverage of: standard lease end procedures, required notice periods for both parties, early termination options and associated fees/penalties, lease buyout provisions if available, renewal procedures, holdover tenancy terms and rates, and conditions for immediate termination (illegal activity, health/safety violations)",
+  "utilitiesAndServices": "Specify clearly: which utilities landlord provides (water, sewer, trash, etc.), which utilities tenant must pay (electricity, gas, internet, cable), meter transfer requirements and timeline, responsibility for utility bills during vacancy, and trash/recycling collection procedures",
+  "petPolicy": "Cover comprehensively: whether pets are allowed, breed and weight restrictions, number of pets allowed, required pet deposit amount, monthly pet rent if applicable, vaccination and licensing requirements, liability for pet damage, consequences for unauthorized pets, and service animal/emotional support animal exceptions with documentation requirements",
+  "noiseAndConduct": "Include: quiet hours (typically 10pm-8am), prohibited activities (loud music, parties, illegal activities), guest policies including maximum consecutive nights (typically 7) and total nights per month (typically 14), commercial activity restrictions, nuisance behavior definitions, and neighbor complaint procedures",
+  "entryAndInspection": "Specify: landlord's right to enter for inspections/repairs/showings, required notice period per local law (typically 24-48 hours), emergency access rights without notice (fire, flood, immediate danger), regular inspection schedule (quarterly), and how entry requests will be communicated",
+  "insuranceRequirements": "Cover: whether renter's insurance is required, minimum liability coverage amount (typically $100,000), minimum personal property coverage (typically $25,000), requirement to name landlord as interested party, proof of insurance requirements and timeline, and consequences for lapse in coverage",
+  "alterationsPolicy": "Explain: what modifications require prior written approval (painting, wallpaper, fixtures, satellite dishes, security systems, smart home devices), reversibility requirements, landlord's right to approve/deny, whether improvements become landlord property, and restoration requirements at move-out",
+  "sublettingPolicy": "Cover: whether subletting/assignment is permitted, approval process and timeline, required subletting fee if applicable, subtenant application requirements, original tenant's continuing liability, and Airbnb/short-term rental restrictions",
+  "additionalClauses": ["array of 2-4 additional jurisdiction-specific required clauses such as: mold disclosure, lead paint disclosure (pre-1978), bed bug history, crime-free housing addendum, military clause for SCRA compliance, or other legally required disclosures"]
 }
 
 Return ONLY valid JSON, no markdown or explanations.`;
@@ -161,7 +172,7 @@ Return ONLY valid JSON, no markdown or explanations.`;
       throw new Error("No content in AI response");
     }
 
-    console.log("AI response received, parsing clauses...");
+    console.log("AI response received, parsing comprehensive clauses...");
 
     // Parse the JSON from the response
     let clauses;
@@ -179,13 +190,21 @@ Return ONLY valid JSON, no markdown or explanations.`;
       throw new Error("Failed to parse lease clauses from AI");
     }
 
-    // Validate required fields
-    const requiredFields = ['legalNotices', 'rentTerms', 'securityDepositRules', 'lateFeePolicy', 'maintenanceResponsibilities', 'terminationConditions'];
+    // Validate and ensure all required fields exist
+    const requiredFields = [
+      'legalNotices', 'rentTerms', 'securityDepositRules', 'lateFeePolicy', 
+      'maintenanceResponsibilities', 'terminationConditions', 'utilitiesAndServices',
+      'petPolicy', 'noiseAndConduct', 'entryAndInspection', 'insuranceRequirements',
+      'alterationsPolicy', 'sublettingPolicy', 'additionalClauses'
+    ];
+    
     for (const field of requiredFields) {
       if (!clauses[field]) {
-        clauses[field] = field === 'legalNotices' || field === 'additionalClauses' 
-          ? [] 
-          : 'To be specified by landlord.';
+        if (field === 'legalNotices' || field === 'additionalClauses') {
+          clauses[field] = [];
+        } else {
+          clauses[field] = 'To be specified by landlord in accordance with local laws.';
+        }
       }
     }
 
@@ -212,7 +231,7 @@ Return ONLY valid JSON, no markdown or explanations.`;
       },
     };
 
-    console.log("Lease generation successful:", templateSource);
+    console.log("Comprehensive lease generation successful:", templateSource);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

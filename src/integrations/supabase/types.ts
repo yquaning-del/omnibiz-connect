@@ -1069,6 +1069,7 @@ export type Database = {
           id: string
           late_fee_amount: number | null
           lease_document: Json | null
+          lease_number: string | null
           lease_type: string
           monthly_rent: number
           organization_id: string
@@ -1092,6 +1093,7 @@ export type Database = {
           id?: string
           late_fee_amount?: number | null
           lease_document?: Json | null
+          lease_number?: string | null
           lease_type?: string
           monthly_rent?: number
           organization_id: string
@@ -1115,6 +1117,7 @@ export type Database = {
           id?: string
           late_fee_amount?: number | null
           lease_document?: Json | null
+          lease_number?: string | null
           lease_type?: string
           monthly_rent?: number
           organization_id?: string
