@@ -4,8 +4,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, RotateCcw, Save } from 'lucide-react';
+import { Loader2, RotateCcw, Save, Sparkles } from 'lucide-react';
 import { useStaffPermissions } from '@/hooks/usePermissions';
 import {
   getAllPermissionsForVertical,
@@ -13,6 +15,7 @@ import {
   getVerticalLabel,
   PermissionDefinition,
 } from '@/lib/verticalPermissions';
+import { getTemplatesForVertical, PermissionTemplate } from '@/lib/permissionTemplates';
 import { AppRole, BusinessVertical } from '@/types';
 import { ROLE_PERMISSIONS } from '@/lib/rolePermissions';
 
@@ -42,9 +45,11 @@ export function StaffPermissionsEditor({
 
   const [localPermissions, setLocalPermissions] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
 
   const allPermissions = getAllPermissionsForVertical(vertical);
   const defaultPermissionKeys = getDefaultPermissionsForRole(vertical, staffRole);
+  const templates = getTemplatesForVertical(vertical);
 
   // Initialize local permissions when sheet opens
   useEffect(() => {
@@ -63,10 +68,12 @@ export function StaffPermissionsEditor({
     }
 
     setLocalPermissions(initial);
+    setSelectedTemplate('');
   }, [open, permissions, allPermissions, defaultPermissionKeys]);
 
   const handleToggle = (key: string, checked: boolean) => {
     setLocalPermissions((prev) => ({ ...prev, [key]: checked }));
+    setSelectedTemplate(''); // Clear template selection on manual change
   };
 
   const handleResetToDefaults = () => {
@@ -75,6 +82,34 @@ export function StaffPermissionsEditor({
       defaults[perm.key] = defaultPermissionKeys.includes(perm.key);
     }
     setLocalPermissions(defaults);
+    setSelectedTemplate('');
+  };
+
+  const handleApplyTemplate = (templateName: string) => {
+    const template = templates.find((t) => t.name === templateName);
+    if (!template) return;
+
+    const newPerms: Record<string, boolean> = {};
+    
+    // Start with all permissions disabled
+    for (const perm of allPermissions) {
+      newPerms[perm.key] = false;
+    }
+
+    // Enable only template permissions
+    for (const permKey of template.permissions) {
+      if (newPerms.hasOwnProperty(permKey)) {
+        newPerms[permKey] = true;
+      }
+    }
+
+    setLocalPermissions(newPerms);
+    setSelectedTemplate(templateName);
+
+    toast({
+      title: `Template Applied: ${templateName}`,
+      description: template.description,
+    });
   };
 
   const handleSave = async () => {
@@ -90,7 +125,12 @@ export function StaffPermissionsEditor({
       }
     }
 
-    const result = await savePermissions(customPerms);
+    const result = await savePermissions(customPerms, {
+      staffName,
+      staffRole,
+      templateApplied: selectedTemplate || undefined,
+      resetToDefaults: selectedTemplate === '' && customPerms.length === 0,
+    });
 
     if (result.success) {
       toast({ title: 'Permissions saved successfully' });
@@ -161,6 +201,24 @@ export function StaffPermissionsEditor({
     </div>
   );
 
+  const renderTemplateCard = (template: PermissionTemplate) => (
+    <button
+      key={template.name}
+      onClick={() => handleApplyTemplate(template.name)}
+      className={`flex items-start gap-3 p-3 rounded-lg border text-left transition-colors ${
+        selectedTemplate === template.name
+          ? 'border-primary bg-primary/5'
+          : 'border-border/50 bg-muted/30 hover:bg-muted/50'
+      }`}
+    >
+      <template.icon className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+      <div>
+        <p className="font-medium text-sm">{template.name}</p>
+        <p className="text-xs text-muted-foreground">{template.description}</p>
+      </div>
+    </button>
+  );
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
@@ -182,6 +240,23 @@ export function StaffPermissionsEditor({
           </div>
         ) : (
           <div className="space-y-6">
+            {/* Quick Templates Section */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <h4 className="text-sm font-medium">Quick Templates</h4>
+              </div>
+              <div className="grid gap-2">
+                {templates.slice(0, 4).map(renderTemplateCard)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Templates provide pre-configured permission sets for common roles.
+              </p>
+            </div>
+
+            <Separator />
+
+            {/* Manual Permission Selection */}
             {mainPermissions.length > 0 &&
               renderPermissionGroup('Main Features', mainPermissions)}
 

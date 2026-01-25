@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { LEASE_COUNTRIES, getStatesForCountry, getCitiesForCountry } from '@/lib/leaseLocations';
+import { PermissionGate } from '@/components/auth/PermissionGate';
 
 interface PropertyUnit {
   id: string;
@@ -202,6 +203,7 @@ export default function Units() {
   };
 
   return (
+    <PermissionGate permission="property.units">
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -591,5 +593,6 @@ export default function Units() {
         </div>
       )}
     </div>
+    </PermissionGate>
   );
 }

@@ -172,8 +172,34 @@ export function useStaffPermissions(userRoleId: string | null) {
   }, [fetchPermissions]);
 
   const savePermissions = useCallback(
-    async (newPermissions: { permission_key: string; granted: boolean }[]) => {
+    async (
+      newPermissions: { permission_key: string; granted: boolean }[],
+      auditInfo?: {
+        staffName?: string;
+        staffRole?: string;
+        templateApplied?: string;
+        resetToDefaults?: boolean;
+        previousPermissions?: string[];
+      }
+    ) => {
       if (!userRoleId) return { success: false, error: 'No user role ID' };
+
+      // Get existing permissions for audit comparison
+      const { data: existingPerms } = await supabase
+        .from('user_permissions')
+        .select('permission_key, granted')
+        .eq('user_role_id', userRoleId);
+
+      const existingGranted = new Set(
+        existingPerms?.filter((p) => p.granted).map((p) => p.permission_key) || []
+      );
+      const newGranted = new Set(
+        newPermissions.filter((p) => p.granted).map((p) => p.permission_key)
+      );
+
+      // Calculate changes for audit log
+      const added = [...newGranted].filter((p) => !existingGranted.has(p));
+      const removed = [...existingGranted].filter((p) => !newGranted.has(p));
 
       // Delete existing permissions
       await supabase
@@ -193,6 +219,29 @@ export function useStaffPermissions(userRoleId: string | null) {
 
         if (error) {
           return { success: false, error: error.message };
+        }
+      }
+
+      // Log the permission change for audit trail
+      if ((added.length > 0 || removed.length > 0) && auditInfo) {
+        try {
+          await supabase.from('admin_audit_logs').insert({
+            admin_user_id: (await supabase.auth.getUser()).data.user?.id,
+            action_type: 'permission_update',
+            target_type: 'user_role',
+            target_id: userRoleId,
+            details: {
+              staff_name: auditInfo.staffName,
+              staff_role: auditInfo.staffRole,
+              added: added.length > 0 ? added : undefined,
+              removed: removed.length > 0 ? removed : undefined,
+              template_applied: auditInfo.templateApplied,
+              reset_to_defaults: auditInfo.resetToDefaults,
+            },
+          });
+        } catch (auditError) {
+          console.warn('Failed to log permission change:', auditError);
+          // Don't fail the main operation if audit logging fails
         }
       }
 

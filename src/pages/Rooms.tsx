@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Loader2, Plus, BedDouble, Users, DollarSign, Sparkles, Wrench, Edit, MoreVertical } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { PermissionGate } from '@/components/auth/PermissionGate';
 
 interface HotelRoom {
   id: string;
@@ -94,6 +95,7 @@ export default function Rooms() {
   if (loading) return <div className="flex items-center justify-center h-[60vh]"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
+    <PermissionGate permission="hotel.rooms">
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -145,5 +147,6 @@ export default function Rooms() {
         ))}
       </div>
     </div>
+    </PermissionGate>
   );
 }

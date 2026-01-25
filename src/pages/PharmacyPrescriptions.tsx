@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import PrescriptionManagement from "@/components/pharmacy/PrescriptionManagement";
 import { supabase } from "@/integrations/supabase/client";
+import { PermissionGate } from "@/components/auth/PermissionGate";
 
 const PharmacyPrescriptions = () => {
   const { currentOrganization } = useAuth();
@@ -27,13 +28,15 @@ const PharmacyPrescriptions = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Prescriptions</h1>
-        <p className="text-muted-foreground">Manage and process patient prescriptions</p>
+    <PermissionGate permission="pharmacy.prescriptions">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Prescriptions</h1>
+          <p className="text-muted-foreground">Manage and process patient prescriptions</p>
+        </div>
+        <PrescriptionManagement onRefresh={handleRefresh} />
       </div>
-      <PrescriptionManagement onRefresh={handleRefresh} />
-    </div>
+    </PermissionGate>
   );
 };
 

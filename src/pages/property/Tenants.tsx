@@ -24,6 +24,7 @@ import {
   XCircle,
   AlertCircle
 } from 'lucide-react';
+import { PermissionGate } from '@/components/auth/PermissionGate';
 
 interface Tenant {
   id: string;
@@ -169,6 +170,7 @@ export default function Tenants() {
   };
 
   return (
+    <PermissionGate permission="property.tenants">
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -448,5 +450,6 @@ export default function Tenants() {
         </div>
       )}
     </div>
+    </PermissionGate>
   );
 }

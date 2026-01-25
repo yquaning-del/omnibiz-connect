@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import MedicationDatabase from "@/components/pharmacy/MedicationDatabase";
+import { PermissionGate } from "@/components/auth/PermissionGate";
 
 const PharmacyMedications = () => {
   const { currentOrganization } = useAuth();
@@ -22,13 +23,15 @@ const PharmacyMedications = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Medications</h1>
-        <p className="text-muted-foreground">Browse and manage medication database</p>
+    <PermissionGate permission="pharmacy.medications">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Medications</h1>
+          <p className="text-muted-foreground">Browse and manage medication database</p>
+        </div>
+        <MedicationDatabase />
       </div>
-      <MedicationDatabase />
-    </div>
+    </PermissionGate>
   );
 };
 

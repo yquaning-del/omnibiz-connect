@@ -17,6 +17,7 @@ import {
 import { formatCurrency } from '@/lib/currency';
 import { LeaseWizard } from '@/components/property/LeaseWizard';
 import { LeaseDetailPanel } from '@/components/property/LeaseDetailPanel';
+import { PermissionGate } from '@/components/auth/PermissionGate';
 
 interface Lease {
   id: string;
@@ -110,6 +111,7 @@ export default function Leases() {
   };
 
   return (
+    <PermissionGate permission="property.leases">
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -272,5 +274,6 @@ export default function Leases() {
         onLeaseUpdated={fetchLeases}
       />
     </div>
+    </PermissionGate>
   );
 }

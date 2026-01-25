@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import InsuranceBilling from "@/components/pharmacy/InsuranceBilling";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
+import { PermissionGate } from "@/components/auth/PermissionGate";
 
 const PharmacyInsurance = () => {
   const { currentOrganization } = useAuth();
@@ -23,15 +24,17 @@ const PharmacyInsurance = () => {
   }
 
   return (
-    <FeatureGate feature="insurance_billing" requiredTier="Professional">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Insurance & Billing</h1>
-          <p className="text-muted-foreground">Manage insurance claims and billing</p>
+    <PermissionGate permission="pharmacy.insurance">
+      <FeatureGate feature="insurance_billing" requiredTier="Professional">
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold">Insurance & Billing</h1>
+            <p className="text-muted-foreground">Manage insurance claims and billing</p>
+          </div>
+          <InsuranceBilling />
         </div>
-        <InsuranceBilling />
-      </div>
-    </FeatureGate>
+      </FeatureGate>
+    </PermissionGate>
   );
 };
 
