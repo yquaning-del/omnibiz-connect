@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -13,11 +13,10 @@ import {
   Search,
   Calendar,
   DollarSign,
-  Building2,
-  Users
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { LeaseWizard } from '@/components/property/LeaseWizard';
+import { LeaseDetailPanel } from '@/components/property/LeaseDetailPanel';
 
 interface Lease {
   id: string;
@@ -48,6 +47,8 @@ export default function Leases() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('active');
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [selectedLeaseId, setSelectedLeaseId] = useState<string | null>(null);
+  const [detailPanelOpen, setDetailPanelOpen] = useState(false);
 
   useEffect(() => {
     if (currentOrganization?.id) {
@@ -101,6 +102,11 @@ export default function Leases() {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString();
+  };
+
+  const handleLeaseClick = (leaseId: string) => {
+    setSelectedLeaseId(leaseId);
+    setDetailPanelOpen(true);
   };
 
   return (
@@ -212,7 +218,11 @@ export default function Leases() {
       ) : (
         <div className="space-y-3">
           {filteredLeases.map((lease) => (
-            <Card key={lease.id} className="hover:border-property/50 transition-colors cursor-pointer">
+            <Card 
+              key={lease.id} 
+              className="hover:border-property/50 transition-colors cursor-pointer"
+              onClick={() => handleLeaseClick(lease.id)}
+            >
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -253,6 +263,13 @@ export default function Leases() {
         open={wizardOpen}
         onOpenChange={setWizardOpen}
         onSuccess={fetchLeases}
+      />
+
+      <LeaseDetailPanel
+        leaseId={selectedLeaseId}
+        open={detailPanelOpen}
+        onOpenChange={setDetailPanelOpen}
+        onLeaseUpdated={fetchLeases}
       />
     </div>
   );
