@@ -27,13 +27,15 @@ import {
 
 interface Tenant {
   id: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   email: string | null;
   phone: string | null;
   status: string;
-  id_verified: boolean;
-  employment_verified: boolean;
-  income_verified: boolean;
+  id_type: string | null;
+  id_number: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
   move_in_date: string | null;
   move_out_date: string | null;
   created_at: string;
@@ -57,17 +59,15 @@ export default function Tenants() {
 
   // Form state
   const [formData, setFormData] = useState({
-    full_name: '',
+    first_name: '',
+    last_name: '',
     email: '',
     phone: '',
     date_of_birth: '',
-    id_document_type: '',
-    id_document_number: '',
+    id_type: '',
+    id_number: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
-    employer_name: '',
-    employer_phone: '',
-    annual_income: '',
   });
 
   useEffect(() => {
@@ -110,17 +110,15 @@ export default function Tenants() {
         .from('tenants')
         .insert({
           organization_id: currentOrganization.id,
-          full_name: formData.full_name,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
           email: formData.email || null,
           phone: formData.phone || null,
           date_of_birth: formData.date_of_birth || null,
-          id_document_type: formData.id_document_type || null,
-          id_document_number: formData.id_document_number || null,
+          id_type: formData.id_type || null,
+          id_number: formData.id_number || null,
           emergency_contact_name: formData.emergency_contact_name || null,
           emergency_contact_phone: formData.emergency_contact_phone || null,
-          employer_name: formData.employer_name || null,
-          employer_phone: formData.employer_phone || null,
-          annual_income: formData.annual_income ? parseFloat(formData.annual_income) : null,
           status: 'applicant',
         });
 
@@ -128,22 +126,20 @@ export default function Tenants() {
 
       toast({
         title: 'Tenant added',
-        description: `${formData.full_name} has been added successfully.`,
+        description: `${formData.first_name} ${formData.last_name} has been added successfully.`,
       });
 
       setIsDialogOpen(false);
       setFormData({
-        full_name: '',
+        first_name: '',
+        last_name: '',
         email: '',
         phone: '',
         date_of_birth: '',
-        id_document_type: '',
-        id_document_number: '',
+        id_type: '',
+        id_number: '',
         emergency_contact_name: '',
         emergency_contact_phone: '',
-        employer_name: '',
-        employer_phone: '',
-        annual_income: '',
       });
       fetchTenants();
     } catch (error: any) {
@@ -158,8 +154,9 @@ export default function Tenants() {
   };
 
   const filteredTenants = tenants.filter(tenant => {
+    const fullName = `${tenant.first_name} ${tenant.last_name}`;
     const matchesSearch = 
-      tenant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tenant.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tenant.phone?.includes(searchTerm);
     return matchesSearch;
@@ -198,24 +195,34 @@ export default function Tenants() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="full_name">Full Name *</Label>
+                    <Label htmlFor="first_name">First Name *</Label>
                     <Input
-                      id="full_name"
-                      value={formData.full_name}
-                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                      placeholder="John Doe"
+                      id="first_name"
+                      value={formData.first_name}
+                      onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                      placeholder="John"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="date_of_birth">Date of Birth</Label>
+                    <Label htmlFor="last_name">Last Name *</Label>
                     <Input
-                      id="date_of_birth"
-                      type="date"
-                      value={formData.date_of_birth}
-                      onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                      id="last_name"
+                      value={formData.last_name}
+                      onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                      placeholder="Doe"
+                      required
                     />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="date_of_birth">Date of Birth</Label>
+                  <Input
+                    id="date_of_birth"
+                    type="date"
+                    value={formData.date_of_birth}
+                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -247,20 +254,20 @@ export default function Tenants() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="id_document_type">ID Type</Label>
+                    <Label htmlFor="id_type">ID Type</Label>
                     <Input
-                      id="id_document_type"
-                      value={formData.id_document_type}
-                      onChange={(e) => setFormData({ ...formData, id_document_type: e.target.value })}
+                      id="id_type"
+                      value={formData.id_type}
+                      onChange={(e) => setFormData({ ...formData, id_type: e.target.value })}
                       placeholder="e.g., Passport, Driver's License"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="id_document_number">ID Number</Label>
+                    <Label htmlFor="id_number">ID Number</Label>
                     <Input
-                      id="id_document_number"
-                      value={formData.id_document_number}
-                      onChange={(e) => setFormData({ ...formData, id_document_number: e.target.value })}
+                      id="id_number"
+                      value={formData.id_number}
+                      onChange={(e) => setFormData({ ...formData, id_number: e.target.value })}
                       placeholder="Document number"
                     />
                   </div>
@@ -294,43 +301,6 @@ export default function Tenants() {
                 </div>
               </div>
 
-              {/* Employment */}
-              <div className="space-y-4">
-                <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                  Employment Information
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="employer_name">Employer</Label>
-                    <Input
-                      id="employer_name"
-                      value={formData.employer_name}
-                      onChange={(e) => setFormData({ ...formData, employer_name: e.target.value })}
-                      placeholder="Company name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="employer_phone">Employer Phone</Label>
-                    <Input
-                      id="employer_phone"
-                      value={formData.employer_phone}
-                      onChange={(e) => setFormData({ ...formData, employer_phone: e.target.value })}
-                      placeholder="+1 234 567 8900"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="annual_income">Annual Income</Label>
-                  <Input
-                    id="annual_income"
-                    type="number"
-                    min="0"
-                    value={formData.annual_income}
-                    onChange={(e) => setFormData({ ...formData, annual_income: e.target.value })}
-                    placeholder="50000"
-                  />
-                </div>
-              </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -428,11 +398,11 @@ export default function Tenants() {
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-full bg-property/20 flex items-center justify-center">
                       <span className="text-lg font-semibold text-property">
-                        {tenant.full_name.charAt(0).toUpperCase()}
+                        {tenant.first_name.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <h3 className="font-semibold">{tenant.full_name}</h3>
+                      <h3 className="font-semibold">{tenant.first_name} {tenant.last_name}</h3>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         {tenant.email && (
                           <span className="flex items-center gap-1">
@@ -453,21 +423,14 @@ export default function Tenants() {
                     {/* Verification Status */}
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1" title="ID Verified">
-                        {tenant.id_verified ? (
+                        {tenant.id_type && tenant.id_number ? (
                           <CheckCircle className="h-4 w-4 text-success" />
                         ) : (
                           <AlertCircle className="h-4 w-4 text-muted-foreground" />
                         )}
                       </div>
-                      <div className="flex items-center gap-1" title="Employment Verified">
-                        {tenant.employment_verified ? (
-                          <CheckCircle className="h-4 w-4 text-success" />
-                        ) : (
-                          <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1" title="Income Verified">
-                        {tenant.income_verified ? (
+                      <div className="flex items-center gap-1" title="Emergency Contact">
+                        {tenant.emergency_contact_name ? (
                           <CheckCircle className="h-4 w-4 text-success" />
                         ) : (
                           <AlertCircle className="h-4 w-4 text-muted-foreground" />
