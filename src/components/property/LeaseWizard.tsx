@@ -142,9 +142,9 @@ export function LeaseWizard({
     if (!currentOrganization?.id) return;
     const { data } = await (supabase as any)
       .from('tenants')
-      .select('id, first_name, last_name, email, phone')
+      .select('id, first_name, last_name, email, phone, status')
       .eq('organization_id', currentOrganization.id)
-      .eq('status', 'active');
+      .in('status', ['active', 'applicant']);
     setTenants(data || []);
   };
 
