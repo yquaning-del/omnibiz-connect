@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -13,7 +13,14 @@ import {
   ChevronDown,
   ChevronUp,
   X,
-  Sparkles
+  Sparkles,
+  Building2,
+  FileText,
+  BedDouble,
+  CalendarCheck,
+  UtensilsCrossed,
+  Pill,
+  ClipboardList
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +43,239 @@ export function SetupChecklist() {
   const navigate = useNavigate();
   const { currentOrganization, user } = useAuth();
 
-  const checklistItems: ChecklistItem[] = [
+  const vertical = currentOrganization?.primary_vertical || 'retail';
+
+  // Shared checklist items (invite team & reports)
+  const sharedChecklistItems: ChecklistItem[] = useMemo(() => [
+    {
+      id: "invite_team",
+      title: "Invite a team member",
+      description: "Add staff to help manage your business",
+      icon: UserPlus,
+      path: "/staff",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await supabase
+          .from("user_roles")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrganization.id);
+        return (count || 0) > 1;
+      },
+    },
+    {
+      id: "view_reports",
+      title: "Explore reports",
+      description: "Check your business analytics",
+      icon: BarChart3,
+      path: vertical === 'property' ? "/property/reports" : "/reports",
+      checkFn: async () => {
+        return localStorage.getItem("checklist_reports_viewed") === "true";
+      },
+    },
+  ], [currentOrganization, vertical]);
+
+  // Property-specific checklist items
+  const propertyChecklistItems: ChecklistItem[] = useMemo(() => [
+    {
+      id: "add_unit",
+      title: "Add your first unit",
+      description: "Create a property unit to start managing",
+      icon: Building2,
+      path: "/units",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await supabase
+          .from("property_units")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrganization.id);
+        return (count || 0) > 0;
+      },
+    },
+    {
+      id: "add_tenant",
+      title: "Create a tenant profile",
+      description: "Add your first tenant to track leases",
+      icon: Users,
+      path: "/tenants",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await supabase
+          .from("tenants")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrganization.id);
+        return (count || 0) > 0;
+      },
+    },
+    {
+      id: "create_lease",
+      title: "Create your first lease",
+      description: "Set up a lease agreement for a unit",
+      icon: FileText,
+      path: "/leases",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await supabase
+          .from("leases")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrganization.id);
+        return (count || 0) > 0;
+      },
+    },
+    ...sharedChecklistItems,
+  ], [currentOrganization, sharedChecklistItems]);
+
+  // Hotel-specific checklist items
+  const hotelChecklistItems: ChecklistItem[] = useMemo(() => [
+    {
+      id: "add_room",
+      title: "Add your first room",
+      description: "Create a room to start accepting guests",
+      icon: BedDouble,
+      path: "/rooms",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await (supabase as any)
+          .from("hotel_rooms")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrganization.id);
+        return (count || 0) > 0;
+      },
+    },
+    {
+      id: "add_guest",
+      title: "Create a guest profile",
+      description: "Add your first guest to track stays",
+      icon: Users,
+      path: "/guest-profiles",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await supabase
+          .from("guest_profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrganization.id);
+        return (count || 0) > 0;
+      },
+    },
+    {
+      id: "create_reservation",
+      title: "Create a reservation",
+      description: "Book your first guest stay",
+      icon: CalendarCheck,
+      path: "/reservations",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await supabase
+          .from("reservations")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrganization.id);
+        return (count || 0) > 0;
+      },
+    },
+    ...sharedChecklistItems,
+  ], [currentOrganization, sharedChecklistItems]);
+
+  // Restaurant-specific checklist items
+  const restaurantChecklistItems: ChecklistItem[] = useMemo(() => [
+    {
+      id: "add_product",
+      title: "Add your first menu item",
+      description: "Create a dish to start selling",
+      icon: UtensilsCrossed,
+      path: "/products",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await supabase
+          .from("products")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrganization.id);
+        return (count || 0) > 0;
+      },
+    },
+    {
+      id: "add_table",
+      title: "Create a table",
+      description: "Set up your dining area layout",
+      icon: Package,
+      path: "/tables",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await supabase
+          .from("restaurant_tables")
+          .select("*", { count: "exact", head: true })
+          .eq("location_id", currentOrganization.id);
+        return (count || 0) > 0;
+      },
+    },
+    {
+      id: "first_sale",
+      title: "Make your first sale",
+      description: "Process a transaction in the POS",
+      icon: ShoppingCart,
+      path: "/pos",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrganization.id);
+        return (count || 0) > 0;
+      },
+    },
+    ...sharedChecklistItems,
+  ], [currentOrganization, sharedChecklistItems]);
+
+  // Pharmacy-specific checklist items
+  const pharmacyChecklistItems: ChecklistItem[] = useMemo(() => [
+    {
+      id: "add_medication",
+      title: "Add your first medication",
+      description: "Create a medication in your inventory",
+      icon: Pill,
+      path: "/pharmacy/medications",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await supabase
+          .from("medications")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrganization.id);
+        return (count || 0) > 0;
+      },
+    },
+    {
+      id: "add_patient",
+      title: "Create a patient profile",
+      description: "Add your first patient record",
+      icon: Users,
+      path: "/pharmacy/patients",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await supabase
+          .from("patient_profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrganization.id);
+        return (count || 0) > 0;
+      },
+    },
+    {
+      id: "process_prescription",
+      title: "Process a prescription",
+      description: "Fill your first prescription order",
+      icon: ClipboardList,
+      path: "/pharmacy/prescriptions",
+      checkFn: async () => {
+        if (!currentOrganization) return false;
+        const { count } = await supabase
+          .from("prescriptions")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", currentOrganization.id);
+        return (count || 0) > 0;
+      },
+    },
+    ...sharedChecklistItems,
+  ], [currentOrganization, sharedChecklistItems]);
+
+  // Retail-specific checklist items (default)
+  const retailChecklistItems: ChecklistItem[] = useMemo(() => [
     {
       id: "add_product",
       title: "Add your first product",
@@ -82,37 +321,28 @@ export function SetupChecklist() {
         return (count || 0) > 0;
       },
     },
-    {
-      id: "invite_team",
-      title: "Invite a team member",
-      description: "Add staff to help manage your business",
-      icon: UserPlus,
-      path: "/staff",
-      checkFn: async () => {
-        if (!currentOrganization) return false;
-        const { count } = await supabase
-          .from("user_roles")
-          .select("*", { count: "exact", head: true })
-          .eq("organization_id", currentOrganization.id);
-        return (count || 0) > 1; // More than just the owner
-      },
-    },
-    {
-      id: "view_reports",
-      title: "Explore reports",
-      description: "Check your business analytics",
-      icon: BarChart3,
-      path: "/reports",
-      checkFn: async () => {
-        // This one we'll track via localStorage since it's a view action
-        return localStorage.getItem("checklist_reports_viewed") === "true";
-      },
-    },
-  ];
+    ...sharedChecklistItems,
+  ], [currentOrganization, sharedChecklistItems]);
+
+  // Select checklist based on vertical
+  const checklistItems = useMemo(() => {
+    switch (vertical) {
+      case 'property':
+        return propertyChecklistItems;
+      case 'hotel':
+        return hotelChecklistItems;
+      case 'restaurant':
+        return restaurantChecklistItems;
+      case 'pharmacy':
+        return pharmacyChecklistItems;
+      default:
+        return retailChecklistItems;
+    }
+  }, [vertical, propertyChecklistItems, hotelChecklistItems, restaurantChecklistItems, pharmacyChecklistItems, retailChecklistItems]);
 
   useEffect(() => {
     checkProgress();
-  }, [currentOrganization]);
+  }, [currentOrganization, checklistItems]);
 
   const checkProgress = async () => {
     if (!currentOrganization) {
@@ -123,7 +353,6 @@ export function SetupChecklist() {
     setLoading(true);
     
     try {
-      // Run all checks in parallel for better performance
       const results = await Promise.all(
         checklistItems.map(async (item) => {
           try {
@@ -141,7 +370,6 @@ export function SetupChecklist() {
       );
       setCompletedItems(completed);
       
-      // Auto-dismiss if all complete
       if (completed.size === checklistItems.length) {
         setTimeout(() => setIsDismissed(true), 2000);
       }
