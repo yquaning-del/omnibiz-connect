@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Product } from '@/types';
 import { cn } from '@/lib/utils';
 import { BarcodeScanner } from '@/components/pos/BarcodeScanner';
+import { OfflineIndicator } from '@/components/pos/OfflineIndicator';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useOfflinePOS } from '@/hooks/useOfflinePOS';
 import {
   Search,
   Plus,
@@ -29,7 +30,7 @@ import {
   X,
   Check,
   ScanLine,
-  Menu,
+  Smartphone,
 } from 'lucide-react';
 
 interface CartItem {
@@ -46,17 +47,32 @@ interface ReceiptData {
   total: number;
   paymentMethod: string;
   date: Date;
+  offline?: boolean;
 }
 
 export default function POS() {
   const { currentOrganization, currentLocation, user } = useAuth();
   const { toast } = useToast();
   
-  const [products, setProducts] = useState<Product[]>([]);
+  // Use offline-capable POS hook
+  const {
+    products,
+    loading,
+    isOnline,
+    offlineMode,
+    syncStatus,
+    processOrder,
+    requestSync,
+  } = useOfflinePOS({
+    organizationId: currentOrganization?.id,
+    locationId: currentLocation?.id,
+    vertical: currentLocation?.vertical,
+    userId: user?.id,
+  });
+  
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   
   // Discount state
@@ -93,28 +109,6 @@ export default function POS() {
       });
     }
   };
-
-  useEffect(() => {
-    if (!currentOrganization) return;
-
-    const fetchProducts = async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('organization_id', currentOrganization.id)
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching products:', error);
-      } else {
-        setProducts(data as Product[]);
-      }
-      setLoading(false);
-    };
-
-    fetchProducts();
-  }, [currentOrganization]);
 
   const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
 
@@ -182,61 +176,24 @@ export default function POS() {
     toast({ title: `Discount applied: ${discountType === 'percent' ? discountValue + '%' : '$' + discountValue}` });
   };
 
-  const processPayment = async (paymentMethod: string) => {
-    if (!currentOrganization || !currentLocation || !user || cart.length === 0) return;
+  const handlePayment = async (paymentMethod: string) => {
+    if (cart.length === 0) return;
 
     setProcessing(true);
 
     try {
-      const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
-
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          organization_id: currentOrganization.id,
-          location_id: currentLocation.id,
-          order_number: orderNumber,
-          vertical: currentLocation.vertical,
-          status: 'completed',
-          subtotal: subtotal,
-          tax_amount: tax,
-          discount_amount: discountAmount,
-          total_amount: total,
-          payment_method: paymentMethod,
-          payment_status: 'paid',
-          created_by: user.id,
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      const orderItems = cart.map(item => ({
-        order_id: order.id,
-        product_id: item.product.id,
-        product_name: item.product.name,
-        quantity: item.quantity,
-        unit_price: item.product.unit_price,
-        total_price: item.product.unit_price * item.quantity,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Update stock
-      for (const item of cart) {
-        await supabase
-          .from('products')
-          .update({ stock_quantity: item.product.stock_quantity - item.quantity })
-          .eq('id', item.product.id);
-      }
+      const result = await processOrder(
+        cart,
+        subtotal,
+        tax,
+        discountAmount,
+        total,
+        paymentMethod
+      );
 
       // Generate receipt
       setReceiptData({
-        orderNumber,
+        orderNumber: result.orderNumber,
         items: [...cart],
         subtotal,
         discount: discountAmount,
@@ -244,13 +201,16 @@ export default function POS() {
         total,
         paymentMethod,
         date: new Date(),
+        offline: result.offline,
       });
       setShowReceipt(true);
 
-      toast({
-        title: 'Payment successful!',
-        description: `Order ${orderNumber} completed. Total: $${total.toFixed(2)}`,
-      });
+      if (!result.offline) {
+        toast({
+          title: 'Payment successful!',
+          description: `Order ${result.orderNumber} completed. Total: $${total.toFixed(2)}`,
+        });
+      }
 
       clearCart();
     } catch (error: any) {
@@ -401,21 +361,21 @@ export default function POS() {
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          <Button variant="outline" className="flex flex-col gap-1 h-auto py-3" disabled={cart.length === 0 || processing} onClick={() => processPayment('cash')}>
+          <Button variant="outline" className="flex flex-col gap-1 h-auto py-3" disabled={cart.length === 0 || processing} onClick={() => handlePayment('cash')}>
             <Banknote className="w-5 h-5" />
             <span className="text-xs">Cash</span>
           </Button>
-          <Button variant="outline" className="flex flex-col gap-1 h-auto py-3" disabled={cart.length === 0 || processing} onClick={() => processPayment('card')}>
+          <Button variant="outline" className="flex flex-col gap-1 h-auto py-3" disabled={cart.length === 0 || processing} onClick={() => handlePayment('card')}>
             <CreditCard className="w-5 h-5" />
             <span className="text-xs">Card</span>
           </Button>
-          <Button variant="outline" className="flex flex-col gap-1 h-auto py-3" disabled={cart.length === 0 || processing} onClick={() => processPayment('qr')}>
-            <QrCode className="w-5 h-5" />
-            <span className="text-xs">QR Pay</span>
+          <Button variant="outline" className="flex flex-col gap-1 h-auto py-3" disabled={cart.length === 0 || processing} onClick={() => handlePayment('mobile_money')}>
+            <Smartphone className="w-5 h-5" />
+            <span className="text-xs">M-Pesa</span>
           </Button>
         </div>
 
-        <Button className="w-full h-14 text-lg" disabled={cart.length === 0 || processing} onClick={() => processPayment('card')}>
+        <Button className="w-full h-14 text-lg" disabled={cart.length === 0 || processing} onClick={() => handlePayment('card')}>
           {processing ? (
             <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Processing...</>
           ) : (
@@ -431,7 +391,14 @@ export default function POS() {
       {/* Products Grid */}
       <div className="flex-1 flex flex-col min-w-0">
         <div className="space-y-4 mb-4">
-          <div className="flex gap-2">
+          {/* Offline indicator and search */}
+          <div className="flex gap-2 items-center">
+            <OfflineIndicator
+              isOnline={isOnline}
+              offlineMode={offlineMode}
+              syncStatus={syncStatus}
+              onSync={requestSync}
+            />
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
@@ -643,6 +610,9 @@ export default function POS() {
               <div className="text-center text-muted-foreground text-xs mt-4">
                 <p>Order #{receiptData.orderNumber}</p>
                 <p>Paid by {receiptData.paymentMethod.toUpperCase()}</p>
+                {receiptData.offline && (
+                  <p className="text-warning mt-1">⏳ Pending sync</p>
+                )}
                 <p className="mt-2">Thank you for your business!</p>
               </div>
             </div>

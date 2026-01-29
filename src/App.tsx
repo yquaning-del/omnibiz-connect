@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CookieConsent } from "@/components/CookieConsent";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -82,6 +83,7 @@ const App = () => (
         <ErrorBoundary>
           <Toaster />
           <Sonner />
+          <ServiceWorkerRegistration />
           <BrowserRouter>
             <AuthProvider>
               <Routes>
