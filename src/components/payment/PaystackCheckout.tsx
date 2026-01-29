@@ -14,11 +14,14 @@ import { MobileMoneyForm } from "./MobileMoneyForm";
 import { Country } from "./CountrySelector";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PaystackCheckoutProps {
   open: boolean;
   onClose: () => void;
   planName: string;
+  planId: string;
   amount: number;
   currency: string;
   currencySymbol: string;
@@ -33,6 +36,7 @@ export function PaystackCheckout({
   open,
   onClose,
   planName,
+  planId,
   amount,
   currency,
   currencySymbol,
@@ -40,10 +44,12 @@ export function PaystackCheckout({
   onSuccess,
   billingCycle,
 }: PaystackCheckoutProps) {
+  const { currentOrganization, profile } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState<"card" | "mobile_money">("card");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(profile?.email || "");
   const [mobileMoneyData, setMobileMoneyData] = useState({ phone: "", network: "" });
   const [status, setStatus] = useState<PaymentStatus>("idle");
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const showMobileMoney = country.code === "GH";
 
@@ -58,39 +64,65 @@ export function PaystackCheckout({
       return;
     }
 
+    if (!currentOrganization?.id) {
+      toast.error("No organization selected");
+      return;
+    }
+
     setStatus("processing");
+    setErrorMessage("");
 
-    // PLACEHOLDER: Simulate Paystack payment
-    // In production, this would call the paystack-payment edge function
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const { data, error } = await supabase.functions.invoke("paystack-payment", {
+        body: {
+          email,
+          amount,
+          currency,
+          planId,
+          organizationId: currentOrganization.id,
+          billingCycle,
+          paymentMethod,
+          mobileNetwork: mobileMoneyData.network || undefined,
+          mobilePhone: mobileMoneyData.phone || undefined,
+        },
+      });
 
-      // Simulate 90% success rate for testing
-      const isSuccess = Math.random() > 0.1;
+      if (error) throw error;
 
-      if (isSuccess) {
-        const mockReference = `PSK_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        setStatus("success");
-        
-        setTimeout(() => {
-          onSuccess(mockReference);
-          toast.success("Payment successful! Your subscription is now active.");
-        }, 1500);
+      if (data?.success && data?.data?.authorization_url) {
+        // Show placeholder message if in demo mode
+        if (data.isPlaceholder) {
+          toast.info("Demo Mode: Paystack not configured. Simulating success...");
+          
+          // Simulate successful payment after 2 seconds
+          setTimeout(() => {
+            setStatus("success");
+            setTimeout(() => {
+              onSuccess(data.data.reference);
+              toast.success("Subscription activated successfully!");
+            }, 1500);
+          }, 2000);
+        } else {
+          // Real payment: redirect to Paystack checkout
+          window.location.href = data.data.authorization_url;
+        }
       } else {
-        setStatus("failed");
-        toast.error("Payment failed. Please try again.");
+        throw new Error(data?.error || "Payment initialization failed");
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Payment error:", error);
       setStatus("failed");
-      toast.error("Payment failed. Please try again.");
+      setErrorMessage(error.message || "Payment failed. Please try again.");
+      toast.error(error.message || "Payment failed. Please try again.");
     }
   };
 
   const resetAndClose = () => {
     setStatus("idle");
     setPaymentMethod("card");
-    setEmail("");
+    setEmail(profile?.email || "");
     setMobileMoneyData({ phone: "", network: "" });
+    setErrorMessage("");
     onClose();
   };
 
@@ -117,7 +149,7 @@ export function PaystackCheckout({
             <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Payment Failed</h3>
             <p className="text-muted-foreground mb-4">
-              Something went wrong. Please try again.
+              {errorMessage || "Something went wrong. Please try again."}
             </p>
             <Button onClick={() => setStatus("idle")}>Try Again</Button>
           </div>

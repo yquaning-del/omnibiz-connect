@@ -1,16 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -32,6 +24,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
+import { RecordPaymentDialog } from '@/components/property/RecordPaymentDialog';
 
 interface RentPayment {
   id: string;
@@ -74,6 +67,7 @@ export default function RentCollection() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showRecordPayment, setShowRecordPayment] = useState(false);
 
   useEffect(() => {
     if (currentOrganization?.id) {
@@ -131,11 +125,18 @@ export default function RentCollection() {
           <h1 className="text-3xl font-bold tracking-tight">Rent Collection</h1>
           <p className="text-muted-foreground">Track and manage rent payments</p>
         </div>
-        <Button>
+        <Button onClick={() => setShowRecordPayment(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Record Payment
         </Button>
       </div>
+
+      {/* Record Payment Dialog */}
+      <RecordPaymentDialog
+        open={showRecordPayment}
+        onClose={() => setShowRecordPayment(false)}
+        onSuccess={fetchPayments}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
