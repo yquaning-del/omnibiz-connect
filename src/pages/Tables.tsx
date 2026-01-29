@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Loader2, Plus, UtensilsCrossed, Users, Clock, Edit, Trash2, LayoutGrid, Map } from 'lucide-react';
+import { Loader2, Plus, UtensilsCrossed, Users, Clock, Edit, Trash2, LayoutGrid, Map, QrCode } from 'lucide-react';
 import { FloorPlanEditor } from '@/components/restaurant/FloorPlanEditor';
+import { QRCodeGenerator } from '@/components/restaurant/QRCodeGenerator';
 
 interface RestaurantTable {
   id: string;
@@ -41,7 +42,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function Tables() {
-  const { currentLocation } = useAuth();
+  const { currentLocation, currentOrganization } = useAuth();
   const { toast } = useToast();
   
   const [tables, setTables] = useState<RestaurantTable[]>([]);
@@ -412,6 +413,18 @@ export default function Tables() {
                       )
                     ))}
                   </div>
+                  
+                  {/* QR Code Button */}
+                  {currentOrganization && (
+                    <div className="mt-2">
+                      <QRCodeGenerator
+                        tableId={table.id}
+                        tableNumber={table.table_number}
+                        locationId={currentLocation!.id}
+                        organizationSlug={currentOrganization.slug}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

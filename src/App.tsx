@@ -73,6 +73,8 @@ import TenantMaintenance from "./pages/tenant/TenantMaintenance";
 import TenantProfile from "./pages/tenant/TenantProfile";
 // Staff Portal
 import AcceptStaffInvite from "./pages/staff/AcceptStaffInvite";
+// Customer Menu (QR ordering)
+import CustomerMenu from "./pages/menu/CustomerMenu";
 
 const queryClient = new QueryClient();
 
@@ -162,6 +164,9 @@ const App = () => (
                   <Route path="/tenant/maintenance" element={<TenantMaintenance />} />
                   <Route path="/tenant/profile" element={<TenantProfile />} />
                 </Route>
+
+                {/* Public Customer Menu (QR ordering) */}
+                <Route path="/menu/:orgSlug/:locationId" element={<CustomerMenu />} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
