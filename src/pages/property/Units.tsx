@@ -32,11 +32,13 @@ import {
   DollarSign,
   Users,
   Filter,
-  MapPin
+  MapPin,
+  ImageIcon,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { LEASE_COUNTRIES, getStatesForCountry, getCitiesForCountry } from '@/lib/leaseLocations';
 import { PermissionGate } from '@/components/auth/PermissionGate';
+import { UnitPhotosManager } from '@/components/property/UnitPhotosManager';
 
 interface PropertyUnit {
   id: string;
@@ -52,6 +54,7 @@ interface PropertyUnit {
   amenities: string[];
   notes: string | null;
   current_tenant_id: string | null;
+  photos: string[];
 }
 
 const unitTypes = ['studio', 'apartment', '1br', '2br', '3br', 'penthouse', 'townhouse'];
@@ -583,9 +586,21 @@ export default function Units() {
                     <span className="font-semibold">{formatCurrency(unit.monthly_rent)}</span>
                     <span className="text-sm text-muted-foreground">/mo</span>
                   </div>
-                  {unit.floor && (
-                    <span className="text-sm text-muted-foreground">Floor {unit.floor}</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <UnitPhotosManager
+                      unitId={unit.id}
+                      unitNumber={unit.unit_number}
+                      photos={unit.photos || []}
+                      onPhotosChange={(photos) => {
+                        setUnits(prev => prev.map(u => 
+                          u.id === unit.id ? { ...u, photos } : u
+                        ));
+                      }}
+                    />
+                    {unit.floor && (
+                      <span className="text-sm text-muted-foreground">Floor {unit.floor}</span>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
