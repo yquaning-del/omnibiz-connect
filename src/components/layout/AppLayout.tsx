@@ -11,6 +11,7 @@ import { ExpiredTrialOverlay } from '@/components/subscription/ExpiredTrialOverl
 import { CommandPalette } from '@/components/ui/command-palette';
 import { ProductTour } from '@/components/onboarding/ProductTour';
 import { FeedbackWidget } from '@/components/feedback/FeedbackWidget';
+import { AIChatAssistant } from '@/components/ai/AIChatAssistant';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Loader2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -63,6 +64,7 @@ function AppLayoutContent() {
       )}
       <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
       <FeedbackWidget />
+      <AIChatAssistant />
       
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background">
