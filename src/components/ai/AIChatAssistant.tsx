@@ -3,14 +3,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { 
-  MessageSquare, Send, Loader2, Bot, User, Sparkles, 
-  TrendingUp, Package, Users, Calendar, X
+  Send, Loader2, Bot, User, Sparkles, 
+  TrendingUp, Package, Users, Calendar, AlertCircle,
+  Wrench, BedDouble, PillIcon
 } from 'lucide-react';
 
 interface Message {
@@ -18,7 +18,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  data?: any;
+  toolsUsed?: string[];
 }
 
 interface SuggestedQuery {
@@ -35,12 +35,31 @@ export function AIChatAssistant() {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const suggestedQueries: SuggestedQuery[] = [
-    { icon: <TrendingUp className="h-4 w-4" />, text: "Today's sales summary", query: "What are today's sales?" },
-    { icon: <Package className="h-4 w-4" />, text: "Low stock items", query: "Show me products that are low on stock" },
-    { icon: <Users className="h-4 w-4" />, text: "Top customers", query: "Who are my top customers this month?" },
-    { icon: <Calendar className="h-4 w-4" />, text: "Upcoming reservations", query: "What reservations do I have today?" },
-  ];
+  // Dynamic suggestions based on vertical
+  const vertical = currentLocation?.vertical || 'retail';
+  
+  const getSuggestedQueries = (): SuggestedQuery[] => {
+    const base: SuggestedQuery[] = [
+      { icon: <TrendingUp className="h-4 w-4" />, text: "Today's sales summary", query: "What are today's sales?" },
+      { icon: <Package className="h-4 w-4" />, text: "Low stock items", query: "Show me products that are low on stock" },
+      { icon: <Users className="h-4 w-4" />, text: "Top customers", query: "Who are my top customers?" },
+    ];
+
+    if (vertical === 'restaurant' || vertical === 'hotel') {
+      base.push({ icon: <Calendar className="h-4 w-4" />, text: "Today's reservations", query: "What reservations do I have today?" });
+    }
+    if (vertical === 'hotel') {
+      base.push({ icon: <BedDouble className="h-4 w-4" />, text: "Room availability", query: "Show me room availability" });
+    }
+    if (vertical === 'property') {
+      base.push({ icon: <Wrench className="h-4 w-4" />, text: "Maintenance requests", query: "Show pending maintenance requests" });
+    }
+    if (vertical === 'pharmacy') {
+      base.push({ icon: <PillIcon className="h-4 w-4" />, text: "Expiring medications", query: "What medications are expiring soon?" });
+    }
+
+    return base.slice(0, 4);
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -48,111 +67,9 @@ export function AIChatAssistant() {
     }
   }, [messages]);
 
-  const processQuery = async (query: string) => {
-    if (!currentOrganization || !currentLocation) return null;
-
-    const lowerQuery = query.toLowerCase();
-
-    // Sales queries
-    if (lowerQuery.includes('sales') || lowerQuery.includes('revenue')) {
-      const today = new Date().toISOString().split('T')[0];
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('total_amount, created_at')
-        .eq('location_id', currentLocation.id)
-        .gte('created_at', today);
-
-      const totalSales = orders?.reduce((sum, o) => sum + Number(o.total_amount), 0) || 0;
-      const orderCount = orders?.length || 0;
-
-      return {
-        message: `📊 **Today's Sales Summary**\n\n- Total Revenue: **$${totalSales.toFixed(2)}**\n- Orders: **${orderCount}**\n- Average Order: **$${orderCount > 0 ? (totalSales / orderCount).toFixed(2) : '0.00'}**`,
-        data: { totalSales, orderCount },
-      };
-    }
-
-    // Low stock queries
-    if (lowerQuery.includes('low stock') || lowerQuery.includes('inventory')) {
-      const { data: products } = await supabase
-        .from('products')
-        .select('name, stock_quantity, low_stock_threshold')
-        .eq('organization_id', currentOrganization.id)
-        .eq('is_active', true);
-
-      const lowStock = products?.filter(p => p.stock_quantity <= p.low_stock_threshold) || [];
-
-      if (lowStock.length === 0) {
-        return { message: "✅ Great news! All products are well-stocked.", data: [] };
-      }
-
-      const list = lowStock.slice(0, 10).map(p => 
-        `- **${p.name}**: ${p.stock_quantity} units (threshold: ${p.low_stock_threshold})`
-      ).join('\n');
-
-      return {
-        message: `⚠️ **Low Stock Alert**\n\n${lowStock.length} product(s) need attention:\n\n${list}${lowStock.length > 10 ? `\n\n...and ${lowStock.length - 10} more` : ''}`,
-        data: lowStock,
-      };
-    }
-
-    // Customer queries
-    if (lowerQuery.includes('customer') || lowerQuery.includes('top')) {
-      const { data: customers } = await supabase
-        .from('customers')
-        .select('full_name, email, loyalty_points')
-        .eq('organization_id', currentOrganization.id)
-        .order('loyalty_points', { ascending: false })
-        .limit(5);
-
-      if (!customers?.length) {
-        return { message: "No customer data available yet.", data: [] };
-      }
-
-      const list = customers.map((c, i) => 
-        `${i + 1}. **${c.full_name}** - ${c.loyalty_points} points`
-      ).join('\n');
-
-      return {
-        message: `👥 **Top Customers by Loyalty Points**\n\n${list}`,
-        data: customers,
-      };
-    }
-
-    // Reservations
-    if (lowerQuery.includes('reservation') || lowerQuery.includes('booking')) {
-      const today = new Date().toISOString().split('T')[0];
-      const { data: reservations } = await supabase
-        .from('reservations')
-        .select('guest_name, guest_count, check_in, status, reservation_type')
-        .eq('location_id', currentLocation.id)
-        .gte('check_in', today)
-        .order('check_in');
-
-      if (!reservations?.length) {
-        return { message: "📅 No upcoming reservations found.", data: [] };
-      }
-
-      const list = reservations.slice(0, 5).map(r => {
-        const time = new Date(r.check_in).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        return `- **${r.guest_name}** (${r.guest_count} guests) at ${time} - ${r.status}`;
-      }).join('\n');
-
-      return {
-        message: `📅 **Upcoming Reservations** (${reservations.length} total)\n\n${list}`,
-        data: reservations,
-      };
-    }
-
-    // Default response
-    return {
-      message: "I can help you with:\n\n- 📊 Sales and revenue data\n- 📦 Inventory and stock levels\n- 👥 Customer information\n- 📅 Reservations and bookings\n\nTry asking something like \"What are today's sales?\" or \"Show me low stock items\".",
-      data: null,
-    };
-  };
-
   const handleSend = async (query?: string) => {
     const messageText = query || input.trim();
-    if (!messageText) return;
+    if (!messageText || !currentOrganization || !currentLocation) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -166,23 +83,39 @@ export function AIChatAssistant() {
     setLoading(true);
 
     try {
-      const result = await processQuery(messageText);
-      
+      // Build conversation history for context
+      const conversationHistory = messages.slice(-10).map(m => ({
+        role: m.role,
+        content: m.content
+      }));
+
+      const { data, error } = await supabase.functions.invoke('ai-copilot', {
+        body: {
+          message: messageText,
+          organizationId: currentOrganization.id,
+          locationId: currentLocation.id,
+          vertical: currentLocation.vertical,
+          conversationHistory,
+        },
+      });
+
+      if (error) throw error;
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: result?.message || "I'm sorry, I couldn't process that request.",
+        content: data?.response || "I couldn't process that request.",
         timestamp: new Date(),
-        data: result?.data,
+        toolsUsed: data?.toolsUsed,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('AI query error:', error);
+      console.error('AI Copilot error:', error);
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "Sorry, something went wrong. Please try again.",
+        content: "Sorry, I encountered an error. Please try again.",
         timestamp: new Date(),
       }]);
     } finally {
@@ -196,6 +129,14 @@ export function AIChatAssistant() {
       handleSend();
     }
   };
+
+  const formatContent = (content: string) => {
+    return content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br/>');
+  };
+
+  const suggestedQueries = getSuggestedQueries();
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -211,8 +152,10 @@ export function AIChatAssistant() {
         <SheetHeader className="px-4 py-3 border-b bg-primary/5">
           <SheetTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-primary" />
-            AI Assistant
-            <Badge variant="secondary" className="ml-auto text-xs">Beta</Badge>
+            AI Copilot
+            <Badge variant="secondary" className="ml-auto text-xs">
+              {vertical}
+            </Badge>
           </SheetTitle>
         </SheetHeader>
 
@@ -223,7 +166,7 @@ export function AIChatAssistant() {
                 <Sparkles className="h-12 w-12 mx-auto text-primary/50 mb-3" />
                 <h3 className="font-semibold text-lg">How can I help you?</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Ask me about your business data
+                  Ask me anything about your {vertical} business
                 </p>
               </div>
               
@@ -271,12 +214,17 @@ export function AIChatAssistant() {
                         "text-sm whitespace-pre-wrap",
                         message.role === 'assistant' && "prose prose-sm dark:prose-invert max-w-none"
                       )}
-                      dangerouslySetInnerHTML={{ 
-                        __html: message.content
-                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                          .replace(/\n/g, '<br/>') 
-                      }}
+                      dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
                     />
+                    {message.toolsUsed && message.toolsUsed.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {message.toolsUsed.map((tool, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">
+                            {tool.replace(/_/g, ' ')}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                     <p className="text-xs opacity-60 mt-1">
                       {message.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     </p>
@@ -293,8 +241,9 @@ export function AIChatAssistant() {
                   <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                     <Bot className="h-4 w-4 text-primary" />
                   </div>
-                  <div className="bg-muted rounded-lg px-4 py-3">
+                  <div className="bg-muted rounded-lg px-4 py-3 flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm text-muted-foreground">Thinking...</span>
                   </div>
                 </div>
               )}
@@ -316,6 +265,9 @@ export function AIChatAssistant() {
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Powered by AI • Data from your {vertical} dashboard
+          </p>
         </div>
       </SheetContent>
     </Sheet>
