@@ -15,6 +15,7 @@ import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard, Upload
 import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
 import { SubscriptionSettings } from '@/components/settings/SubscriptionSettings';
+import { OrganizationSettings as RegionalSettings } from '@/components/settings/OrganizationSettings';
 import DataImport from '@/pages/settings/DataImport';
 import { useLimitChecker, formatLimitDisplay } from '@/hooks/useLimitChecker';
 import { useNavigate } from 'react-router-dom';
@@ -185,7 +186,7 @@ export default function Settings() {
         </TabsList>
 
         {/* Organization Settings */}
-        <TabsContent value="organization">
+        <TabsContent value="organization" className="space-y-6">
           <Card className="border-border/50 bg-card/50">
             <CardHeader>
               <CardTitle>Organization Settings</CardTitle>
@@ -225,6 +226,9 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+          
+          {/* Regional & Tax Settings */}
+          <RegionalSettings />
         </TabsContent>
 
         {/* Location Settings */}

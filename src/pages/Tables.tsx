@@ -8,9 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Loader2, Plus, UtensilsCrossed, Users, Clock, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Plus, UtensilsCrossed, Users, Clock, Edit, Trash2, LayoutGrid, Map } from 'lucide-react';
+import { FloorPlanEditor } from '@/components/restaurant/FloorPlanEditor';
 
 interface RestaurantTable {
   id: string;
@@ -47,6 +49,7 @@ export default function Tables() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingTable, setEditingTable] = useState<RestaurantTable | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'floorplan'>('grid');
 
   // Form state
   const [tableNumber, setTableNumber] = useState('');
@@ -175,6 +178,21 @@ export default function Tables() {
     );
   }
 
+  const handleUpdatePositions = async (updates: { id: string; position_x: number; position_y: number }[]) => {
+    try {
+      for (const update of updates) {
+        await supabase
+          .from('restaurant_tables')
+          .update({ position_x: update.position_x, position_y: update.position_y })
+          .eq('id', update.id);
+      }
+      toast({ title: 'Floor plan saved' });
+      fetchTables();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -184,16 +202,30 @@ export default function Tables() {
           <p className="text-muted-foreground">Manage restaurant floor plan and table status</p>
         </div>
         
-        <Dialog open={dialogOpen} onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Table
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'grid' | 'floorplan')}>
+            <TabsList>
+              <TabsTrigger value="grid" className="gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Grid
+              </TabsTrigger>
+              <TabsTrigger value="floorplan" className="gap-2">
+                <Map className="h-4 w-4" />
+                Floor Plan
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          <Dialog open={dialogOpen} onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Table
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>{editingTable ? 'Edit Table' : 'Add New Table'}</DialogTitle>
@@ -243,6 +275,7 @@ export default function Tables() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Stats */}
@@ -293,10 +326,23 @@ export default function Tables() {
         </Card>
       </div>
 
-      {/* Floor Plan */}
+      {/* Floor Plan View */}
+      {viewMode === 'floorplan' && (
+        <FloorPlanEditor
+          tables={tables}
+          onUpdatePositions={handleUpdatePositions}
+          onTableClick={(table) => {
+            const fullTable = tables.find(t => t.id === table.id);
+            if (fullTable) openEditDialog(fullTable);
+          }}
+        />
+      )}
+
+      {/* Grid View */}
+      {viewMode === 'grid' && (
       <Card className="border-border/50 bg-card/50">
         <CardHeader>
-          <CardTitle className="text-lg">Floor Plan</CardTitle>
+          <CardTitle className="text-lg">Tables</CardTitle>
         </CardHeader>
         <CardContent>
           {tables.length === 0 ? (
@@ -372,6 +418,7 @@ export default function Tables() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Legend */}
       <div className="flex flex-wrap gap-4">
