@@ -2277,6 +2277,7 @@ export type Database = {
           monthly_rent: number
           notes: string | null
           organization_id: string
+          photos: string[] | null
           security_deposit: number | null
           square_footage: number | null
           state: string | null
@@ -2300,6 +2301,7 @@ export type Database = {
           monthly_rent?: number
           notes?: string | null
           organization_id: string
+          photos?: string[] | null
           security_deposit?: number | null
           square_footage?: number | null
           state?: string | null
@@ -2323,6 +2325,7 @@ export type Database = {
           monthly_rent?: number
           notes?: string | null
           organization_id?: string
+          photos?: string[] | null
           security_deposit?: number | null
           square_footage?: number | null
           state?: string | null
@@ -2950,6 +2953,60 @@ export type Database = {
             columns: ["unit_id"]
             isOneToOne: false
             referencedRelation: "property_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          organization_id: string
+          tenant_id: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          organization_id: string
+          tenant_id: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          organization_id?: string
+          tenant_id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
