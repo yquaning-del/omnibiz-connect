@@ -142,7 +142,7 @@ export function AIChatAssistant() {
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+          className="fixed bottom-20 right-6 h-14 w-14 rounded-full shadow-lg z-50"
           size="icon"
         >
           <Sparkles className="h-6 w-6" />
