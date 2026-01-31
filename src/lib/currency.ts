@@ -2,7 +2,7 @@
  * Currency formatting utilities
  */
 
-export type SupportedCurrency = 'USD' | 'GHS';
+export type SupportedCurrency = 'USD' | 'GHS' | 'KES' | 'NGN' | 'ZAR' | 'TZS' | 'UGX' | 'RWF';
 
 interface CurrencyConfig {
   code: string;
@@ -23,6 +23,42 @@ export const CURRENCIES: Record<SupportedCurrency, CurrencyConfig> = {
     symbol: '₵',
     locale: 'en-GH',
     name: 'Ghana Cedi',
+  },
+  KES: {
+    code: 'KES',
+    symbol: 'KSh',
+    locale: 'en-KE',
+    name: 'Kenyan Shilling',
+  },
+  NGN: {
+    code: 'NGN',
+    symbol: '₦',
+    locale: 'en-NG',
+    name: 'Nigerian Naira',
+  },
+  ZAR: {
+    code: 'ZAR',
+    symbol: 'R',
+    locale: 'en-ZA',
+    name: 'South African Rand',
+  },
+  TZS: {
+    code: 'TZS',
+    symbol: 'TSh',
+    locale: 'sw-TZ',
+    name: 'Tanzanian Shilling',
+  },
+  UGX: {
+    code: 'UGX',
+    symbol: 'USh',
+    locale: 'en-UG',
+    name: 'Ugandan Shilling',
+  },
+  RWF: {
+    code: 'RWF',
+    symbol: 'FRw',
+    locale: 'rw-RW',
+    name: 'Rwandan Franc',
   },
 };
 

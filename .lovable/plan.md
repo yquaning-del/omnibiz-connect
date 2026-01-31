@@ -240,18 +240,41 @@ prescriber_registrations, epcs_transactions, surescripts_logs
 
 ## Recommended Priority Order
 
-| Rank | Enhancement | Impact | Effort | Vertical |
-|------|-------------|--------|--------|----------|
-| 1 | E-commerce Module | Critical | High | Retail |
-| 2 | Channel Manager | Critical | High | Hotel |
-| 3 | Accounting Integration | High | Medium | All |
-| 4 | Tenant Self-Service Portal | High | Medium | Property |
-| 5 | Delivery Platform Integration | High | Medium | Restaurant |
-| 6 | Advanced Scheduling | Medium | Medium | All |
-| 7 | E-Prescribing (EPCS) | Critical | High | Pharmacy |
-| 8 | Purchase Orders | High | Medium | Retail |
-| 9 | Gift Cards | Medium | Low | Retail |
-| 10 | Loyalty Tiers | Medium | Medium | All |
+| Rank | Enhancement | Impact | Effort | Vertical | Status |
+|------|-------------|--------|--------|----------|--------|
+| 1 | E-commerce Module | Critical | High | Retail | ✅ DONE |
+| 2 | Channel Manager | Critical | High | Hotel | 🔲 TODO |
+| 3 | Accounting Integration | High | Medium | All | 🔲 TODO |
+| 4 | Tenant Self-Service Portal | High | Medium | Property | 🔲 TODO |
+| 5 | Delivery Platform Integration | High | Medium | Restaurant | 🔲 TODO |
+| 6 | Advanced Scheduling | Medium | Medium | All | 🔲 TODO |
+| 7 | E-Prescribing (EPCS) | Critical | High | Pharmacy | 🔲 TODO |
+| 8 | Purchase Orders | High | Medium | Retail | 🔲 TODO |
+| 9 | Gift Cards | Medium | Low | Retail | 🔲 TODO |
+| 10 | Loyalty Tiers | Medium | Medium | All | 🔲 TODO |
+
+---
+
+## Completed Implementations
+
+### E-commerce Module (Completed)
+**Database Tables:**
+- `product_variants` - Product size/color variants with stock
+- `cart_items` - Shopping cart (supports guest and authenticated)
+- `shipping_addresses` - Customer shipping info
+- `online_orders` - Orders from online store
+- `online_order_items` - Line items for online orders
+
+**Frontend Components:**
+- `/store/:orgSlug` - Public storefront catalog
+- `/store/:orgSlug/checkout` - Checkout flow
+- `/online-orders` - Admin order management
+- Products page now has "Available Online" toggle
+
+**Backend:**
+- `process-online-order` edge function for order fulfillment
+- Order number auto-generation trigger
+- Inventory deduction on order confirmation
 
 ---
 

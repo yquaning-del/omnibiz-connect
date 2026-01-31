@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Product } from '@/types';
 import { cn } from '@/lib/utils';
@@ -24,11 +25,13 @@ import {
   Edit,
   Trash2,
   MoreVertical,
+  Globe,
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
@@ -51,6 +54,7 @@ export default function Products() {
   const [formCost, setFormCost] = useState('');
   const [formStock, setFormStock] = useState('');
   const [formThreshold, setFormThreshold] = useState('10');
+  const [formAvailableOnline, setFormAvailableOnline] = useState(false);
 
   useEffect(() => {
     if (!currentOrganization) return;
@@ -82,6 +86,7 @@ export default function Products() {
     setFormCost('');
     setFormStock('');
     setFormThreshold('10');
+    setFormAvailableOnline(false);
     setEditingProduct(null);
   };
 
@@ -94,6 +99,7 @@ export default function Products() {
     setFormCost(product.cost_price?.toString() || '');
     setFormStock(product.stock_quantity.toString());
     setFormThreshold(product.low_stock_threshold.toString());
+    setFormAvailableOnline((product as any).is_available_online || false);
     setDialogOpen(true);
   };
 
@@ -115,6 +121,7 @@ export default function Products() {
         organization_id: currentOrganization.id,
         location_id: currentLocation.id,
         vertical: currentLocation.vertical,
+        is_available_online: formAvailableOnline,
       };
 
       if (editingProduct) {
@@ -162,6 +169,24 @@ export default function Products() {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } else {
       toast({ title: 'Product deleted' });
+      fetchProducts();
+    }
+  };
+
+  const toggleOnlineAvailability = async (product: Product) => {
+    const newStatus = !(product as any).is_available_online;
+    const { error } = await supabase
+      .from('products')
+      .update({ is_available_online: newStatus })
+      .eq('id', product.id);
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } else {
+      toast({ 
+        title: newStatus ? 'Available online' : 'Removed from online store',
+        description: `${product.name} is now ${newStatus ? 'visible' : 'hidden'} in the online store.`
+      });
       fetchProducts();
     }
   };
@@ -293,6 +318,20 @@ export default function Products() {
                 </div>
               </div>
 
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label htmlFor="online">Available Online</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Show this product in your online store
+                  </p>
+                </div>
+                <Switch
+                  id="online"
+                  checked={formAvailableOnline}
+                  onCheckedChange={setFormAvailableOnline}
+                />
+              </div>
+
               <Button type="submit" className="w-full" disabled={saving}>
                 {saving ? (
                   <>
@@ -356,6 +395,11 @@ export default function Products() {
                         <Edit className="w-4 h-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => toggleOnlineAvailability(product)}>
+                        <Globe className="w-4 h-4 mr-2" />
+                        {(product as any).is_available_online ? 'Remove from Online Store' : 'Add to Online Store'}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem 
                         onClick={() => deleteProduct(product)}
                         className="text-destructive"
@@ -368,9 +412,17 @@ export default function Products() {
                 </div>
 
                 <h3 className="font-medium text-foreground mb-1 truncate">{product.name}</h3>
-                {product.sku && (
-                  <p className="text-xs text-muted-foreground mb-2">SKU: {product.sku}</p>
-                )}
+                <div className="flex items-center gap-2 mb-2">
+                  {product.sku && (
+                    <span className="text-xs text-muted-foreground">SKU: {product.sku}</span>
+                  )}
+                  {(product as any).is_available_online && (
+                    <Badge variant="secondary" className="text-xs">
+                      <Globe className="w-3 h-3 mr-1" />
+                      Online
+                    </Badge>
+                  )}
+                </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold text-primary">
