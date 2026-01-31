@@ -71,10 +71,14 @@ import TenantLeaseDetails from "./pages/tenant/TenantLeaseDetails";
 import TenantPayments from "./pages/tenant/TenantPayments";
 import TenantMaintenance from "./pages/tenant/TenantMaintenance";
 import TenantProfile from "./pages/tenant/TenantProfile";
-// Staff Portal
 import AcceptStaffInvite from "./pages/staff/AcceptStaffInvite";
+// Online Orders Management
+import OnlineOrders from "./pages/OnlineOrders";
 // Customer Menu (QR ordering)
 import CustomerMenu from "./pages/menu/CustomerMenu";
+// E-commerce Store
+import StoreCatalog from "./pages/store/StoreCatalog";
+import StoreCheckout from "./pages/store/StoreCheckout";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +114,7 @@ const App = () => (
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/orders/:id" element={<Orders />} />
                   <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/online-orders" element={<OnlineOrders />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/staff" element={<Staff />} />
                   <Route path="/tables" element={<Tables />} />
@@ -167,6 +172,10 @@ const App = () => (
 
                 {/* Public Customer Menu (QR ordering) */}
                 <Route path="/menu/:orgSlug/:locationId" element={<CustomerMenu />} />
+
+                {/* Public E-commerce Store */}
+                <Route path="/store/:orgSlug" element={<StoreCatalog />} />
+                <Route path="/store/:orgSlug/checkout" element={<StoreCheckout />} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
