@@ -266,6 +266,67 @@ export type Database = {
           },
         ]
       }
+      cart_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          organization_id: string
+          product_id: string
+          quantity: number
+          session_id: string | null
+          unit_price: number
+          updated_at: string | null
+          user_id: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          organization_id: string
+          product_id: string
+          quantity?: number
+          session_id?: string | null
+          unit_price: number
+          updated_at?: string | null
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          organization_id?: string
+          product_id?: string
+          quantity?: number
+          session_id?: string | null
+          unit_price?: number
+          updated_at?: string | null
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       controlled_substance_log: {
         Row: {
           action: string
@@ -1490,6 +1551,195 @@ export type Database = {
         }
         Relationships: []
       }
+      online_order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          order_id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          sku: string | null
+          total_price: number
+          unit_price: number
+          variant_id: string | null
+          variant_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          sku?: string | null
+          total_price: number
+          unit_price: number
+          variant_id?: string | null
+          variant_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          sku?: string | null
+          total_price?: number
+          unit_price?: number
+          variant_id?: string | null
+          variant_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "online_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_order_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      online_orders: {
+        Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          created_at: string | null
+          currency: string | null
+          customer_id: string | null
+          delivered_at: string | null
+          discount_amount: number | null
+          estimated_delivery: string | null
+          fulfillment_status: string | null
+          id: string
+          location_id: string | null
+          metadata: Json | null
+          notes: string | null
+          order_number: string
+          organization_id: string
+          payment_method: string | null
+          payment_reference: string | null
+          payment_status: string | null
+          shipping_address_id: string | null
+          shipping_amount: number | null
+          shipping_method: string | null
+          status: string
+          subtotal: number
+          tax_amount: number | null
+          total_amount: number
+          tracking_number: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          delivered_at?: string | null
+          discount_amount?: number | null
+          estimated_delivery?: string | null
+          fulfillment_status?: string | null
+          id?: string
+          location_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          order_number: string
+          organization_id: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          shipping_address_id?: string | null
+          shipping_amount?: number | null
+          shipping_method?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number | null
+          total_amount?: number
+          tracking_number?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          delivered_at?: string | null
+          discount_amount?: number | null
+          estimated_delivery?: string | null
+          fulfillment_status?: string | null
+          id?: string
+          location_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          order_number?: string
+          organization_id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          shipping_address_id?: string | null
+          shipping_amount?: number | null
+          shipping_method?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number | null
+          total_amount?: number
+          tracking_number?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_orders_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_orders_shipping_address_id_fkey"
+            columns: ["shipping_address_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -2132,6 +2382,63 @@ export type Database = {
           },
         ]
       }
+      product_variants: {
+        Row: {
+          attributes: Json | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          price_adjustment: number | null
+          product_id: string
+          sku: string | null
+          stock_quantity: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          attributes?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          price_adjustment?: number | null
+          product_id: string
+          sku?: string | null
+          stock_quantity?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          attributes?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          price_adjustment?: number | null
+          product_id?: string
+          sku?: string | null
+          stock_quantity?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           barcode: string | null
@@ -2142,10 +2449,13 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          is_available_online: boolean | null
           location_id: string | null
           low_stock_threshold: number | null
           metadata: Json | null
           name: string
+          online_description: string | null
+          online_images: Json | null
           organization_id: string
           sku: string | null
           stock_quantity: number | null
@@ -2164,10 +2474,13 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_available_online?: boolean | null
           location_id?: string | null
           low_stock_threshold?: number | null
           metadata?: Json | null
           name: string
+          online_description?: string | null
+          online_images?: Json | null
           organization_id: string
           sku?: string | null
           stock_quantity?: number | null
@@ -2186,10 +2499,13 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_available_online?: boolean | null
           location_id?: string | null
           low_stock_threshold?: number | null
           metadata?: Json | null
           name?: string
+          online_description?: string | null
+          online_images?: Json | null
           organization_id?: string
           sku?: string | null
           stock_quantity?: number | null
@@ -2699,6 +3015,68 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "hotel_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shipping_addresses: {
+        Row: {
+          address_line1: string
+          address_line2: string | null
+          city: string
+          country: string
+          created_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          is_default: boolean | null
+          organization_id: string | null
+          phone: string | null
+          postal_code: string | null
+          state: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address_line1: string
+          address_line2?: string | null
+          city: string
+          country?: string
+          created_at?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          is_default?: boolean | null
+          organization_id?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address_line1?: string
+          address_line2?: string | null
+          city?: string
+          country?: string
+          created_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          is_default?: boolean | null
+          organization_id?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipping_addresses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
