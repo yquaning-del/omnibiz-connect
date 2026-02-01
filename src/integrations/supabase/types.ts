@@ -1811,6 +1811,7 @@ export type Database = {
           status: string
           subtotal: number
           tax_amount: number | null
+          tip_amount: number | null
           total_amount: number
           updated_at: string
           vertical: Database["public"]["Enums"]["business_vertical"]
@@ -1831,6 +1832,7 @@ export type Database = {
           status?: string
           subtotal?: number
           tax_amount?: number | null
+          tip_amount?: number | null
           total_amount?: number
           updated_at?: string
           vertical: Database["public"]["Enums"]["business_vertical"]
@@ -1851,6 +1853,7 @@ export type Database = {
           status?: string
           subtotal?: number
           tax_amount?: number | null
+          tip_amount?: number | null
           total_amount?: number
           updated_at?: string
           vertical?: Database["public"]["Enums"]["business_vertical"]
@@ -2672,8 +2675,12 @@ export type Database = {
           amount: number
           created_at: string
           due_date: string | null
+          grace_period_days: number | null
           id: string
           late_fee: number | null
+          late_fee_applied: boolean | null
+          late_fee_applied_at: string | null
+          late_fee_rate: number | null
           lease_id: string | null
           notes: string | null
           organization_id: string
@@ -2686,8 +2693,12 @@ export type Database = {
           amount: number
           created_at?: string
           due_date?: string | null
+          grace_period_days?: number | null
           id?: string
           late_fee?: number | null
+          late_fee_applied?: boolean | null
+          late_fee_applied_at?: string | null
+          late_fee_rate?: number | null
           lease_id?: string | null
           notes?: string | null
           organization_id: string
@@ -2700,8 +2711,12 @@ export type Database = {
           amount?: number
           created_at?: string
           due_date?: string | null
+          grace_period_days?: number | null
           id?: string
           late_fee?: number | null
+          late_fee_applied?: boolean | null
+          late_fee_applied_at?: string | null
+          late_fee_rate?: number | null
           lease_id?: string | null
           notes?: string | null
           organization_id?: string
@@ -3161,6 +3176,80 @@ export type Database = {
           {
             foreignKeyName: "staff_schedules_location_id_fkey"
             columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_transfers: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          from_location_id: string
+          id: string
+          initiated_by: string | null
+          notes: string | null
+          organization_id: string
+          product_id: string
+          quantity: number
+          status: string
+          to_location_id: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          from_location_id: string
+          id?: string
+          initiated_by?: string | null
+          notes?: string | null
+          organization_id: string
+          product_id: string
+          quantity: number
+          status?: string
+          to_location_id: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          from_location_id?: string
+          id?: string
+          initiated_by?: string | null
+          notes?: string | null
+          organization_id?: string
+          product_id?: string
+          quantity?: number
+          status?: string
+          to_location_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfers_from_location_id_fkey"
+            columns: ["from_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_to_location_id_fkey"
+            columns: ["to_location_id"]
             isOneToOne: false
             referencedRelation: "locations"
             referencedColumns: ["id"]
@@ -3630,6 +3719,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_late_fees: { Args: never; Returns: undefined }
       calculate_platform_metrics: {
         Args: never
         Returns: {

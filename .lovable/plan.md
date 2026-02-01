@@ -227,12 +227,12 @@ prescriber_registrations, epcs_transactions, surescripts_logs
 
 ## Quick Wins (Implementable in 1-2 Days Each)
 
-1. **Tip Management** - Add tip fields to orders and POS
-2. **Order Aging Timer** - Add elapsed time to Kitchen Display
-3. **Automated Late Fee Calculation** - Property rent payments
+1. **Tip Management** - Add tip fields to orders and POS ✅ DONE
+2. **Order Aging Timer** - Add elapsed time to Kitchen Display ✅ DONE
+3. **Automated Late Fee Calculation** - Property rent payments ✅ DONE
 4. **Night Audit Button** - End-of-day hotel reconciliation
 5. **Refill Request Form** - Pharmacy patient portal
-6. **Stock Transfer UI** - Move inventory between locations
+6. **Stock Transfer UI** - Move inventory between locations ✅ DONE
 7. **Employee PIN Login** - Fast POS user switching
 8. **SMS Order Notifications** - Customer alerts
 
@@ -275,6 +275,32 @@ prescriber_registrations, epcs_transactions, surescripts_logs
 - `process-online-order` edge function for order fulfillment
 - Order number auto-generation trigger
 - Inventory deduction on order confirmation
+
+### Quick Wins (Completed)
+
+**Tip Management (Restaurant POS):**
+- Added `tip_amount` column to orders table
+- Created `TipInput` component with preset percentages (10%, 15%, 18%, 20%)
+- Integrated into POS checkout flow for restaurant vertical
+- Tips displayed on receipt
+
+**Kitchen Order Aging Timer:**
+- Created `OrderAgingBadge` component with real-time countdown
+- Color-coded urgency: normal → urgent (10min) → critical (15min)
+- Animated alerts for overdue orders
+- Integrated into Kitchen Display System
+
+**Automated Late Fee Calculation:**
+- Added late fee columns to `rent_payments` table
+- Created `apply_late_fees()` database function
+- Added `ApplyLateFeeButton` component for manual trigger
+- Default: 5% late fee after 5-day grace period
+
+**Stock Transfer Between Locations:**
+- Created `stock_transfers` table with RLS policies
+- Built `StockTransferDialog` component
+- Source/destination location selection
+- Quantity validation and stock updates
 
 ---
 

@@ -11,6 +11,7 @@ import { Product } from '@/types';
 import { cn } from '@/lib/utils';
 import { BarcodeScanner } from '@/components/pos/BarcodeScanner';
 import { OfflineIndicator } from '@/components/pos/OfflineIndicator';
+import { TipInput } from '@/components/pos/TipInput';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useOfflinePOS } from '@/hooks/useOfflinePOS';
 import {
@@ -43,6 +44,7 @@ interface ReceiptData {
   items: CartItem[];
   subtotal: number;
   discount: number;
+  tip: number;
   tax: number;
   total: number;
   paymentMethod: string;
@@ -79,6 +81,10 @@ export default function POS() {
   const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent');
   const [discountValue, setDiscountValue] = useState('');
   const [showDiscountInput, setShowDiscountInput] = useState(false);
+  
+  // Tip state (restaurant vertical)
+  const [tipAmount, setTipAmount] = useState(0);
+  const isRestaurant = currentLocation?.vertical === 'restaurant';
   
   // Receipt state
   const [showReceipt, setShowReceipt] = useState(false);
@@ -154,6 +160,7 @@ export default function POS() {
     setCart([]);
     setDiscountValue('');
     setShowDiscountInput(false);
+    setTipAmount(0);
   };
 
   const subtotal = cart.reduce((sum, item) => sum + (item.product.unit_price * item.quantity), 0);
@@ -168,7 +175,7 @@ export default function POS() {
   const afterDiscount = Math.max(0, subtotal - discountAmount);
   const taxRate = 0.1; // 10% tax
   const tax = afterDiscount * taxRate;
-  const total = afterDiscount + tax;
+  const total = afterDiscount + tax + tipAmount;
 
   const applyDiscount = () => {
     if (!discountValue) return;
@@ -187,7 +194,7 @@ export default function POS() {
         subtotal,
         tax,
         discountAmount,
-        total,
+        total - tipAmount, // Total without tip for order processing
         paymentMethod
       );
 
@@ -197,6 +204,7 @@ export default function POS() {
         items: [...cart],
         subtotal,
         discount: discountAmount,
+        tip: tipAmount,
         tax,
         total,
         paymentMethod,
@@ -339,6 +347,17 @@ export default function POS() {
           </Button>
         )}
 
+        {/* Tip Section (Restaurant only) */}
+        {isRestaurant && cart.length > 0 && (
+          <div className="border-t border-border/50 pt-3">
+            <TipInput
+              subtotal={afterDiscount}
+              tipAmount={tipAmount}
+              onTipChange={setTipAmount}
+            />
+          </div>
+        )}
+
         <div className="space-y-2 text-sm">
           <div className="flex justify-between text-muted-foreground">
             <span>Subtotal</span>
@@ -354,6 +373,12 @@ export default function POS() {
             <span>Tax (10%)</span>
             <span>${tax.toFixed(2)}</span>
           </div>
+          {tipAmount > 0 && (
+            <div className="flex justify-between text-info">
+              <span>Tip</span>
+              <span>${tipAmount.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-xl font-bold text-foreground pt-2 border-t border-border/50">
             <span>Total</span>
             <span className="text-primary">${total.toFixed(2)}</span>
@@ -601,6 +626,12 @@ export default function POS() {
                   <span>Tax</span>
                   <span>${receiptData.tax.toFixed(2)}</span>
                 </div>
+                {receiptData.tip > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Tip</span>
+                    <span>${receiptData.tip.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-bold text-lg pt-2">
                   <span>TOTAL</span>
                   <span>${receiptData.total.toFixed(2)}</span>
