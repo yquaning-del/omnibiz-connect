@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Loader2, ChefHat, Clock, CheckCircle, AlertCircle, Play, Pause } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Loader2, ChefHat, Clock, CheckCircle, AlertCircle, Play } from 'lucide-react';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
+import { OrderAgingBadge } from '@/components/kitchen/OrderAgingBadge';
 
 interface OrderItem {
   id: string;
@@ -210,10 +210,11 @@ export default function Kitchen() {
                         <CardTitle className="text-lg font-mono">
                           #{order.order_number}
                         </CardTitle>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
-                        </div>
+                        <OrderAgingBadge 
+                          createdAt={order.created_at}
+                          urgentThresholdMinutes={10}
+                          criticalThresholdMinutes={15}
+                        />
                       </div>
                     </CardHeader>
                     <CardContent>

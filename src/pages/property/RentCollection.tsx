@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { RecordPaymentDialog } from '@/components/property/RecordPaymentDialog';
+import { ApplyLateFeeButton } from '@/components/property/ApplyLateFeeButton';
 
 interface RentPayment {
   id: string;
@@ -125,10 +126,13 @@ export default function RentCollection() {
           <h1 className="text-3xl font-bold tracking-tight">Rent Collection</h1>
           <p className="text-muted-foreground">Track and manage rent payments</p>
         </div>
-        <Button onClick={() => setShowRecordPayment(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Record Payment
-        </Button>
+        <div className="flex gap-2">
+          <ApplyLateFeeButton onSuccess={fetchPayments} />
+          <Button onClick={() => setShowRecordPayment(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Record Payment
+          </Button>
+        </div>
       </div>
 
       {/* Record Payment Dialog */}

@@ -25,8 +25,10 @@ import {
   Minus,
   TrendingUp,
   TrendingDown,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
+import { StockTransferDialog } from '@/components/inventory/StockTransferDialog';
 
 export default function Inventory() {
   const { currentOrganization } = useAuth();
@@ -36,6 +38,7 @@ export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [adjustmentQty, setAdjustmentQty] = useState('');
   const [adjustmentType, setAdjustmentType] = useState<'add' | 'remove'>('add');
@@ -125,7 +128,18 @@ export default function Inventory() {
               Track and manage your stock levels
             </p>
           </div>
+          <Button onClick={() => setTransferDialogOpen(true)} variant="outline">
+            <ArrowLeftRight className="w-4 h-4 mr-2" />
+            Transfer Stock
+          </Button>
         </div>
+
+        {/* Stock Transfer Dialog */}
+        <StockTransferDialog
+          open={transferDialogOpen}
+          onClose={() => setTransferDialogOpen(false)}
+          onSuccess={fetchProducts}
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
