@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { DemandForecastPanel } from '@/components/ai/DemandForecastPanel';
 import { DynamicPricingPanel } from '@/components/ai/DynamicPricingPanel';
 import { MaintenancePredictorPanel } from '@/components/ai/MaintenancePredictorPanel';
+import { NightAuditDialog } from '@/components/hotel/NightAuditDialog';
 import {
   Building2,
   BedDouble,
@@ -272,6 +273,7 @@ export default function HotelDashboard() {
           </p>
         </div>
         <div className="flex gap-2">
+          <NightAuditDialog />
           <Button variant="outline" onClick={() => navigate('/rooms')}>
             <BedDouble className="w-4 h-4 mr-2" />
             Room Status

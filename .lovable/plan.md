@@ -230,10 +230,10 @@ prescriber_registrations, epcs_transactions, surescripts_logs
 1. **Tip Management** - Add tip fields to orders and POS ✅ DONE
 2. **Order Aging Timer** - Add elapsed time to Kitchen Display ✅ DONE
 3. **Automated Late Fee Calculation** - Property rent payments ✅ DONE
-4. **Night Audit Button** - End-of-day hotel reconciliation
-5. **Refill Request Form** - Pharmacy patient portal
+4. **Night Audit Button** - End-of-day hotel reconciliation ✅ DONE
+5. **Refill Request Form** - Pharmacy patient portal ✅ DONE
 6. **Stock Transfer UI** - Move inventory between locations ✅ DONE
-7. **Employee PIN Login** - Fast POS user switching
+7. **Employee PIN Login** - Fast POS user switching ✅ DONE
 8. **SMS Order Notifications** - Customer alerts
 
 ---
@@ -301,6 +301,25 @@ prescriber_registrations, epcs_transactions, surescripts_logs
 - Built `StockTransferDialog` component
 - Source/destination location selection
 - Quantity validation and stock updates
+
+**Night Audit (Hotel):**
+- Created `night_audit_records` table tracking room stats, revenue, and guest movement
+- Built `NightAuditDialog` component with multi-step flow
+- Calculates occupancy rate, revenue totals, and detects discrepancies
+- Integrated into Hotel Dashboard header
+
+**Pharmacy Refill Requests:**
+- Created `refill_requests` table for patient-initiated refills
+- Built `RefillRequestForm` component for patient submission
+- Built `RefillRequestsManager` component for pharmacist processing
+- Added Refills tab to Pharmacy page
+
+**Employee PIN Login (POS):**
+- Added `pos_pin` and `pos_pin_enabled` columns to profiles
+- Created secure `verify_pos_pin()` function (security definer)
+- Built `EmployeePinLogin` component with number pad
+- Built `SetupPinForm` for user settings
+- Integrated into POS header for quick user switching
 
 ---
 
