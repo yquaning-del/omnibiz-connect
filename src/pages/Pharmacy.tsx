@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Pill, Users, FileText, AlertTriangle, DollarSign, ClipboardList } from "lucide-react";
+import { Loader2, Pill, Users, FileText, AlertTriangle, DollarSign, ClipboardList, RefreshCcw } from "lucide-react";
 import PrescriptionManagement from "@/components/pharmacy/PrescriptionManagement";
 import PatientProfiles from "@/components/pharmacy/PatientProfiles";
 import MedicationDatabase from "@/components/pharmacy/MedicationDatabase";
 import InsuranceBilling from "@/components/pharmacy/InsuranceBilling";
 import ControlledSubstances from "@/components/pharmacy/ControlledSubstances";
+import { RefillRequestForm, RefillRequestsManager } from "@/components/pharmacy/RefillRequestForm";
 import { supabase } from "@/integrations/supabase/client";
 
 const Pharmacy = () => {
@@ -72,9 +73,12 @@ const Pharmacy = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Pharmacy Management</h1>
-        <p className="text-muted-foreground">Prescription management, patient profiles, and compliance tracking</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Pharmacy Management</h1>
+          <p className="text-muted-foreground">Prescription management, patient profiles, and compliance tracking</p>
+        </div>
+        <RefillRequestForm onSuccess={fetchStats} />
       </div>
 
       {/* Stats Cards */}
@@ -137,10 +141,14 @@ const Pharmacy = () => {
 
       {/* Main Tabs */}
       <Tabs defaultValue="prescriptions" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="prescriptions" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Prescriptions
+          </TabsTrigger>
+          <TabsTrigger value="refills" className="flex items-center gap-2">
+            <RefreshCcw className="h-4 w-4" />
+            Refills
           </TabsTrigger>
           <TabsTrigger value="patients" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -162,6 +170,10 @@ const Pharmacy = () => {
 
         <TabsContent value="prescriptions">
           <PrescriptionManagement onRefresh={fetchStats} />
+        </TabsContent>
+
+        <TabsContent value="refills">
+          <RefillRequestsManager />
         </TabsContent>
 
         <TabsContent value="patients">

@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { BarcodeScanner } from '@/components/pos/BarcodeScanner';
 import { OfflineIndicator } from '@/components/pos/OfflineIndicator';
 import { TipInput } from '@/components/pos/TipInput';
+import { EmployeePinLogin } from '@/components/pos/EmployeePinLogin';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useOfflinePOS } from '@/hooks/useOfflinePOS';
 import {
@@ -95,6 +96,16 @@ export default function POS() {
   const [showScanner, setShowScanner] = useState(false);
   const isMobile = useIsMobile();
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
+  
+  // Employee PIN login state
+  const [activeEmployeeId, setActiveEmployeeId] = useState<string | undefined>(user?.id);
+  const [activeEmployeeEmail, setActiveEmployeeEmail] = useState<string | undefined>(user?.email || undefined);
+
+  const handleEmployeeLogin = (userId: string, email: string) => {
+    setActiveEmployeeId(userId);
+    setActiveEmployeeEmail(email);
+    toast({ title: `Switched to ${email}` });
+  };
 
   const handleBarcodeScan = (barcode: string) => {
     // Search for product by SKU or barcode
@@ -416,13 +427,17 @@ export default function POS() {
       {/* Products Grid */}
       <div className="flex-1 flex flex-col min-w-0">
         <div className="space-y-4 mb-4">
-          {/* Offline indicator and search */}
+          {/* Offline indicator, employee switch, and search */}
           <div className="flex gap-2 items-center">
             <OfflineIndicator
               isOnline={isOnline}
               offlineMode={offlineMode}
               syncStatus={syncStatus}
               onSync={requestSync}
+            />
+            <EmployeePinLogin 
+              onLoginSuccess={handleEmployeeLogin}
+              currentUserId={activeEmployeeId}
             />
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
