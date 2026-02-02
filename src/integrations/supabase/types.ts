@@ -1551,6 +1551,102 @@ export type Database = {
         }
         Relationships: []
       }
+      night_audit_records: {
+        Row: {
+          arrivals_count: number | null
+          audit_date: string
+          available_rooms: number
+          completed_at: string | null
+          created_at: string
+          departures_count: number | null
+          discrepancies: Json | null
+          id: string
+          in_house_guests: number | null
+          incidental_revenue: number | null
+          location_id: string
+          no_shows_count: number | null
+          notes: string | null
+          occupancy_rate: number | null
+          occupied_rooms: number
+          organization_id: string
+          out_of_order_rooms: number
+          performed_by: string | null
+          room_revenue: number | null
+          started_at: string | null
+          status: string
+          total_revenue: number | null
+          total_rooms: number
+          updated_at: string
+        }
+        Insert: {
+          arrivals_count?: number | null
+          audit_date: string
+          available_rooms?: number
+          completed_at?: string | null
+          created_at?: string
+          departures_count?: number | null
+          discrepancies?: Json | null
+          id?: string
+          in_house_guests?: number | null
+          incidental_revenue?: number | null
+          location_id: string
+          no_shows_count?: number | null
+          notes?: string | null
+          occupancy_rate?: number | null
+          occupied_rooms?: number
+          organization_id: string
+          out_of_order_rooms?: number
+          performed_by?: string | null
+          room_revenue?: number | null
+          started_at?: string | null
+          status?: string
+          total_revenue?: number | null
+          total_rooms?: number
+          updated_at?: string
+        }
+        Update: {
+          arrivals_count?: number | null
+          audit_date?: string
+          available_rooms?: number
+          completed_at?: string | null
+          created_at?: string
+          departures_count?: number | null
+          discrepancies?: Json | null
+          id?: string
+          in_house_guests?: number | null
+          incidental_revenue?: number | null
+          location_id?: string
+          no_shows_count?: number | null
+          notes?: string | null
+          occupancy_rate?: number | null
+          occupied_rooms?: number
+          organization_id?: string
+          out_of_order_rooms?: number
+          performed_by?: string | null
+          room_revenue?: number | null
+          started_at?: string | null
+          status?: string
+          total_revenue?: number | null
+          total_rooms?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "night_audit_records_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "night_audit_records_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       online_order_items: {
         Row: {
           created_at: string | null
@@ -2546,6 +2642,8 @@ export type Database = {
           is_suspended: boolean | null
           onboarding_progress: Json | null
           phone: string | null
+          pos_pin: string | null
+          pos_pin_enabled: boolean | null
           tour_completed: boolean | null
           updated_at: string
           user_settings: Json | null
@@ -2560,6 +2658,8 @@ export type Database = {
           is_suspended?: boolean | null
           onboarding_progress?: Json | null
           phone?: string | null
+          pos_pin?: string | null
+          pos_pin_enabled?: boolean | null
           tour_completed?: boolean | null
           updated_at?: string
           user_settings?: Json | null
@@ -2574,6 +2674,8 @@ export type Database = {
           is_suspended?: boolean | null
           onboarding_progress?: Json | null
           phone?: string | null
+          pos_pin?: string | null
+          pos_pin_enabled?: boolean | null
           tour_completed?: boolean | null
           updated_at?: string
           user_settings?: Json | null
@@ -2666,6 +2768,104 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      refill_requests: {
+        Row: {
+          created_at: string
+          denial_reason: string | null
+          id: string
+          location_id: string
+          medication_name: string
+          medication_strength: string | null
+          notes: string | null
+          organization_id: string
+          patient_email: string | null
+          patient_id: string | null
+          patient_name: string | null
+          patient_phone: string | null
+          picked_up_at: string | null
+          prescription_id: string | null
+          quantity_requested: number | null
+          ready_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          denial_reason?: string | null
+          id?: string
+          location_id: string
+          medication_name: string
+          medication_strength?: string | null
+          notes?: string | null
+          organization_id: string
+          patient_email?: string | null
+          patient_id?: string | null
+          patient_name?: string | null
+          patient_phone?: string | null
+          picked_up_at?: string | null
+          prescription_id?: string | null
+          quantity_requested?: number | null
+          ready_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          denial_reason?: string | null
+          id?: string
+          location_id?: string
+          medication_name?: string
+          medication_strength?: string | null
+          notes?: string | null
+          organization_id?: string
+          patient_email?: string | null
+          patient_id?: string | null
+          patient_name?: string | null
+          patient_phone?: string | null
+          picked_up_at?: string | null
+          prescription_id?: string | null
+          quantity_requested?: number | null
+          ready_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refill_requests_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refill_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refill_requests_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refill_requests_prescription_id_fkey"
+            columns: ["prescription_id"]
+            isOneToOne: false
+            referencedRelation: "prescriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -3764,6 +3964,10 @@ export type Database = {
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_tenant: { Args: { _user_id: string }; Returns: boolean }
+      verify_pos_pin: {
+        Args: { pin: string; user_email: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role:
