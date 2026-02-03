@@ -234,7 +234,7 @@ prescriber_registrations, epcs_transactions, surescripts_logs
 5. **Refill Request Form** - Pharmacy patient portal ✅ DONE
 6. **Stock Transfer UI** - Move inventory between locations ✅ DONE
 7. **Employee PIN Login** - Fast POS user switching ✅ DONE
-8. **SMS Order Notifications** - Customer alerts
+8. **SMS Order Notifications** - Customer alerts ✅ DONE
 
 ---
 
