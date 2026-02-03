@@ -19,9 +19,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Inner component that can access subscription context
 function AppLayoutContent() {
-  const { isExpired, isPaid, loading: subscriptionLoading } = useSubscription();
+  const { isExpired, isPaid, loading: subscriptionLoading, isSuperAdmin } = useSubscription();
   const { user, profile } = useAuth();
-  const showExpiredOverlay = !subscriptionLoading && isExpired && !isPaid;
+  // Super admins never see expired overlay
+  const showExpiredOverlay = !subscriptionLoading && isExpired && !isPaid && !isSuperAdmin;
   
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [showTour, setShowTour] = useState(false);

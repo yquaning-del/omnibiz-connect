@@ -31,6 +31,7 @@ interface SubscriptionContextType {
   daysRemaining: number;
   isPaid: boolean;
   isExpired: boolean;
+  isSuperAdmin: boolean;
   canAccess: (feature: string) => boolean;
   refresh: () => Promise<void>;
 }
@@ -118,10 +119,13 @@ export function getRequiredTier(feature: string): string {
 }
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { currentOrganization } = useAuth();
+  const { currentOrganization, roles } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Check if user is super_admin - they get unlimited access
+  const isSuperAdmin = roles.some(r => r.role === 'super_admin');
 
   const fetchSubscription = async () => {
     if (!currentOrganization?.id) {
@@ -194,7 +198,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const isPaid = subscription?.status === 'active' && !isTrialing;
   
+  // Super admins never have expired subscriptions
   const isExpired = (() => {
+    if (isSuperAdmin) return false;
     if (subscription?.status === 'cancelled' || subscription?.status === 'expired') return true;
     if (isTrialing && daysRemaining === 0) return true;
     return false;
@@ -202,6 +208,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   // Feature gating function
   const canAccess = (feature: string): boolean => {
+    // Super admins can access ALL features
+    if (isSuperAdmin) {
+      return true;
+    }
+
     // If no subscription or plan, only allow basic features
     if (!subscription || !plan) {
       return FEATURE_TIERS[feature]?.includes('starter') ?? false;
@@ -232,6 +243,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         daysRemaining,
         isPaid,
         isExpired,
+        isSuperAdmin,
         canAccess,
         refresh: fetchSubscription,
       }}
