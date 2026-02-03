@@ -73,6 +73,7 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
         { title: 'Tables', href: '/tables', icon: UtensilsCrossed },
         { title: 'Kitchen Display', href: '/kitchen', icon: ChefHat, requiredFeature: 'kitchen_display' },
         { title: 'Orders', href: '/orders', icon: Receipt },
+        { title: 'Online Orders', href: '/online-orders', icon: Globe },
       ],
       features: [
         { title: 'Reservations', href: '/reservations', icon: Calendar, requiredFeature: 'reservations' },
