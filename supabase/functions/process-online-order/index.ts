@@ -13,6 +13,34 @@ interface ProcessOrderRequest {
   cancellationReason?: string;
 }
 
+// Helper to send SMS notification
+async function sendSMSNotification(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  to: string,
+  message: string,
+  type: string
+): Promise<void> {
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-sms`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ to, message, type }),
+    });
+    
+    if (!response.ok) {
+      console.error('SMS notification failed:', await response.text());
+    } else {
+      console.log('SMS notification sent successfully');
+    }
+  } catch (error) {
+    console.error('Error sending SMS notification:', error);
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -40,10 +68,15 @@ serve(async (req) => {
 
     console.log(`Processing order ${orderId} - Action: ${action}`);
 
-    // Fetch the order
+    // Fetch the order with customer info for SMS
     const { data: order, error: orderError } = await supabase
       .from("online_orders")
-      .select("*, online_order_items(*)")
+      .select(`
+        *, 
+        online_order_items(*),
+        shipping_addresses(phone, full_name),
+        customers(phone, full_name)
+      `)
       .eq("id", orderId)
       .single();
 
@@ -63,9 +96,16 @@ serve(async (req) => {
       throw new Error("Insufficient permissions");
     }
 
+    // Get customer phone for SMS
+    const customerPhone = order.shipping_addresses?.phone || order.customers?.phone;
+    const customerName = order.shipping_addresses?.full_name || order.customers?.full_name || 'Customer';
+
     let updateData: Record<string, any> = {
       updated_at: new Date().toISOString(),
     };
+
+    let smsMessage = '';
+    let smsType = '';
 
     switch (action) {
       case "confirm":
@@ -85,6 +125,9 @@ serve(async (req) => {
             }
           }
         }
+
+        smsMessage = `Hi ${customerName}! Your order #${order.order_number} has been confirmed. Total: ${order.currency || 'KES'} ${order.total_amount}. Thank you for your purchase!`;
+        smsType = 'order_confirmation';
         break;
 
       case "ship":
@@ -93,12 +136,18 @@ serve(async (req) => {
         if (trackingNumber) {
           updateData.tracking_number = trackingNumber;
         }
+
+        smsMessage = `Hi ${customerName}! Your order #${order.order_number} has been shipped.${trackingNumber ? ` Tracking: ${trackingNumber}` : ''} Thank you!`;
+        smsType = 'order_shipped';
         break;
 
       case "deliver":
         updateData.status = "delivered";
         updateData.fulfillment_status = "fulfilled";
         updateData.delivered_at = new Date().toISOString();
+
+        smsMessage = `Hi ${customerName}! Great news - your order #${order.order_number} has been delivered. Enjoy your purchase!`;
+        smsType = 'order_delivered';
         break;
 
       case "cancel":
@@ -121,6 +170,9 @@ serve(async (req) => {
             }
           }
         }
+
+        smsMessage = `Hi ${customerName}, your order #${order.order_number} has been cancelled.${cancellationReason ? ` Reason: ${cancellationReason}` : ''} Contact us for questions.`;
+        smsType = 'general';
         break;
 
       default:
@@ -135,6 +187,11 @@ serve(async (req) => {
 
     if (updateError) {
       throw updateError;
+    }
+
+    // Send SMS notification if customer has phone
+    if (customerPhone && smsMessage) {
+      await sendSMSNotification(supabaseUrl, supabaseServiceKey, customerPhone, smsMessage, smsType);
     }
 
     console.log(`Order ${orderId} updated successfully - New status: ${updateData.status}`);
