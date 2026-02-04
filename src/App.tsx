@@ -79,7 +79,11 @@ import CustomerMenu from "./pages/menu/CustomerMenu";
 // E-commerce Store
 import StoreCatalog from "./pages/store/StoreCatalog";
 import StoreCheckout from "./pages/store/StoreCheckout";
-
+// Public Business Portals
+import HotelBooking from "./pages/public/HotelBooking";
+import PropertyListings from "./pages/public/PropertyListings";
+import PharmacyRefillPortal from "./pages/public/PharmacyRefillPortal";
+import BusinessSite from "./pages/public/BusinessSite";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -176,6 +180,12 @@ const App = () => (
                 {/* Public E-commerce Store */}
                 <Route path="/store/:orgSlug" element={<StoreCatalog />} />
                 <Route path="/store/:orgSlug/checkout" element={<StoreCheckout />} />
+
+                {/* Public Business Portals */}
+                <Route path="/site/:orgSlug" element={<BusinessSite />} />
+                <Route path="/book/:orgSlug" element={<HotelBooking />} />
+                <Route path="/rentals/:orgSlug" element={<PropertyListings />} />
+                <Route path="/pharmacy/:orgSlug/refills" element={<PharmacyRefillPortal />} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

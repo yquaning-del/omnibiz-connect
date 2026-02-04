@@ -11,11 +11,12 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard, Upload, BookOpen, FileText, ChevronRight } from 'lucide-react';
+import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard, Upload, BookOpen, FileText, ChevronRight, ExternalLink } from 'lucide-react';
 import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
 import { SubscriptionSettings } from '@/components/settings/SubscriptionSettings';
 import { OrganizationSettings as RegionalSettings } from '@/components/settings/OrganizationSettings';
+import { WebsiteSettingsPanel } from '@/components/settings/WebsiteSettings';
 import DataImport from '@/pages/settings/DataImport';
 import { useLimitChecker, formatLimitDisplay } from '@/hooks/useLimitChecker';
 import { useNavigate } from 'react-router-dom';
@@ -178,6 +179,10 @@ export default function Settings() {
           <TabsTrigger value="import" className="flex items-center gap-2">
             <Upload className="w-4 h-4" />
             Data Import
+          </TabsTrigger>
+          <TabsTrigger value="website" className="flex items-center gap-2">
+            <ExternalLink className="w-4 h-4" />
+            Website
           </TabsTrigger>
           <TabsTrigger value="help" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
@@ -470,9 +475,13 @@ export default function Settings() {
           <LanguageSettings />
         </TabsContent>
 
-        {/* Data Import */}
         <TabsContent value="import">
           <DataImport />
+        </TabsContent>
+
+        {/* Website Settings */}
+        <TabsContent value="website">
+          <WebsiteSettingsPanel />
         </TabsContent>
 
         {/* Help & Documentation */}

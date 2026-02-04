@@ -204,14 +204,14 @@ No new tables required - leveraging existing settings JSON.
 
 ## Implementation Order
 
-1. **Phase 1.1**: Hotel Booking Portal (new vertical coverage)
-2. **Phase 1.3**: Property Listings Portal (new vertical coverage)
-3. **Phase 1.2**: Pharmacy Refill Portal (new vertical coverage)
-4. **Phase 2**: Business Site Hub (unifies all portals)
-5. **Phase 3**: Website Settings (admin control)
-6. **Phase 4**: Sidebar Updates (easy access)
-7. **Phase 5**: Ensure all syncs work correctly
-8. **Phase 6**: Custom domain documentation
+1. ✅ **Phase 1.1**: Hotel Booking Portal - `/book/:orgSlug`
+2. ✅ **Phase 1.3**: Property Listings Portal - `/rentals/:orgSlug`
+3. ✅ **Phase 1.2**: Pharmacy Refill Portal - `/pharmacy/:orgSlug/refills`
+4. ✅ **Phase 2**: Business Site Hub - `/site/:orgSlug`
+5. ✅ **Phase 3**: Website Settings - Settings → Website tab
+6. ⏳ **Phase 4**: Sidebar Updates (external links per vertical)
+7. ⏳ **Phase 5**: Ensure all syncs work correctly
+8. ⏳ **Phase 6**: Custom domain documentation
 
 ## Technical Notes
 
