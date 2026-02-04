@@ -1,334 +1,223 @@
 
-# Strategic Enhancement Roadmap: Competing with Industry Leaders
+# Business Website Deployment System
 
-## Executive Summary
-HospitalityOS has solid foundations across all five verticals but lacks several key features that competitors like Toast, Square, Cloudbeds, AppFolio, and PioneerRx offer as standard. This plan identifies 25+ enhancements prioritized by impact and implementation complexity.
+## Overview
+This plan implements a comprehensive system that allows businesses to deploy their own live public-facing websites that automatically sync with their selected module (Restaurant, Hotel, Retail, Pharmacy, Property). Each business gets a branded website accessible via their organization slug.
 
----
+## Current State Analysis
 
-## Current Platform Strengths
-- Multi-tenant architecture with role-based access
-- Offline-capable POS with IndexedDB caching
-- AI-powered insights across verticals
-- Integrated subscription and billing system
-- Africa-first payment integrations (M-Pesa, Paystack)
+### What Already Exists
+1. **E-commerce Store** (`/store/:orgSlug`) - Public storefront for Retail/Restaurant
+2. **Customer Menu** (`/menu/:orgSlug/:locationId`) - QR ordering for Restaurants
+3. **Tenant Portal** (`/tenant/*`) - Self-service portal for Property tenants
+4. **Organization Slug System** - Each org has a unique slug used for routing
 
----
+### What's Missing
+1. **Hotel Booking Portal** - Public room booking interface
+2. **Pharmacy Refill Portal** - Patient prescription refill requests
+3. **Property Listings Portal** - Available units showcase
+4. **Unified Website Hub** - Central entry point that routes to vertical-specific sites
+5. **Website Settings** - Admin controls for public site customization
+6. **Custom Domain Support** - Instructions/setup for custom domains
 
-## Gap Analysis by Vertical
+## Implementation Plan
 
-### Restaurant Vertical (vs Toast, Square, Lightspeed)
+### Phase 1: Create Vertical-Specific Public Portals
 
-| Feature | Current State | Competitors | Priority |
-|---------|---------------|-------------|----------|
-| Online Ordering | QR code menu only | Full e-commerce + delivery | HIGH |
-| Delivery Integration | Missing | DoorDash, UberEats, Glovo API | HIGH |
-| Menu Modifiers/Combos | Basic products only | Complex modifiers, upsells | HIGH |
-| Tip Management | Not implemented | Tip pooling, tip-out reports | MEDIUM |
-| Employee Scheduling | Basic schedules | Shift swapping, time clock | MEDIUM |
-| Kitchen Display Timers | No cook timers | Order aging alerts, SLA tracking | MEDIUM |
-| Loyalty Program | Points only | Rewards tiers, punch cards | LOW |
+#### 1.1 Hotel Booking Portal
+**Route**: `/book/:orgSlug`
 
-### Hotel Vertical (vs Cloudbeds, Opera PMS)
+**Features**:
+- Public room availability search by dates
+- Room type display with photos, amenities, pricing
+- Real-time availability from `hotel_rooms` table
+- Direct booking form creating reservations
+- Guest information collection
+- Integration with existing reservation system
 
-| Feature | Current State | Competitors | Priority |
-|---------|---------------|-------------|----------|
-| Channel Manager | Missing | Booking.com, Expedia, Airbnb sync | CRITICAL |
-| Revenue Management | AI pricing panel | Automated rate pushing | HIGH |
-| Online Booking Engine | Missing | Branded website widget | HIGH |
-| Group Bookings | Single reservations | Block reservations, rooming lists | MEDIUM |
-| Guest Messaging | Missing | SMS/WhatsApp/Email automation | MEDIUM |
-| Spa/Activity Booking | Missing | Amenity reservations | LOW |
-| Night Audit | Missing | End-of-day reconciliation | MEDIUM |
+**Files to Create**:
+- `src/pages/public/HotelBooking.tsx` - Main booking page
+- `src/components/public/RoomCard.tsx` - Room display component
+- `src/components/public/BookingCalendar.tsx` - Date picker with availability
+- `src/components/public/GuestInfoForm.tsx` - Booking form
 
-### Property Management (vs AppFolio, Buildium)
+#### 1.2 Pharmacy Refill Portal  
+**Route**: `/pharmacy/:orgSlug/refills`
 
-| Feature | Current State | Competitors | Priority |
-|---------|---------------|-------------|----------|
-| Tenant Portal | Basic dashboard | Full self-service portal | HIGH |
-| Online Applications | Basic form | Credit/background checks API | HIGH |
-| Accounting Integration | Missing | QuickBooks/Xero sync | HIGH |
-| Automated Late Fees | Missing | Rule-based fee calculation | MEDIUM |
-| Lease Renewals | Manual | Automated renewal workflow | MEDIUM |
-| Vendor Management | Missing | Work order assignment, vendor portal | MEDIUM |
-| Owner Portal/Statements | Missing | Owner dashboards, distributions | MEDIUM |
+**Features**:
+- Patient login/registration
+- Prescription history view
+- Refill request submission
+- Status tracking
+- Syncs with existing `prescriptions` and patient tables
 
-### Pharmacy Vertical (vs PioneerRx, CarePoint)
+**Files to Create**:
+- `src/pages/public/PharmacyRefillPortal.tsx` - Patient refill interface
+- `src/components/public/PrescriptionCard.tsx` - Rx display
+- `src/components/public/RefillStatus.tsx` - Request tracking
 
-| Feature | Current State | Competitors | Priority |
-|---------|---------------|-------------|----------|
-| E-Prescribing (EPCS) | Missing | Surescripts integration | CRITICAL |
-| Medication Sync | Missing | Auto-refill alignment | HIGH |
-| IVR Refill System | Missing | Phone-based refill requests | HIGH |
-| Immunization Tracking | Missing | Vaccine scheduling, records | MEDIUM |
-| MTM Services | Adherence panel only | Comprehensive MTM workflow | MEDIUM |
-| Point of Care Testing | Missing | Lab result integration | LOW |
-| 340B Compliance | Missing | Split billing, tracking | LOW |
+#### 1.3 Property Listings Portal
+**Route**: `/rentals/:orgSlug`
 
-### Retail Vertical (vs Square, Lightspeed)
+**Features**:
+- Available units showcase
+- Unit details with photos, amenities, pricing
+- Rental application submission
+- Syncs with `property_units` and `tenant_applications` tables
 
-| Feature | Current State | Competitors | Priority |
-|---------|---------------|-------------|----------|
-| E-commerce | Missing | Online store + POS sync | CRITICAL |
-| Purchase Orders | Missing | Supplier ordering workflow | HIGH |
-| Multi-location Inventory | Missing | Stock transfers, central view | HIGH |
-| Gift Cards | Missing | Physical and digital gift cards | MEDIUM |
-| Employee Time Clock | Missing | Punch in/out, timesheets | MEDIUM |
-| Layaway/Deposits | Missing | Partial payments tracking | LOW |
+**Files to Create**:
+- `src/pages/public/PropertyListings.tsx` - Available units grid
+- `src/components/public/UnitListingCard.tsx` - Unit display
+- `src/components/public/RentalApplication.tsx` - Application form
 
----
+### Phase 2: Unified Business Website Hub
 
-## Cross-Vertical Enhancements
+#### 2.1 Business Homepage
+**Route**: `/site/:orgSlug`
 
-### 1. Accounting Integration Hub (HIGH Priority)
+**Features**:
+- Auto-detects vertical and displays appropriate content
+- Restaurant: Menu + Order online
+- Hotel: Rooms + Book now
+- Retail: Products + Shop online
+- Pharmacy: Services + Refill prescriptions
+- Property: Available rentals + Apply
+
+**File to Create**:
+- `src/pages/public/BusinessSite.tsx` - Smart hub that routes based on vertical
+
+#### 2.2 Update App.tsx Routes
+Add new public routes under `/site/*`, `/book/*`, `/rentals/*`, `/pharmacy/:orgSlug/refills`
+
+### Phase 3: Website Settings in Admin Dashboard
+
+#### 3.1 Website Configuration Panel
+**Location**: Settings page, new "Website" tab
+
+**Features**:
+- Toggle public website on/off
+- Customize hero text/tagline
+- Upload cover/banner images
+- Set contact information
+- Social media links
+- Business hours display
+- Theme color selection
+- SEO metadata (title, description)
+
+**Files to Create/Modify**:
+- `src/components/settings/WebsiteSettings.tsx` - Website config UI
+- Modify `src/pages/Settings.tsx` - Add Website tab
+- Update `organizations.settings` JSON to include website config
+
+#### 3.2 Website Preview Link
+- Add "View My Website" button in settings
+- Show shareable link: `yourapp.com/site/org-slug`
+
+### Phase 4: Sidebar Navigation Updates
+
+#### 4.1 Add Module Access Links
+
+| Vertical | New Sidebar Link | Route |
+|----------|------------------|-------|
+| Restaurant | Customer Menu | External link to `/menu/:orgSlug/:locationId` |
+| Restaurant/Retail | Online Store | External link to `/store/:orgSlug` |
+| Hotel | Booking Page | External link to `/book/:orgSlug` |
+| Property | Public Listings | External link to `/rentals/:orgSlug` |
+| Pharmacy | Patient Portal | External link to `/pharmacy/:orgSlug/refills` |
+
+**File to Modify**:
+- `src/components/layout/AppSidebar.tsx` - Add "My Website" section with external links
+
+### Phase 5: Data Synchronization
+
+All public portals will use the existing database tables with appropriate RLS policies:
+
+| Portal | Data Source | Sync Method |
+|--------|-------------|-------------|
+| Store | `products` (is_active + available_online) | Real-time |
+| Menu | `products` (is_active) | Real-time |
+| Booking | `hotel_rooms`, `reservations` | Real-time availability |
+| Listings | `property_units` (status = 'available') | Real-time |
+| Refills | `prescriptions`, `patient_profiles` | Authenticated |
+
+### Phase 6: Custom Domain Documentation
+
+Add documentation/help text in Website Settings explaining:
+1. How Lovable custom domains work
+2. DNS configuration requirements
+3. SSL auto-provisioning
+
+## File Structure Summary
+
 ```text
-New Components Needed:
-- src/components/integrations/QuickBooksConnect.tsx
-- src/components/integrations/XeroConnect.tsx
-- supabase/functions/sync-accounting/index.ts
+src/pages/public/
+├── BusinessSite.tsx        # Smart hub page
+├── HotelBooking.tsx        # Room booking
+├── PropertyListings.tsx    # Rental listings
+└── PharmacyRefillPortal.tsx # Patient refills
 
-Features:
-- Auto-sync invoices, payments, expenses
-- Chart of accounts mapping
-- Bank reconciliation support
+src/components/public/
+├── PublicHeader.tsx        # Shared header for public pages
+├── RoomCard.tsx            # Hotel room display
+├── BookingCalendar.tsx     # Date availability picker
+├── GuestInfoForm.tsx       # Booking form
+├── UnitListingCard.tsx     # Property unit card
+├── RentalApplication.tsx   # Application form
+├── PrescriptionCard.tsx    # Rx display
+└── RefillStatus.tsx        # Status tracker
+
+src/components/settings/
+└── WebsiteSettings.tsx     # Website configuration
+
+Modified files:
+├── src/App.tsx             # New routes
+├── src/pages/Settings.tsx  # Website tab
+└── src/components/layout/AppSidebar.tsx # My Website links
 ```
 
-### 2. Advanced Scheduling System (MEDIUM Priority)
-```text
-New Components Needed:
-- src/pages/Scheduling.tsx
-- src/components/scheduling/ShiftCalendar.tsx
-- src/components/scheduling/TimeClockWidget.tsx
+## Database Considerations
 
-Features:
-- Drag-and-drop shift assignment
-- Employee availability management
-- Time clock with geofencing
-- Overtime alerts
-- Labor cost forecasting
+The `organizations.settings` JSONB column will be extended to include:
+
+```json
+{
+  "website": {
+    "enabled": true,
+    "heroTitle": "Welcome to Our Business",
+    "heroSubtitle": "Quality service since 2020",
+    "coverImage": "url-to-image",
+    "contactEmail": "info@business.com",
+    "contactPhone": "+1234567890",
+    "socialLinks": {
+      "facebook": "...",
+      "instagram": "...",
+      "twitter": "..."
+    },
+    "businessHours": {...},
+    "seoTitle": "...",
+    "seoDescription": "..."
+  }
+}
 ```
 
-### 3. E-commerce Module (CRITICAL Priority)
-```text
-New Components Needed:
-- src/pages/OnlineStore.tsx
-- src/components/ecommerce/ProductCatalog.tsx
-- src/components/ecommerce/ShoppingCart.tsx
-- src/components/ecommerce/Checkout.tsx
+No new tables required - leveraging existing settings JSON.
 
-Features:
-- Synchronized inventory with POS
-- Customer accounts and order history
-- Shipping integration (Africa Post, DHL)
-- Pick-up scheduling
-```
+## Implementation Order
 
-### 4. Communication Hub (HIGH Priority)
-```text
-New Components Needed:
-- src/components/messaging/UnifiedInbox.tsx
-- src/components/messaging/TemplateBuilder.tsx
-- supabase/functions/send-sms/index.ts (AfricasTalking API)
+1. **Phase 1.1**: Hotel Booking Portal (new vertical coverage)
+2. **Phase 1.3**: Property Listings Portal (new vertical coverage)
+3. **Phase 1.2**: Pharmacy Refill Portal (new vertical coverage)
+4. **Phase 2**: Business Site Hub (unifies all portals)
+5. **Phase 3**: Website Settings (admin control)
+6. **Phase 4**: Sidebar Updates (easy access)
+7. **Phase 5**: Ensure all syncs work correctly
+8. **Phase 6**: Custom domain documentation
 
-Features:
-- WhatsApp Business API (pending secrets)
-- SMS notifications via Africa's Talking
-- Email campaigns with templates
-- Automated appointment reminders
-```
+## Technical Notes
 
-### 5. Advanced Reporting & BI (MEDIUM Priority)
-```text
-New Components Needed:
-- src/pages/Analytics.tsx
-- src/components/analytics/CustomReportBuilder.tsx
-- src/components/analytics/ScheduledReports.tsx
+- All public pages use the organization slug to fetch data
+- RLS policies allow anonymous SELECT on public-facing data
+- Website enable/disable toggle respects `settings.website.enabled`
+- Mobile-responsive design for all public pages (Africa-First strategy)
+- Offline-capable where possible using existing service worker
 
-Features:
-- Custom report builder with drag-drop
-- Scheduled email reports (daily/weekly/monthly)
-- Comparative period analysis
-- Profit margin tracking
-- Staff performance dashboards
-```
-
----
-
-## Implementation Phases
-
-### Phase 1: Foundation (4-6 weeks)
-1. **E-commerce Module** - Critical for retail competition
-2. **Channel Manager API** - Critical for hotel competition
-3. **QuickBooks/Xero Integration** - High-value for all verticals
-4. **Tenant Portal Enhancement** - Immediate property management value
-
-### Phase 2: Operations (4-6 weeks)
-5. **Advanced Scheduling + Time Clock** - Labor management
-6. **Purchase Order System** - Inventory control
-7. **Delivery Platform Integrations** - Restaurant growth
-8. **E-Prescribing (EPCS)** - Pharmacy compliance
-
-### Phase 3: Growth (4-6 weeks)
-9. **Loyalty Program Engine** - Customer retention
-10. **Gift Card System** - Revenue driver
-11. **Owner Portal** - Property management differentiator
-12. **Group Booking Module** - Hotel revenue
-
-### Phase 4: Intelligence (4-6 weeks)
-13. **Custom Report Builder** - Enterprise feature
-14. **Predictive Staffing AI** - Operational efficiency
-15. **Automated Marketing Campaigns** - Growth engine
-16. **Night Audit Automation** - Hotel operations
-
----
-
-## Technical Architecture Additions
-
-### New Database Tables Required
-```sql
--- E-commerce
-online_orders, shipping_addresses, cart_items, product_variants
-
--- Scheduling
-shifts, time_entries, availability_rules, shift_swap_requests
-
--- Accounting
-accounting_connections, sync_logs, chart_of_accounts_mappings
-
--- Channel Manager
-channel_connections, rate_plans, availability_calendars, ota_reservations
-
--- E-Prescribing
-prescriber_registrations, epcs_transactions, surescripts_logs
-```
-
-### New Edge Functions Required
-```text
-- sync-quickbooks (OAuth + API sync)
-- sync-xero (OAuth + API sync)
-- channel-manager-sync (OTA rate/availability push)
-- delivery-webhook (DoorDash, UberEats orders)
-- africas-talking-sms (SMS gateway)
-- stripe-subscriptions (enhanced billing)
-```
-
-### Third-Party APIs to Integrate
-| Service | Purpose | Vertical |
-|---------|---------|----------|
-| Booking.com API | Channel distribution | Hotel |
-| DoorDash Drive API | Delivery dispatch | Restaurant |
-| QuickBooks Online API | Accounting sync | All |
-| Surescripts | E-Prescribing | Pharmacy |
-| TransUnion/Experian | Tenant screening | Property |
-| Africa's Talking | SMS/USSD | All |
-| Glovo API | Africa delivery | Restaurant |
-
----
-
-## Quick Wins (Implementable in 1-2 Days Each)
-
-1. **Tip Management** - Add tip fields to orders and POS ✅ DONE
-2. **Order Aging Timer** - Add elapsed time to Kitchen Display ✅ DONE
-3. **Automated Late Fee Calculation** - Property rent payments ✅ DONE
-4. **Night Audit Button** - End-of-day hotel reconciliation ✅ DONE
-5. **Refill Request Form** - Pharmacy patient portal ✅ DONE
-6. **Stock Transfer UI** - Move inventory between locations ✅ DONE
-7. **Employee PIN Login** - Fast POS user switching ✅ DONE
-8. **SMS Order Notifications** - Customer alerts ✅ DONE
-
----
-
-## Recommended Priority Order
-
-| Rank | Enhancement | Impact | Effort | Vertical | Status |
-|------|-------------|--------|--------|----------|--------|
-| 1 | E-commerce Module | Critical | High | Retail | ✅ DONE |
-| 2 | Channel Manager | Critical | High | Hotel | 🔲 TODO |
-| 3 | Accounting Integration | High | Medium | All | 🔲 TODO |
-| 4 | Tenant Self-Service Portal | High | Medium | Property | 🔲 TODO |
-| 5 | Delivery Platform Integration | High | Medium | Restaurant | 🔲 TODO |
-| 6 | Advanced Scheduling | Medium | Medium | All | 🔲 TODO |
-| 7 | E-Prescribing (EPCS) | Critical | High | Pharmacy | 🔲 TODO |
-| 8 | Purchase Orders | High | Medium | Retail | 🔲 TODO |
-| 9 | Gift Cards | Medium | Low | Retail | 🔲 TODO |
-| 10 | Loyalty Tiers | Medium | Medium | All | 🔲 TODO |
-
----
-
-## Completed Implementations
-
-### E-commerce Module (Completed)
-**Database Tables:**
-- `product_variants` - Product size/color variants with stock
-- `cart_items` - Shopping cart (supports guest and authenticated)
-- `shipping_addresses` - Customer shipping info
-- `online_orders` - Orders from online store
-- `online_order_items` - Line items for online orders
-
-**Frontend Components:**
-- `/store/:orgSlug` - Public storefront catalog
-- `/store/:orgSlug/checkout` - Checkout flow
-- `/online-orders` - Admin order management
-- Products page now has "Available Online" toggle
-
-**Backend:**
-- `process-online-order` edge function for order fulfillment
-- Order number auto-generation trigger
-- Inventory deduction on order confirmation
-
-### Quick Wins (Completed)
-
-**Tip Management (Restaurant POS):**
-- Added `tip_amount` column to orders table
-- Created `TipInput` component with preset percentages (10%, 15%, 18%, 20%)
-- Integrated into POS checkout flow for restaurant vertical
-- Tips displayed on receipt
-
-**Kitchen Order Aging Timer:**
-- Created `OrderAgingBadge` component with real-time countdown
-- Color-coded urgency: normal → urgent (10min) → critical (15min)
-- Animated alerts for overdue orders
-- Integrated into Kitchen Display System
-
-**Automated Late Fee Calculation:**
-- Added late fee columns to `rent_payments` table
-- Created `apply_late_fees()` database function
-- Added `ApplyLateFeeButton` component for manual trigger
-- Default: 5% late fee after 5-day grace period
-
-**Stock Transfer Between Locations:**
-- Created `stock_transfers` table with RLS policies
-- Built `StockTransferDialog` component
-- Source/destination location selection
-- Quantity validation and stock updates
-
-**Night Audit (Hotel):**
-- Created `night_audit_records` table tracking room stats, revenue, and guest movement
-- Built `NightAuditDialog` component with multi-step flow
-- Calculates occupancy rate, revenue totals, and detects discrepancies
-- Integrated into Hotel Dashboard header
-
-**Pharmacy Refill Requests:**
-- Created `refill_requests` table for patient-initiated refills
-- Built `RefillRequestForm` component for patient submission
-- Built `RefillRequestsManager` component for pharmacist processing
-- Added Refills tab to Pharmacy page
-
-**Employee PIN Login (POS):**
-- Added `pos_pin` and `pos_pin_enabled` columns to profiles
-- Created secure `verify_pos_pin()` function (security definer)
-- Built `EmployeePinLogin` component with number pad
-- Built `SetupPinForm` for user settings
-- Integrated into POS header for quick user switching
-
----
-
-## Success Metrics
-
-| Metric | Current | Target (6 months) |
-|--------|---------|-------------------|
-| Feature parity score | ~60% | 85%+ |
-| Monthly recurring revenue features | 5 | 15+ |
-| Third-party integrations | 3 | 12+ |
-| Vertical-specific workflows | Basic | Advanced |
-| Self-service capabilities | Limited | Comprehensive |
