@@ -8,9 +8,28 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Pill, AlertCircle, RefreshCw, User, LogIn, UserPlus, Phone, Mail, CheckCircle } from 'lucide-react';
+import { 
+  Pill, 
+  AlertCircle, 
+  RefreshCw, 
+  User, 
+  LogIn, 
+  UserPlus, 
+  Phone, 
+  Mail, 
+  CheckCircle,
+  Shield,
+  Clock,
+  Heart,
+  Stethoscope,
+  FileText,
+  Truck,
+  Star,
+  MapPin,
+} from 'lucide-react';
 
 interface PharmacyInfo {
   id: string;
@@ -18,6 +37,14 @@ interface PharmacyInfo {
   slug: string;
   logo_url: string | null;
   primary_vertical: string;
+}
+
+interface Location {
+  id: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
 }
 
 interface Prescription {
@@ -33,12 +60,20 @@ interface Prescription {
   notes: string | null;
 }
 
+const PHARMACY_SERVICES = [
+  { icon: Pill, title: 'Prescription Refills', description: 'Easy online refill requests' },
+  { icon: Stethoscope, title: 'Medication Counseling', description: 'Expert pharmacist advice' },
+  { icon: Truck, title: 'Home Delivery', description: 'Convenient delivery options' },
+  { icon: Heart, title: 'Health Screenings', description: 'Regular health check services' },
+];
+
 export default function PharmacyRefillPortal() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   
   const [pharmacy, setPharmacy] = useState<PharmacyInfo | null>(null);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [patientId, setPatientId] = useState<string | null>(null);
@@ -85,6 +120,15 @@ export default function PharmacyRefillPortal() {
       }
 
       setPharmacy(orgData);
+
+      // Load locations
+      const { data: locData } = await supabase
+        .from('locations')
+        .select('id, name, address, phone, email')
+        .eq('organization_id', orgData.id)
+        .eq('is_active', true);
+
+      setLocations(locData || []);
     } catch (error) {
       console.error('Error loading pharmacy:', error);
       toast({
@@ -103,7 +147,6 @@ export default function PharmacyRefillPortal() {
 
     setPrescriptionsLoading(true);
     try {
-      // Look up patient by email or phone
       const { data: patient, error: patientError } = await supabase
         .from('patient_profiles')
         .select('id')
@@ -140,7 +183,6 @@ export default function PharmacyRefillPortal() {
     if (!pharmacy) return;
 
     try {
-      // Check if patient already exists
       const { data: existing } = await supabase
         .from('patient_profiles')
         .select('id')
@@ -157,7 +199,6 @@ export default function PharmacyRefillPortal() {
         return;
       }
 
-      // Register new patient
       const { data: newPatient, error } = await supabase
         .from('patient_profiles')
         .insert({
@@ -213,7 +254,6 @@ export default function PharmacyRefillPortal() {
   const handleRequestRefill = async (prescriptionId: string) => {
     setRefillLoading(prescriptionId);
     try {
-      // Update prescription status to refill_requested
       const { error } = await supabase
         .from('prescriptions')
         .update({ status: 'refill_requested' })
@@ -221,7 +261,6 @@ export default function PharmacyRefillPortal() {
 
       if (error) throw error;
 
-      // Update local state
       setPrescriptions(prescriptions.map(p => 
         p.id === prescriptionId ? { ...p, status: 'refill_requested' } : p
       ));
@@ -258,6 +297,7 @@ export default function PharmacyRefillPortal() {
             <Skeleton className="h-8 w-48" />
           </div>
         </div>
+        <Skeleton className="h-80" />
         <div className="container mx-auto px-4 py-8 max-w-md">
           <Skeleton className="h-96" />
         </div>
@@ -291,33 +331,81 @@ export default function PharmacyRefillPortal() {
       />
 
       {/* Hero Section */}
-      <section className="border-b border-border/50 bg-gradient-to-b from-pharmacy/5 to-transparent py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl font-bold text-foreground md:text-4xl">
-            Prescription Refills
-          </h1>
-          <p className="mt-3 text-muted-foreground">
-            Request refills online at {pharmacy.name}
-          </p>
+      <section className="relative overflow-hidden bg-gradient-to-br from-pharmacy/10 via-background to-background">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-pharmacy/5 via-transparent to-transparent" />
+        
+        <div className="container relative mx-auto px-4 py-16 md:py-24">
+          <div className="mx-auto max-w-3xl text-center">
+            <Badge className="mb-4 bg-pharmacy/10 text-pharmacy border-0">
+              <Heart className="mr-1 h-3 w-3 fill-current" />
+              Your Health Partner
+            </Badge>
+            <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
+              Prescription Refills Made Easy
+            </h1>
+            <p className="mt-6 text-lg text-muted-foreground md:text-xl">
+              Request prescription refills online at {pharmacy.name}. Quick, secure, and convenient.
+            </p>
+            
+            {/* Trust indicators */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Shield className="h-5 w-5 text-pharmacy" />
+                <span className="text-sm">Licensed Pharmacy</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <CheckCircle className="h-5 w-5 text-pharmacy" />
+                <span className="text-sm">Verified & Secure</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-5 w-5 text-pharmacy" />
+                <span className="text-sm">Fast Processing</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <main className="container mx-auto px-4 py-8">
+      {/* Services Section */}
+      {!isAuthenticated && (
+        <section className="border-y border-border/50 bg-card/50 py-12">
+          <div className="container mx-auto px-4">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {PHARMACY_SERVICES.map((service, index) => {
+                const ServiceIcon = service.icon;
+                return (
+                  <div key={index} className="flex items-start gap-4 p-4 rounded-lg bg-background/50">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-pharmacy/10">
+                      <ServiceIcon className="h-5 w-5 text-pharmacy" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">{service.title}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{service.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <main className="container mx-auto px-4 py-12">
         {!isAuthenticated ? (
           <div className="max-w-md mx-auto">
-            <Card className="border-border/50 bg-card/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-pharmacy" />
-                  Patient Access
-                </CardTitle>
+            <Card className="border-border/50 bg-card/50 shadow-lg">
+              <CardHeader className="text-center pb-2">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-pharmacy/10">
+                  <User className="h-8 w-8 text-pharmacy" />
+                </div>
+                <CardTitle className="text-xl">Patient Access</CardTitle>
                 <CardDescription>
                   Look up your prescriptions or register as a new patient
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Tabs value={loginTab} onValueChange={(v) => setLoginTab(v as 'lookup' | 'register')}>
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
                     <TabsTrigger value="lookup" className="flex items-center gap-2">
                       <LogIn className="h-4 w-4" />
                       Patient Lookup
@@ -328,7 +416,7 @@ export default function PharmacyRefillPortal() {
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="lookup" className="mt-6">
+                  <TabsContent value="lookup" className="space-y-4">
                     <form onSubmit={handlePatientLookup} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="email">Email Address</Label>
@@ -345,7 +433,11 @@ export default function PharmacyRefillPortal() {
                         </div>
                       </div>
 
-                      <div className="text-center text-sm text-muted-foreground">or</div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1 h-px bg-border" />
+                        <span className="text-xs text-muted-foreground uppercase">or</span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number</Label>
@@ -364,7 +456,7 @@ export default function PharmacyRefillPortal() {
 
                       <Button 
                         type="submit" 
-                        className="w-full" 
+                        className="w-full h-11" 
                         disabled={(!loginEmail && !loginPhone) || prescriptionsLoading}
                       >
                         {prescriptionsLoading ? (
@@ -373,13 +465,16 @@ export default function PharmacyRefillPortal() {
                             Looking up...
                           </>
                         ) : (
-                          'Find My Prescriptions'
+                          <>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Find My Prescriptions
+                          </>
                         )}
                       </Button>
                     </form>
                   </TabsContent>
 
-                  <TabsContent value="register" className="mt-6">
+                  <TabsContent value="register" className="space-y-4">
                     <form onSubmit={handleRegister} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="name">Full Name *</Label>
@@ -394,26 +489,34 @@ export default function PharmacyRefillPortal() {
 
                       <div className="space-y-2">
                         <Label htmlFor="regEmail">Email Address *</Label>
-                        <Input
-                          id="regEmail"
-                          type="email"
-                          placeholder="your@email.com"
-                          value={registerEmail}
-                          onChange={(e) => setRegisterEmail(e.target.value)}
-                          required
-                        />
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="regEmail"
+                            type="email"
+                            placeholder="your@email.com"
+                            value={registerEmail}
+                            onChange={(e) => setRegisterEmail(e.target.value)}
+                            className="pl-10"
+                            required
+                          />
+                        </div>
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="regPhone">Phone Number *</Label>
-                        <Input
-                          id="regPhone"
-                          type="tel"
-                          placeholder="+1 234 567 8900"
-                          value={registerPhone}
-                          onChange={(e) => setRegisterPhone(e.target.value)}
-                          required
-                        />
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="regPhone"
+                            type="tel"
+                            placeholder="+1 234 567 8900"
+                            value={registerPhone}
+                            onChange={(e) => setRegisterPhone(e.target.value)}
+                            className="pl-10"
+                            required
+                          />
+                        </div>
                       </div>
 
                       <div className="space-y-2">
@@ -426,7 +529,8 @@ export default function PharmacyRefillPortal() {
                         />
                       </div>
 
-                      <Button type="submit" className="w-full">
+                      <Button type="submit" className="w-full h-11">
+                        <UserPlus className="mr-2 h-4 w-4" />
                         Register as Patient
                       </Button>
                     </form>
@@ -434,11 +538,29 @@ export default function PharmacyRefillPortal() {
                 </Tabs>
               </CardContent>
             </Card>
+
+            {/* Info box */}
+            <Card className="mt-6 border-pharmacy/20 bg-pharmacy/5">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <Shield className="h-5 w-5 text-pharmacy mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Secure & Private</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Your health information is protected and only accessible to you and our pharmacy team.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
           <div className="max-w-2xl mx-auto space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-foreground">Your Prescriptions</h2>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">Your Prescriptions</h2>
+                <p className="text-muted-foreground">Manage and request refills for your medications</p>
+              </div>
               <Button variant="outline" size="sm" onClick={() => patientId && loadPrescriptions(patientId)}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${prescriptionsLoading ? 'animate-spin' : ''}`} />
                 Refresh
@@ -453,11 +575,14 @@ export default function PharmacyRefillPortal() {
               </div>
             ) : prescriptions.length === 0 ? (
               <Card className="border-dashed border-border/50 bg-muted/10">
-                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                  <Pill className="h-12 w-12 text-muted-foreground/50" />
-                  <h3 className="mt-4 text-lg font-medium text-foreground">No Prescriptions Found</h3>
-                  <p className="mt-2 text-muted-foreground">
-                    Your prescriptions will appear here once added by the pharmacy.
+                <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted/50 mb-6">
+                    <Pill className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground">No Prescriptions Found</h3>
+                  <p className="mt-3 text-muted-foreground max-w-md">
+                    Your prescriptions will appear here once they are added by the pharmacy.
+                    Contact the pharmacy if you believe this is an error.
                   </p>
                 </CardContent>
               </Card>
@@ -476,6 +601,63 @@ export default function PharmacyRefillPortal() {
           </div>
         )}
       </main>
+
+      {/* Contact Section */}
+      {locations[0] && !isAuthenticated && (
+        <section className="border-t border-border/50 bg-card/30 py-16">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-2xl text-center mb-10">
+              <h2 className="text-2xl font-bold text-foreground">Visit Us</h2>
+              <p className="mt-2 text-muted-foreground">
+                Our friendly pharmacists are here to help
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap items-center justify-center gap-8">
+              {locations[0].phone && (
+                <a 
+                  href={`tel:${locations[0].phone}`}
+                  className="flex items-center gap-3 text-foreground hover:text-pharmacy transition-colors"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pharmacy/10">
+                    <Phone className="h-5 w-5 text-pharmacy" />
+                  </div>
+                  <span className="font-medium">{locations[0].phone}</span>
+                </a>
+              )}
+              {locations[0].email && (
+                <a 
+                  href={`mailto:${locations[0].email}`}
+                  className="flex items-center gap-3 text-foreground hover:text-pharmacy transition-colors"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pharmacy/10">
+                    <Mail className="h-5 w-5 text-pharmacy" />
+                  </div>
+                  <span className="font-medium">{locations[0].email}</span>
+                </a>
+              )}
+              {locations[0].address && (
+                <div className="flex items-center gap-3 text-foreground">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pharmacy/10">
+                    <MapPin className="h-5 w-5 text-pharmacy" />
+                  </div>
+                  <span className="font-medium">{locations[0].address}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Footer */}
+      <footer className="border-t border-border/50 bg-card/50 py-8">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} {pharmacy.name}. All rights reserved.</p>
+          <p className="mt-2 text-xs">
+            For medical emergencies, please call your local emergency services.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

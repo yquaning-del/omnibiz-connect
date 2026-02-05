@@ -6,10 +6,28 @@ import { BookingCalendar } from '@/components/public/BookingCalendar';
 import { RoomCard } from '@/components/public/RoomCard';
 import { GuestInfoForm } from '@/components/public/GuestInfoForm';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { BedDouble, CalendarX, AlertCircle } from 'lucide-react';
-import { useOrganizationSettings } from '@/hooks/useOrganizationSettings';
+import { 
+  BedDouble, 
+  CalendarX, 
+  AlertCircle, 
+  Wifi, 
+  Car, 
+  UtensilsCrossed, 
+  Dumbbell,
+  Sparkles,
+  Shield,
+  Star,
+  Clock,
+  MapPin,
+  Phone,
+  CheckCircle,
+  Coffee,
+  Waves,
+} from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 
 interface HotelInfo {
@@ -35,6 +53,8 @@ interface Room {
 interface Location {
   id: string;
   name: string;
+  address: string | null;
+  phone: string | null;
 }
 
 // Get currency symbol from settings
@@ -44,6 +64,15 @@ const getCurrencySymbol = (settings: unknown): string => {
   }
   return '$';
 };
+
+const HOTEL_AMENITIES = [
+  { icon: Wifi, label: 'Free WiFi' },
+  { icon: Car, label: 'Free Parking' },
+  { icon: UtensilsCrossed, label: 'Restaurant' },
+  { icon: Dumbbell, label: 'Fitness Center' },
+  { icon: Waves, label: 'Swimming Pool' },
+  { icon: Coffee, label: 'Room Service' },
+];
 
 export default function HotelBooking() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
@@ -65,8 +94,6 @@ export default function HotelBooking() {
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
 
   const nights = checkIn && checkOut ? differenceInDays(checkOut, checkIn) : 1;
-
-  // Get currency from hotel settings
   const currencySymbol = getCurrencySymbol(hotel?.settings);
 
   useEffect(() => {
@@ -78,7 +105,6 @@ export default function HotelBooking() {
     
     setLoading(true);
     try {
-      // Load organization
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('id, name, slug, logo_url, primary_vertical, settings')
@@ -87,7 +113,6 @@ export default function HotelBooking() {
 
       if (orgError) throw orgError;
       
-      // Check if it's a hotel
       if (orgData.primary_vertical !== 'hotel') {
         toast({
           title: 'Not a Hotel',
@@ -100,10 +125,9 @@ export default function HotelBooking() {
 
       setHotel(orgData);
 
-      // Load locations for this hotel
       const { data: locData } = await supabase
         .from('locations')
-        .select('id, name')
+        .select('id, name, address, phone')
         .eq('organization_id', orgData.id)
         .eq('vertical', 'hotel')
         .eq('is_active', true);
@@ -133,7 +157,6 @@ export default function HotelBooking() {
     try {
       const locationIds = locations.map(l => l.id);
 
-      // Get all available rooms with sufficient capacity
       const { data: roomsData, error: roomsError } = await supabase
         .from('hotel_rooms')
         .select('*')
@@ -144,7 +167,6 @@ export default function HotelBooking() {
 
       if (roomsError) throw roomsError;
 
-      // Check for existing reservations in the date range
       const { data: reservations, error: resError } = await supabase
         .from('reservations')
         .select('room_id')
@@ -155,7 +177,6 @@ export default function HotelBooking() {
 
       if (resError) throw resError;
 
-      // Filter out rooms with conflicting reservations
       const bookedRoomIds = new Set((reservations || []).map(r => r.room_id));
       const availableRooms = (roomsData || []).filter(room => !bookedRoomIds.has(room.id));
 
@@ -191,7 +212,6 @@ export default function HotelBooking() {
     }
 
     try {
-      // Create reservation
       const { error } = await supabase
         .from('reservations')
         .insert({
@@ -216,7 +236,6 @@ export default function HotelBooking() {
         description: 'Your room has been reserved. Check your email for details.',
       });
 
-      // Remove booked room from list
       setRooms(rooms.filter(r => r.id !== selectedRoom.id));
     } catch (error) {
       console.error('Error creating reservation:', error);
@@ -237,12 +256,14 @@ export default function HotelBooking() {
             <Skeleton className="h-8 w-48" />
           </div>
         </div>
+        <Skeleton className="h-96" />
         <div className="container mx-auto px-4 py-8">
           <div className="grid gap-8 lg:grid-cols-3">
             <Skeleton className="h-96 lg:col-span-1" />
-            <div className="lg:col-span-2">
-              <Skeleton className="h-64 mb-4" />
-              <Skeleton className="h-64" />
+            <div className="lg:col-span-2 grid gap-6 sm:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-80 rounded-lg" />
+              ))}
             </div>
           </div>
         </div>
@@ -266,39 +287,138 @@ export default function HotelBooking() {
       <PublicHeader orgName={hotel.name} logoUrl={hotel.logo_url} />
 
       {/* Hero Section */}
-      <section className="border-b border-border/50 bg-gradient-to-b from-hotel/5 to-transparent py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl font-bold text-foreground md:text-4xl">
-            Book Your Perfect Stay
-          </h1>
-          <p className="mt-3 text-muted-foreground">
-            Find and reserve the ideal room at {hotel.name}
-          </p>
+      <section className="relative overflow-hidden bg-gradient-to-br from-hotel/10 via-background to-background">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-hotel/5 via-transparent to-transparent" />
+        
+        <div className="container relative mx-auto px-4 py-16 md:py-24">
+          <div className="mx-auto max-w-3xl text-center">
+            <Badge className="mb-4 bg-hotel/10 text-hotel border-0">
+              <Star className="mr-1 h-3 w-3 fill-current" />
+              Premium Accommodation
+            </Badge>
+            <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
+              Book Your Perfect Stay
+            </h1>
+            <p className="mt-6 text-lg text-muted-foreground md:text-xl">
+              Experience luxury and comfort at {hotel.name}. Find the ideal room for your needs.
+            </p>
+            
+            {/* Trust indicators */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Shield className="h-5 w-5 text-hotel" />
+                <span className="text-sm">Best Price Guarantee</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <CheckCircle className="h-5 w-5 text-hotel" />
+                <span className="text-sm">Free Cancellation</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-5 w-5 text-hotel" />
+                <span className="text-sm">24/7 Support</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Amenities bar */}
+        <div className="border-y border-border/50 bg-card/50">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
+              {HOTEL_AMENITIES.map((amenity, index) => {
+                const AmenityIcon = amenity.icon;
+                return (
+                  <div key={index} className="flex items-center gap-2 text-muted-foreground">
+                    <AmenityIcon className="h-4 w-4 text-hotel" />
+                    <span className="text-sm">{amenity.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-12">
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Search Panel */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24">
+            <div className="sticky top-24 space-y-6">
               <BookingCalendar onSearch={searchRooms} loading={searchLoading} />
+              
+              {/* Location info */}
+              {locations[0] && (
+                <Card className="border-border/50 bg-card/50">
+                  <CardContent className="p-4 space-y-3">
+                    <h3 className="font-semibold text-foreground flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-hotel" />
+                      Location
+                    </h3>
+                    {locations[0].address && (
+                      <p className="text-sm text-muted-foreground">{locations[0].address}</p>
+                    )}
+                    {locations[0].phone && (
+                      <a 
+                        href={`tel:${locations[0].phone}`}
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-hotel"
+                      >
+                        <Phone className="h-3 w-3" />
+                        {locations[0].phone}
+                      </a>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Why book with us */}
+              <Card className="border-border/50 bg-card/50">
+                <CardContent className="p-4 space-y-4">
+                  <h3 className="font-semibold text-foreground">Why Book Direct?</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-hotel shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Best Rate Guarantee</p>
+                        <p className="text-xs text-muted-foreground">Lowest price when booking direct</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Sparkles className="h-5 w-5 text-hotel shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Exclusive Perks</p>
+                        <p className="text-xs text-muted-foreground">Welcome amenities & upgrades</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Shield className="h-5 w-5 text-hotel shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Flexible Booking</p>
+                        <p className="text-xs text-muted-foreground">Easy modifications & cancellations</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
           {/* Results */}
           <div className="lg:col-span-2">
             {!hasSearched ? (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border/50 bg-muted/10 py-16 text-center">
-                <BedDouble className="h-12 w-12 text-muted-foreground/50" />
-                <h3 className="mt-4 text-lg font-medium text-foreground">
-                  Search for Available Rooms
-                </h3>
-                <p className="mt-2 text-muted-foreground">
-                  Select your dates and number of guests to see available rooms.
-                </p>
-              </div>
+              <Card className="border-dashed border-border/50 bg-muted/10">
+                <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-hotel/10 mb-6">
+                    <BedDouble className="h-10 w-10 text-hotel" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground">
+                    Search for Available Rooms
+                  </h3>
+                  <p className="mt-3 text-muted-foreground max-w-md">
+                    Select your check-in and check-out dates along with the number of guests to view available rooms.
+                  </p>
+                </CardContent>
+              </Card>
             ) : searchLoading ? (
               <div className="grid gap-6 sm:grid-cols-2">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -306,22 +426,39 @@ export default function HotelBooking() {
                 ))}
               </div>
             ) : rooms.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border/50 bg-muted/10 py-16 text-center">
-                <CalendarX className="h-12 w-12 text-muted-foreground/50" />
-                <h3 className="mt-4 text-lg font-medium text-foreground">
-                  No Rooms Available
-                </h3>
-                <p className="mt-2 text-muted-foreground">
-                  Sorry, no rooms are available for your selected dates and guest count.
-                  Try different dates or fewer guests.
-                </p>
-              </div>
+              <Card className="border-dashed border-border/50 bg-muted/10">
+                <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted/50 mb-6">
+                    <CalendarX className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground">
+                    No Rooms Available
+                  </h3>
+                  <p className="mt-3 text-muted-foreground max-w-md">
+                    Unfortunately, no rooms match your criteria for the selected dates.
+                    Please try different dates or adjust the number of guests.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-6"
+                    onClick={() => setHasSearched(false)}
+                  >
+                    Modify Search
+                  </Button>
+                </CardContent>
+              </Card>
             ) : (
               <>
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    {rooms.length} room{rooms.length !== 1 ? 's' : ''} available
-                  </p>
+                <div className="mb-6 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground">Available Rooms</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {rooms.length} room{rooms.length !== 1 ? 's' : ''} available for your dates
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-hotel border-hotel/30">
+                    {nights} night{nights !== 1 ? 's' : ''}
+                  </Badge>
                 </div>
                 <div className="grid gap-6 sm:grid-cols-2">
                   {rooms.map((room) => (
@@ -339,6 +476,13 @@ export default function HotelBooking() {
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border/50 bg-card/30 py-8">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} {hotel.name}. All rights reserved.</p>
+        </div>
+      </footer>
 
       {/* Booking Dialog */}
       {selectedRoom && checkIn && checkOut && (
