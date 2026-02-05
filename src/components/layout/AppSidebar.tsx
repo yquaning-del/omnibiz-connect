@@ -47,6 +47,7 @@ import {
   AlertTriangle,
   LucideIcon,
   Lock,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -157,6 +158,43 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
   return { common: nav.main, verticalSpecific: nav.features, management, adminItems, isSuperAdmin };
 };
 
+// Get "My Website" external links based on vertical
+interface WebsiteLink {
+  title: string;
+  path: string;
+  icon: LucideIcon;
+}
+
+const getWebsiteLinks = (vertical: BusinessVertical, orgSlug?: string, locationId?: string): WebsiteLink[] => {
+  if (!orgSlug) return [];
+  
+  const websiteLinks: Record<BusinessVertical, WebsiteLink[]> = {
+    restaurant: [
+      { title: 'Business Site', path: `/site/${orgSlug}`, icon: Globe },
+      { title: 'Online Store', path: `/store/${orgSlug}`, icon: Store },
+      ...(locationId ? [{ title: 'Customer Menu', path: `/menu/${orgSlug}/${locationId}`, icon: UtensilsCrossed }] : []),
+    ],
+    hotel: [
+      { title: 'Business Site', path: `/site/${orgSlug}`, icon: Globe },
+      { title: 'Booking Page', path: `/book/${orgSlug}`, icon: Calendar },
+    ],
+    pharmacy: [
+      { title: 'Business Site', path: `/site/${orgSlug}`, icon: Globe },
+      { title: 'Patient Portal', path: `/pharmacy/${orgSlug}/refills`, icon: Pill },
+    ],
+    retail: [
+      { title: 'Business Site', path: `/site/${orgSlug}`, icon: Globe },
+      { title: 'Online Store', path: `/store/${orgSlug}`, icon: Store },
+    ],
+    property: [
+      { title: 'Business Site', path: `/site/${orgSlug}`, icon: Globe },
+      { title: 'Public Listings', path: `/rentals/${orgSlug}`, icon: Building2 },
+    ],
+  };
+
+  return websiteLinks[vertical] || [];
+};
+
 export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
@@ -168,6 +206,7 @@ export function AppSidebar() {
   const isSuperAdminRole = hasRole('super_admin');
   const vertical = (currentLocation?.vertical || currentOrganization?.primary_vertical || 'retail') as BusinessVertical;
   const { common, verticalSpecific, management, adminItems } = getNavItems(vertical, isSuperAdminRole);
+  const websiteLinks = getWebsiteLinks(vertical, currentOrganization?.slug, currentLocation?.id);
 
   const isActive = (path: string) => location.pathname === path;
   
@@ -281,6 +320,46 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {websiteLinks.length > 0 && (
+          <SidebarGroup>
+            {!collapsed && <SidebarGroupLabel className="text-accent-foreground">My Website</SidebarGroupLabel>}
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {websiteLinks.map((link) => (
+                  <SidebarMenuItem key={link.path}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <a
+                          href={link.path}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={cn(
+                            'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+                            'text-accent-foreground hover:bg-accent/50'
+                          )}
+                        >
+                          <link.icon className="w-5 h-5 shrink-0" />
+                          {!collapsed && (
+                            <>
+                              <span className="flex-1">{link.title}</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </>
+                          )}
+                        </a>
+                      </TooltipTrigger>
+                      {collapsed && (
+                        <TooltipContent side="right">
+                          <p>{link.title} (opens in new tab)</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {adminItems.length > 0 && (
           <SidebarGroup>

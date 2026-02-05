@@ -209,7 +209,7 @@ No new tables required - leveraging existing settings JSON.
 3. ✅ **Phase 1.2**: Pharmacy Refill Portal - `/pharmacy/:orgSlug/refills`
 4. ✅ **Phase 2**: Business Site Hub - `/site/:orgSlug`
 5. ✅ **Phase 3**: Website Settings - Settings → Website tab
-6. ⏳ **Phase 4**: Sidebar Updates (external links per vertical)
+6. ✅ **Phase 4**: Sidebar Updates (external links per vertical)
 7. ⏳ **Phase 5**: Ensure all syncs work correctly
 8. ⏳ **Phase 6**: Custom domain documentation
 
