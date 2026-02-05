@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building2, BedDouble, Bath, Square, MapPin, Check } from 'lucide-react';
+import { Building2, BedDouble, Bath, Square, MapPin, Check, Home, Sparkles } from 'lucide-react';
 
 interface UnitListingCardProps {
   unit: {
@@ -21,106 +21,121 @@ interface UnitListingCardProps {
   currencySymbol?: string;
 }
 
-const UNIT_TYPE_COLORS: Record<string, string> = {
-  studio: 'bg-muted text-muted-foreground',
-  apartment: 'bg-info/20 text-info',
-  house: 'bg-success/20 text-success',
-  condo: 'bg-property/20 text-property',
-  townhouse: 'bg-warning/20 text-warning',
-  commercial: 'bg-primary/20 text-primary',
+const UNIT_TYPE_CONFIG: Record<string, { color: string; bgColor: string; label: string }> = {
+  studio: { color: 'text-muted-foreground', bgColor: 'bg-muted', label: 'Studio' },
+  apartment: { color: 'text-info', bgColor: 'bg-info/10', label: 'Apartment' },
+  house: { color: 'text-success', bgColor: 'bg-success/10', label: 'House' },
+  condo: { color: 'text-property', bgColor: 'bg-property/10', label: 'Condo' },
+  townhouse: { color: 'text-warning', bgColor: 'bg-warning/10', label: 'Townhouse' },
+  commercial: { color: 'text-primary', bgColor: 'bg-primary/10', label: 'Commercial' },
 };
 
 export function UnitListingCard({ unit, onApply, currencySymbol = '$' }: UnitListingCardProps) {
   const isAvailable = unit.status === 'available' || unit.status === 'vacant';
+  const unitConfig = UNIT_TYPE_CONFIG[unit.unit_type?.toLowerCase()] || UNIT_TYPE_CONFIG.apartment;
   
   return (
-    <Card className="overflow-hidden border-border/50 bg-card/50 transition-all hover:border-primary/30 hover:shadow-lg">
+    <Card className="group overflow-hidden border-border/50 bg-card/50 transition-all duration-300 hover:border-property/30 hover:shadow-xl hover:shadow-property/5">
       {/* Unit Image Placeholder */}
-      <div className="relative h-48 bg-gradient-to-br from-muted to-muted/50">
+      <div className="relative h-52 bg-gradient-to-br from-property/20 via-property/10 to-muted/50 overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center">
-          <Building2 className="h-16 w-16 text-muted-foreground/30" />
+          <Home className="h-20 w-20 text-property/20 group-hover:scale-110 transition-transform duration-300" />
         </div>
-        <Badge className={`absolute right-3 top-3 ${UNIT_TYPE_COLORS[unit.unit_type?.toLowerCase()] || UNIT_TYPE_COLORS.apartment}`}>
-          {unit.unit_type || 'Apartment'}
+        
+        {/* Unit type badge */}
+        <Badge className={`absolute left-3 top-3 ${unitConfig.bgColor} ${unitConfig.color} border-0 shadow-sm`}>
+          <Sparkles className="mr-1 h-3 w-3" />
+          {unitConfig.label}
         </Badge>
+        
+        {/* Availability overlay */}
         {!isAvailable && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80">
-            <Badge variant="destructive" className="text-sm">Not Available</Badge>
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <Badge variant="destructive" className="text-sm px-4 py-1.5">Not Available</Badge>
           </div>
         )}
+        
+        {/* Price overlay */}
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/90 to-transparent p-4">
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl font-bold text-foreground">
+              {currencySymbol}{unit.monthly_rent.toLocaleString()}
+            </span>
+            <span className="text-sm text-muted-foreground">/ month</span>
+          </div>
+        </div>
       </div>
 
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="p-5 space-y-4">
         <div>
-          <h3 className="text-lg font-semibold text-foreground">
+          <h3 className="text-lg font-semibold text-foreground group-hover:text-property transition-colors">
             Unit {unit.unit_number}
           </h3>
           {unit.address && (
-            <p className="flex items-center gap-1 text-sm text-muted-foreground">
-              <MapPin className="h-3 w-3" />
-              {unit.address}
+            <p className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span className="line-clamp-1">{unit.address}</span>
             </p>
           )}
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        {/* Features */}
+        <div className="flex flex-wrap items-center gap-3 text-sm">
           {unit.bedrooms !== null && (
-            <div className="flex items-center gap-1">
-              <BedDouble className="h-4 w-4" />
-              <span>{unit.bedrooms} bed{unit.bedrooms !== 1 ? 's' : ''}</span>
+            <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5">
+              <BedDouble className="h-4 w-4 text-property" />
+              <span className="text-foreground font-medium">{unit.bedrooms}</span>
+              <span className="text-muted-foreground">bed{unit.bedrooms !== 1 ? 's' : ''}</span>
             </div>
           )}
           {unit.bathrooms !== null && (
-            <div className="flex items-center gap-1">
-              <Bath className="h-4 w-4" />
-              <span>{unit.bathrooms} bath{unit.bathrooms !== 1 ? 's' : ''}</span>
+            <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5">
+              <Bath className="h-4 w-4 text-property" />
+              <span className="text-foreground font-medium">{unit.bathrooms}</span>
+              <span className="text-muted-foreground">bath{unit.bathrooms !== 1 ? 's' : ''}</span>
             </div>
           )}
           {unit.square_feet !== null && (
-            <div className="flex items-center gap-1">
-              <Square className="h-4 w-4" />
-              <span>{unit.square_feet.toLocaleString()} sqft</span>
+            <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5">
+              <Square className="h-4 w-4 text-property" />
+              <span className="text-foreground font-medium">{unit.square_feet.toLocaleString()}</span>
+              <span className="text-muted-foreground">sqft</span>
             </div>
           )}
         </div>
 
+        {/* Amenities */}
         {unit.amenities && unit.amenities.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {unit.amenities.slice(0, 4).map((amenity) => (
-              <Badge key={amenity} variant="outline" className="text-xs">
-                <Check className="h-3 w-3 mr-1" />
+            {unit.amenities.slice(0, 3).map((amenity) => (
+              <Badge key={amenity} variant="outline" className="text-xs font-normal border-border/50 bg-muted/30">
+                <Check className="h-3 w-3 mr-1 text-property" />
                 {amenity}
               </Badge>
             ))}
-            {unit.amenities.length > 4 && (
-              <Badge variant="outline" className="text-xs">
-                +{unit.amenities.length - 4} more
+            {unit.amenities.length > 3 && (
+              <Badge variant="outline" className="text-xs font-normal border-border/50">
+                +{unit.amenities.length - 3} more
               </Badge>
             )}
           </div>
         )}
 
-        <div className="pt-2 border-t border-border/50">
-          <div className="flex items-baseline justify-between">
-            <div>
-              <span className="text-2xl font-bold text-foreground">
-                {currencySymbol}{unit.monthly_rent.toLocaleString()}
-              </span>
-              <span className="text-sm text-muted-foreground"> / month</span>
+        {/* Deposit info */}
+        {unit.security_deposit !== null && (
+          <div className="rounded-lg bg-muted/30 p-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Security Deposit</span>
+              <span className="font-semibold text-foreground">{currencySymbol}{unit.security_deposit.toLocaleString()}</span>
             </div>
-            {unit.security_deposit !== null && (
-              <div className="text-right text-sm text-muted-foreground">
-                <p>Deposit: {currencySymbol}{unit.security_deposit.toLocaleString()}</p>
-              </div>
-            )}
           </div>
-        </div>
+        )}
       </CardContent>
 
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-5 pt-0">
         <Button 
           onClick={() => onApply(unit.id)} 
-          className="w-full"
+          className="w-full h-11 text-base shadow-sm"
           disabled={!isAvailable}
           variant={isAvailable ? 'default' : 'secondary'}
         >
