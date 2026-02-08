@@ -43,7 +43,13 @@ export default function StoreCatalog() {
         .single();
 
       if (error) throw error;
-      setStore(data);
+      setStore({
+        ...data,
+        name: data.name ?? '',
+        slug: data.slug ?? '',
+        primary_vertical: data.primary_vertical ?? '',
+        logo_url: data.logo_url ?? undefined,
+      });
     } catch (error) {
       console.error('Error loading store:', error);
       toast({

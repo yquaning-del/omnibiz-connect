@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { BusinessVertical, AppRole } from '@/types';
 import { getDefaultPermissionsForRole, getPermissionKeyFromRoute } from '@/lib/verticalPermissions';
+import { toast } from 'sonner';
 
 interface UserPermission {
   permission_key: string;
@@ -21,20 +22,15 @@ export function usePermissions() {
     (r) => r.organization_id === currentOrganization?.id
   )?.role as AppRole | undefined;
 
+  // Stabilize the user role record ID to avoid re-fetching on every render
+  const userRoleRecordId = useMemo(() => {
+    return roles.find((r) => r.organization_id === currentOrganization?.id)?.id ?? null;
+  }, [roles, currentOrganization?.id]);
+
   // Fetch custom permissions for the user
   useEffect(() => {
     const fetchPermissions = async () => {
-      if (!user || !currentOrganization) {
-        setLoading(false);
-        return;
-      }
-
-      // Get user's role record
-      const userRoleRecord = roles.find(
-        (r) => r.organization_id === currentOrganization.id
-      );
-
-      if (!userRoleRecord) {
+      if (!user || !currentOrganization || !userRoleRecordId) {
         setLoading(false);
         return;
       }
@@ -42,10 +38,11 @@ export function usePermissions() {
       const { data, error } = await supabase
         .from('user_permissions')
         .select('permission_key, granted')
-        .eq('user_role_id', userRoleRecord.id);
+        .eq('user_role_id', userRoleRecordId);
 
       if (error) {
         console.error('Error fetching permissions:', error);
+        toast.error('Failed to load permissions. Please try refreshing the page.');
       } else if (data) {
         setCustomPermissions(data);
       }
@@ -54,7 +51,7 @@ export function usePermissions() {
     };
 
     fetchPermissions();
-  }, [user, currentOrganization, roles]);
+  }, [user, currentOrganization, userRoleRecordId]);
 
   // Check if user has a specific permission
   const hasPermission = useCallback(
@@ -160,6 +157,7 @@ export function useStaffPermissions(userRoleId: string | null) {
 
     if (error) {
       console.error('Error fetching staff permissions:', error);
+      toast.error('Failed to load staff permissions.');
     } else if (data) {
       setPermissions(data);
     }
@@ -201,47 +199,69 @@ export function useStaffPermissions(userRoleId: string | null) {
       const added = [...newGranted].filter((p) => !existingGranted.has(p));
       const removed = [...existingGranted].filter((p) => !newGranted.has(p));
 
-      // Delete existing permissions
-      await supabase
-        .from('user_permissions')
-        .delete()
-        .eq('user_role_id', userRoleId);
-
-      // Insert new permissions
+      // Use upsert instead of delete-then-insert to avoid race conditions.
+      // This ensures atomicity: if insert fails, no data is lost.
       if (newPermissions.length > 0) {
-        const { error } = await supabase.from('user_permissions').insert(
+        // First, delete permissions that are no longer in the new set
+        const newKeys = new Set(newPermissions.map(p => p.permission_key));
+        const keysToDelete = existingPerms
+          ?.map(p => p.permission_key)
+          .filter(k => !newKeys.has(k)) || [];
+
+        if (keysToDelete.length > 0) {
+          await supabase
+            .from('user_permissions')
+            .delete()
+            .eq('user_role_id', userRoleId)
+            .in('permission_key', keysToDelete);
+        }
+
+        // Then upsert the new permissions (insert or update on conflict)
+        const { error } = await supabase.from('user_permissions').upsert(
           newPermissions.map((p) => ({
             user_role_id: userRoleId,
             permission_key: p.permission_key,
             granted: p.granted,
-          }))
+          })),
+          { onConflict: 'user_role_id,permission_key' }
         );
 
         if (error) {
+          toast.error('Failed to save permissions. Please try again.');
           return { success: false, error: error.message };
         }
+      } else {
+        // No new permissions — delete all existing
+        await supabase
+          .from('user_permissions')
+          .delete()
+          .eq('user_role_id', userRoleId);
       }
 
       // Log the permission change for audit trail
       if ((added.length > 0 || removed.length > 0) && auditInfo) {
         try {
-          await supabase.from('admin_audit_logs').insert({
-            admin_user_id: (await supabase.auth.getUser()).data.user?.id,
-            action_type: 'permission_update',
-            target_type: 'user_role',
-            target_id: userRoleId,
-            details: {
-              staff_name: auditInfo.staffName,
-              staff_role: auditInfo.staffRole,
-              added: added.length > 0 ? added : undefined,
-              removed: removed.length > 0 ? removed : undefined,
-              template_applied: auditInfo.templateApplied,
-              reset_to_defaults: auditInfo.resetToDefaults,
-            },
-          });
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user?.id) {
+            await supabase.from('admin_audit_logs').insert({
+              admin_user_id: user.id,
+              action_type: 'permission_update',
+              target_type: 'user_role',
+              target_id: userRoleId,
+              details: {
+                staff_name: auditInfo.staffName,
+                staff_role: auditInfo.staffRole,
+                added: added.length > 0 ? added : undefined,
+                removed: removed.length > 0 ? removed : undefined,
+                template_applied: auditInfo.templateApplied,
+                reset_to_defaults: auditInfo.resetToDefaults,
+              },
+            });
+          }
         } catch (auditError) {
           console.warn('Failed to log permission change:', auditError);
           // Don't fail the main operation if audit logging fails
+          // No toast here as the main operation succeeded
         }
       }
 

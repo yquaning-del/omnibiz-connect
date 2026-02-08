@@ -14,6 +14,7 @@ interface StoreInfo {
   name: string;
   slug: string;
   logo_url?: string;
+  settings?: Record<string, unknown>;
 }
 
 export default function StoreCheckout() {
@@ -38,12 +39,18 @@ export default function StoreCheckout() {
     try {
       const { data, error } = await supabase
         .from('organizations')
-        .select('id, name, slug, logo_url')
+        .select('id, name, slug, logo_url, settings')
         .eq('slug', orgSlug)
         .single();
 
       if (error) throw error;
-      setStore(data);
+      setStore({
+        ...data,
+        name: data.name ?? '',
+        slug: data.slug ?? '',
+        logo_url: data.logo_url ?? undefined,
+        settings: (data.settings as Record<string, unknown>) ?? undefined,
+      });
     } catch (error) {
       console.error('Error loading store:', error);
     } finally {
@@ -51,7 +58,7 @@ export default function StoreCheckout() {
     }
   };
 
-  const handleSubmitOrder = async (formData: any) => {
+  const handleSubmitOrder = async (formData: any, transactionReference?: string) => {
     if (!store) return;
 
     try {
@@ -75,14 +82,21 @@ export default function StoreCheckout() {
 
       if (addressError) throw addressError;
 
-      // Calculate shipping
-      const shippingRates: Record<string, number> = {
+      // Calculate shipping -- rates from org settings or defaults
+      const orgData = store as any;
+      const orgSettings = orgData?.settings as Record<string, unknown> | undefined;
+      const configuredRates = orgSettings?.shipping_rates as Record<string, number> | undefined;
+      const shippingRates: Record<string, number> = configuredRates ?? {
         standard: 250,
         express: 500,
         pickup: 0,
       };
       const shippingAmount = shippingRates[formData.shippingMethod] || 0;
       const totalAmount = cart.subtotal + shippingAmount;
+
+      // Determine payment status based on payment method and transaction reference
+      const isPaystackPayment = formData.paymentMethod === 'card' || formData.paymentMethod === 'paystack';
+      const paymentStatus = isPaystackPayment && transactionReference ? 'paid' : 'pending';
 
       // Create order
       const { data: orderData, error: orderError } = await supabase
@@ -95,9 +109,10 @@ export default function StoreCheckout() {
           shipping_amount: shippingAmount,
           total_amount: totalAmount,
           payment_method: formData.paymentMethod,
+          payment_reference: transactionReference || null,
           shipping_method: formData.shippingMethod,
           status: 'pending',
-          payment_status: 'pending',
+          payment_status: paymentStatus,
         })
         .select('id, order_number')
         .single();
@@ -269,6 +284,11 @@ export default function StoreCheckout() {
           subtotal={cart.subtotal}
           onSubmit={handleSubmitOrder}
           onCancel={() => navigate(`/store/${orgSlug}`)}
+          paystackPublicKey={
+            (store.settings as Record<string, unknown>)?.paystack_public_key as string | undefined ||
+            import.meta.env.VITE_PAYSTACK_PUBLIC_KEY ||
+            'pk_test_xxxxxxxxxxxxx'
+          }
         />
       </main>
     </div>

@@ -1,10 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { handleCorsPreFlight, getCorsHeaders } from "../_shared/cors.ts";
+import { verifyAuth, verifyOrgAccess } from "../_shared/auth.ts";
+import { validateRequired, validateUUID, sanitizeString } from "../_shared/validation.ts";
+import { jsonResponse, errorResponse } from "../_shared/response.ts";
 
 // Define available tools for the AI copilot
 const tools = [
@@ -283,7 +281,6 @@ async function executeTool(supabase: any, toolName: string, args: any, context: 
         .eq("organization_id", organizationId)
         .eq("is_active", true);
 
-      // Filter by expiry in metadata
       const expiring = products?.filter((p: any) => {
         const expiryDate = p.metadata?.expiry_date;
         if (!expiryDate) return false;
@@ -294,7 +291,6 @@ async function executeTool(supabase: any, toolName: string, args: any, context: 
     }
 
     case "send_notification": {
-      // This would integrate with notification service
       console.log(`Would send ${args.type} notification to ${args.recipient}: ${args.message}`);
       return { 
         success: true, 
@@ -308,22 +304,34 @@ async function executeTool(supabase: any, toolName: string, args: any, context: 
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflight = handleCorsPreFlight(req);
+  if (preflight) return preflight;
+
+  const cors = getCorsHeaders(req);
 
   try {
-    const { message, organizationId, locationId, vertical, conversationHistory = [] } = await req.json();
+    // Verify JWT authentication
+    const { userId, supabaseClient: supabase } = await verifyAuth(req);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const body = await req.json();
+    validateRequired(body, ["message", "organizationId"]);
+
+    const organizationId = validateUUID(body.organizationId, "organizationId");
+    const locationId = body.locationId ? validateUUID(body.locationId, "locationId") : null;
+    const message = sanitizeString(body.message, "message", 2000);
+    const vertical = body.vertical ? sanitizeString(body.vertical, "vertical", 50) : "business";
+    const conversationHistory = Array.isArray(body.conversationHistory) ? body.conversationHistory.slice(-10) : [];
+
+    // Verify user has access to the organization
+    const hasAccess = await verifyOrgAccess(supabase, userId, organizationId);
+    if (!hasAccess) {
+      return jsonResponse({ success: false, error: "Access denied to this organization" }, cors, 403);
+    }
 
     const context = { organizationId, locationId, vertical };
 
     // System prompt tailored to business context
-    const systemPrompt = `You are an AI assistant for a ${vertical || 'business'} management platform. You help users:
+    const systemPrompt = `You are an AI assistant for a ${vertical} management platform. You help users:
 - Get insights about their business (sales, inventory, customers, reservations)
 - Answer questions about their data
 - Perform actions like sending notifications
@@ -339,7 +347,7 @@ If you can't help with something, politely explain what you can do instead.`;
     // Build messages array
     const messages = [
       { role: "system", content: systemPrompt },
-      ...conversationHistory.slice(-10), // Keep last 10 messages for context
+      ...conversationHistory,
       { role: "user", content: message }
     ];
 
@@ -372,26 +380,28 @@ If you can't help with something, politely explain what you can do instead.`;
     if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
       console.log(`AI requested ${assistantMessage.tool_calls.length} tool(s)`);
 
-      // Execute all tool calls
       const toolResults = [];
       for (const toolCall of assistantMessage.tool_calls) {
-        const args = JSON.parse(toolCall.function.arguments || "{}");
-        console.log(`Executing tool: ${toolCall.function.name}`, args);
-        
-        const result = await executeTool(supabase, toolCall.function.name, args, context);
-        toolResults.push({
-          tool_call_id: toolCall.id,
-          role: "tool",
-          content: JSON.stringify(result)
-        });
+        try {
+          const args = JSON.parse(toolCall.function.arguments || "{}");
+          console.log(`Executing tool: ${toolCall.function.name}`, args);
+          const result = await executeTool(supabase, toolCall.function.name, args, context);
+          toolResults.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            content: JSON.stringify(result)
+          });
+        } catch (toolError) {
+          console.error(`Tool execution failed: ${toolCall.function.name}`, toolError);
+          toolResults.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            content: JSON.stringify({ error: "Tool execution failed" })
+          });
+        }
       }
 
-      // Send tool results back to AI for final response
-      const finalMessages = [
-        ...messages,
-        assistantMessage,
-        ...toolResults
-      ];
+      const finalMessages = [...messages, assistantMessage, ...toolResults];
 
       const finalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -410,32 +420,22 @@ If you can't help with something, politely explain what you can do instead.`;
       const finalData = await finalResponse.json();
       const finalContent = finalData.choices?.[0]?.message?.content;
 
-      return new Response(JSON.stringify({
+      return jsonResponse({
         success: true,
         response: finalContent,
         toolsUsed: assistantMessage.tool_calls.map((tc: any) => tc.function.name)
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      }, cors);
     }
 
     // No tools needed - return direct response
-    return new Response(JSON.stringify({
+    return jsonResponse({
       success: true,
       response: assistantMessage?.content || "I couldn't generate a response.",
       toolsUsed: []
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+    }, cors);
 
   } catch (error) {
     console.error("AI Copilot error:", error);
-    return new Response(JSON.stringify({
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error"
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+    return errorResponse(error, cors);
   }
 });

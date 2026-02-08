@@ -43,7 +43,7 @@ export default function AcceptInvite() {
       const { data, error } = await supabase
         .from('lease_invitations')
         .select('*')
-        .eq('token', token)
+        .eq('token', token!)
         .maybeSingle();
 
       if (error) throw error;
@@ -63,7 +63,15 @@ export default function AcceptInvite() {
         return;
       }
 
-      setInvitation(data);
+      setInvitation({
+        id: data.id,
+        email: data.email ?? '',
+        status: data.status ?? 'pending',
+        expires_at: data.expires_at ?? new Date().toISOString(),
+        lease_id: data.lease_id ?? '',
+        tenant_id: data.tenant_id ?? '',
+        organization_id: data.organization_id ?? '',
+      });
     } catch (err) {
       console.error('Error validating token:', err);
       setError('Failed to validate invitation. Please try again.');

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { Loader2, UserCog, Calendar, Trash2, MoreVertical, Shield, KeyRound } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -66,6 +67,7 @@ const roleLabels: Record<string, string> = {
 export default function Staff() {
   const { currentOrganization, currentLocation, isOrgAdmin } = useAuth();
   const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const limits = useLimitChecker();
   
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -143,7 +145,8 @@ export default function Staff() {
   };
 
   const removeStaff = async (staffId: string) => {
-    if (!confirm('Remove this staff member?')) return;
+    const confirmed = await confirm({ title: 'Remove staff member?', description: 'This action cannot be undone.', variant: 'destructive', confirmLabel: 'Remove' });
+    if (!confirmed) return;
 
     const { error } = await supabase
       .from('user_roles')
@@ -210,6 +213,7 @@ export default function Staff() {
   return (
     <FeatureGate feature="staff_management" requiredTier="Professional">
       <div className="space-y-6 animate-fade-in">
+        <ConfirmDialog />
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

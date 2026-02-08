@@ -83,13 +83,16 @@ export function StockTransferDialog({ open, onClose, onSuccess }: StockTransferD
       .order('name');
 
     if (!error && data) {
-      setProducts(data);
+      setProducts(data.map(p => ({
+        ...p,
+        stock_quantity: p.stock_quantity ?? 0,
+      })));
     }
     setLoading(false);
   };
 
   const selectedProduct = products.find((p) => p.id === productId);
-  const maxQuantity = selectedProduct?.stock_quantity || 0;
+  const maxQuantity = selectedProduct?.stock_quantity ?? 0;
 
   const handleSubmit = async () => {
     if (!fromLocationId || !toLocationId || !productId || !quantity) {

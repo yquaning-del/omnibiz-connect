@@ -69,7 +69,13 @@ export function NotificationCenter() {
       .limit(50);
 
     if (!error && data) {
-      setNotifications(data);
+      setNotifications(data.map(n => ({
+        ...n,
+        message: n.message ?? null,
+        link: n.link ?? null,
+        is_read: n.is_read ?? false,
+        created_at: n.created_at ?? new Date().toISOString(),
+      })));
     }
     setLoading(false);
   };
@@ -88,7 +94,14 @@ export function NotificationCenter() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          setNotifications((prev) => [payload.new as Notification, ...prev]);
+          const newNotif = payload.new as any;
+          setNotifications((prev) => [{
+            ...newNotif,
+            message: newNotif.message ?? null,
+            link: newNotif.link ?? null,
+            is_read: newNotif.is_read ?? false,
+            created_at: newNotif.created_at ?? new Date().toISOString(),
+          } as Notification, ...prev]);
         }
       )
       .subscribe();

@@ -1,101 +1,163 @@
-// Service Worker for Offline POS functionality
-const CACHE_NAME = 'pos-cache-v1';
-const STATIC_ASSETS = [
+// Service Worker for OmniBiz Connect — Offline-first for African markets
+const CACHE_VERSION = 3;
+const CACHE_NAME = `omnibiz-cache-v${CACHE_VERSION}`;
+
+// Core app shell to precache on install
+const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/icons/icon-192.svg',
+  '/icons/icon-512.svg',
+  '/favicon.ico',
 ];
 
-// Install event - cache static assets
+// ─── Install ────────────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...');
+  console.log('[SW] Installing service worker v' + CACHE_VERSION);
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
+      console.log('[SW] Precaching app shell');
+      return cache.addAll(PRECACHE_ASSETS);
     })
   );
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// ─── Activate — clean old caches ────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...');
+  console.log('[SW] Activating service worker v' + CACHE_VERSION);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
           .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+          .map((name) => {
+            console.log('[SW] Deleting old cache:', name);
+            return caches.delete(name);
+          })
       );
     })
   );
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// ─── Fetch — strategy depends on request type ───────────────────────────────
 self.addEventListener('fetch', (event) => {
+  const { request } = event;
+
   // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
+  if (request.method !== 'GET') return;
 
-  // Skip Supabase API requests (handle offline separately)
-  if (event.request.url.includes('supabase.co')) return;
+  // Skip Supabase API requests (offline handled via IndexedDB in the app)
+  if (request.url.includes('supabase.co')) return;
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
+  // Skip chrome-extension and other non-http(s) schemes
+  if (!request.url.startsWith('http')) return;
 
-      return fetch(event.request)
-        .then((response) => {
-          // Don't cache non-successful responses
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
+  const url = new URL(request.url);
+
+  // ── Strategy 1: Cache-first for hashed static assets (/assets/*)
+  //    Vite produces content-hashed filenames so they are immutable.
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
+          return response;
+        }).catch(() => new Response('', { status: 503, statusText: 'Offline' }));
+      })
+    );
+    return;
+  }
 
-          // Clone the response
-          const responseToCache = response.clone();
+  // ── Strategy 2: Cache-first for icons and other static files in public/
+  if (url.pathname.startsWith('/icons/') || url.pathname === '/manifest.json' || url.pathname === '/favicon.ico') {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        }).catch(() => new Response('', { status: 503, statusText: 'Offline' }));
+      })
+    );
+    return;
+  }
 
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-
+  // ── Strategy 3: Network-first for navigation (HTML pages)
+  //    Try network; on failure serve cached /index.html (SPA shell).
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache the latest HTML shell
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           return response;
         })
         .catch(() => {
-          // Return offline page for navigation requests
-          if (event.request.mode === 'navigate') {
-            return caches.match('/');
+          return caches.match('/index.html');
+        })
+    );
+    return;
+  }
+
+  // ── Strategy 4: Stale-while-revalidate for everything else
+  //    Serve from cache immediately, fetch in background and update cache.
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      const fetchPromise = fetch(request)
+        .then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
-          return new Response('Offline', { status: 503 });
+          return response;
+        })
+        .catch(() => {
+          // If both cache and network fail, return an offline JSON response
+          return new Response(
+            JSON.stringify({ error: 'Offline', message: 'No network connection available' }),
+            { status: 503, headers: { 'Content-Type': 'application/json' } }
+          );
         });
+
+      return cached || fetchPromise;
     })
   );
 });
 
-// Listen for sync events
+// ─── Background Sync ────────────────────────────────────────────────────────
 self.addEventListener('sync', (event) => {
   console.log('[SW] Sync event received:', event.tag);
   if (event.tag === 'sync-offline-orders') {
-    event.waitUntil(syncOfflineOrders());
+    event.waitUntil(notifyClientsToSync());
   }
 });
 
-// Sync offline orders function
-async function syncOfflineOrders() {
-  console.log('[SW] Syncing offline orders...');
-  // The actual sync logic is handled by the app via IndexedDB
-  // This just triggers a message to the client
-  const clients = await self.clients.matchAll();
-  clients.forEach((client) => {
+async function notifyClientsToSync() {
+  console.log('[SW] Notifying clients to sync offline orders...');
+  const allClients = await self.clients.matchAll({ type: 'window' });
+  for (const client of allClients) {
     client.postMessage({ type: 'SYNC_ORDERS' });
-  });
+  }
 }
 
-// Listen for messages from the app
+// ─── Messages from the app ─────────────────────────────────────────────────
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+
+  if (event.data && event.data.type === 'TRIGGER_SYNC') {
+    notifyClientsToSync();
   }
 });

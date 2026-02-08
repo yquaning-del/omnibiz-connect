@@ -10,7 +10,7 @@ export default function Terms() {
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <Building2 className="h-8 w-8 text-primary" />
-            <span className="text-xl font-display font-bold text-foreground">HospitalityOS</span>
+            <span className="text-xl font-display font-bold text-foreground">OmniBiz Connect</span>
           </Link>
           <Link to="/">
             <Button variant="ghost" size="sm" className="gap-2">
@@ -30,7 +30,7 @@ export default function Terms() {
           <section>
             <h2 className="text-2xl font-semibold text-foreground mb-4">1. Acceptance of Terms</h2>
             <p className="text-muted-foreground leading-relaxed">
-              By accessing or using HospitalityOS ("the Service"), you agree to be bound by these Terms of Service. 
+              By accessing or using OmniBiz Connect ("the Service"), you agree to be bound by these Terms of Service. 
               If you disagree with any part of these terms, you may not access the Service.
             </p>
           </section>
@@ -38,7 +38,7 @@ export default function Terms() {
           <section>
             <h2 className="text-2xl font-semibold text-foreground mb-4">2. Description of Service</h2>
             <p className="text-muted-foreground leading-relaxed">
-              HospitalityOS provides a unified management platform for hospitality businesses including restaurants, 
+              OmniBiz Connect provides a unified management platform for hospitality businesses including restaurants, 
               hotels, pharmacies, and retail operations. Our services include point-of-sale systems, inventory management, 
               staff scheduling, customer management, and analytics tools.
             </p>
@@ -96,7 +96,7 @@ export default function Terms() {
           <section>
             <h2 className="text-2xl font-semibold text-foreground mb-4">8. Limitation of Liability</h2>
             <p className="text-muted-foreground leading-relaxed">
-              In no event shall HospitalityOS, its directors, employees, or agents be liable for any indirect, 
+              In no event shall OmniBiz Connect, its directors, employees, or agents be liable for any indirect, 
               incidental, special, consequential, or punitive damages resulting from your use of the Service. 
               Our total liability shall not exceed the amount you paid for the Service in the past 12 months.
             </p>
@@ -114,7 +114,7 @@ export default function Terms() {
             <h2 className="text-2xl font-semibold text-foreground mb-4">10. Contact Us</h2>
             <p className="text-muted-foreground leading-relaxed">
               If you have any questions about these Terms, please contact us at{' '}
-              <a href="mailto:legal@hospitalityos.com" className="text-primary hover:underline">legal@hospitalityos.com</a>
+              <a href="mailto:legal@omnibizconnect.com" className="text-primary hover:underline">legal@omnibizconnect.com</a>
             </p>
           </section>
         </div>
@@ -123,7 +123,7 @@ export default function Terms() {
       {/* Footer */}
       <footer className="py-8 border-t border-border/50">
         <div className="container mx-auto px-6 text-center text-muted-foreground text-sm">
-          <p>© {new Date().getFullYear()} HospitalityOS. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} OmniBiz Connect. All rights reserved.</p>
         </div>
       </footer>
     </div>

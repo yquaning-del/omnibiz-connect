@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 type NotificationType = 'rent_reminder' | 'lease_expiry' | 'maintenance_update' | 'payment_confirmation';
 
@@ -14,7 +14,6 @@ interface NotificationData {
 
 export function useNotifications() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
 
   const sendNotification = useCallback(async ({
     type,
@@ -24,6 +23,7 @@ export function useNotifications() {
   }: NotificationData): Promise<boolean> => {
     if (!currentOrganization) {
       console.error('No organization context for notifications');
+      toast.error('No organization context for notifications');
       return false;
     }
 
@@ -47,6 +47,7 @@ export function useNotifications() {
       return true;
     } catch (error: any) {
       console.error('Failed to send notification:', error);
+      toast.error('Failed to send notification. Please try again.');
       return false;
     }
   }, [currentOrganization]);

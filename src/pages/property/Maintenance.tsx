@@ -110,15 +110,53 @@ export default function PropertyMaintenance() {
           .from('property_units' as any)
           .select('id, unit_number')
           .eq('organization_id', currentOrganization.id),
-        supabase.from('profiles').select('id, full_name'),
+        supabase
+          .from('user_roles')
+          .select('user_id, profiles:user_id(id, full_name)')
+          .eq('organization_id', currentOrganization.id),
       ]);
 
-      if (unitsRes.data) setUnits(unitsRes.data as unknown as PropertyUnit[]);
-      if (staffRes.data) setStaff(staffRes.data);
+      if (unitsRes.data) setUnits((unitsRes.data as unknown as any[]).map((u: any) => ({
+        id: u.id,
+        unit_number: u.unit_number ?? '',
+      })));
+      if (staffRes.data) setStaff(staffRes.data
+        .filter((s: any) => s.profiles)
+        .map((s: any) => ({
+          id: s.profiles.id ?? s.user_id,
+          full_name: s.profiles.full_name ?? '',
+        })));
 
-      // For now, we'll store maintenance in a simple local state
-      // In production, this would query a property_maintenance table
-      setRequests([]);
+      // Fetch maintenance requests from database
+      const { data: maintenanceData, error: maintenanceError } = await supabase
+        .from('maintenance_requests' as any)
+        .select('*, unit:property_units!maintenance_requests_unit_id_fkey(unit_number), assignee:profiles!maintenance_requests_assigned_to_fkey(full_name)')
+        .eq('organization_id', currentOrganization.id)
+        .order('created_at', { ascending: false });
+
+      if (maintenanceError) {
+        // If maintenance_requests table doesn't exist, try using the general table
+        console.error('Error fetching maintenance:', maintenanceError);
+        setRequests([]);
+      } else if (maintenanceData) {
+        setRequests((maintenanceData as unknown as any[]).map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          description: r.description ?? null,
+          category: r.category ?? 'general',
+          priority: r.priority ?? 'normal',
+          status: r.status ?? 'open',
+          estimated_cost: r.estimated_cost ?? 0,
+          actual_cost: r.actual_cost ?? 0,
+          scheduled_date: r.scheduled_date ?? null,
+          completed_at: r.completed_at ?? null,
+          notes: r.notes ?? null,
+          created_at: r.created_at,
+          unit_id: r.unit_id ?? null,
+          unit: r.unit ? { unit_number: r.unit.unit_number } : undefined,
+          assignee: r.assignee ? { full_name: r.assignee.full_name } : undefined,
+        })));
+      }
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {
@@ -132,9 +170,8 @@ export default function PropertyMaintenance() {
     setSaving(true);
 
     try {
-      // Create a new maintenance request locally
-      const newRequest: MaintenanceRequest = {
-        id: crypto.randomUUID(),
+      const insertData: Record<string, unknown> = {
+        organization_id: currentOrganization.id,
         title: formData.title,
         description: formData.description || null,
         category: formData.category,
@@ -142,19 +179,20 @@ export default function PropertyMaintenance() {
         status: 'open',
         estimated_cost: parseFloat(formData.estimated_cost) || 0,
         actual_cost: 0,
-        scheduled_date: null,
-        completed_at: null,
-        notes: null,
-        created_at: new Date().toISOString(),
         unit_id: formData.unit_id || null,
-        unit: units.find(u => u.id === formData.unit_id),
-        assignee: staff.find(s => s.id === formData.assigned_to),
+        assigned_to: formData.assigned_to || null,
       };
 
-      setRequests(prev => [newRequest, ...prev]);
+      const { error } = await supabase
+        .from('maintenance_requests' as any)
+        .insert(insertData);
+
+      if (error) throw error;
+
       toast({ title: 'Maintenance request created' });
       setDialogOpen(false);
       resetForm();
+      fetchData();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {
@@ -162,15 +200,31 @@ export default function PropertyMaintenance() {
     }
   };
 
-  const updateStatus = (id: string, status: string) => {
-    setRequests(prev =>
-      prev.map(req =>
-        req.id === id
-          ? { ...req, status, completed_at: status === 'completed' ? new Date().toISOString() : null }
-          : req
-      )
-    );
-    toast({ title: 'Status updated' });
+  const updateStatus = async (id: string, status: string) => {
+    try {
+      const updateData: Record<string, unknown> = {
+        status,
+        completed_at: status === 'completed' ? new Date().toISOString() : null,
+      };
+
+      const { error } = await supabase
+        .from('maintenance_requests' as any)
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setRequests(prev =>
+        prev.map(req =>
+          req.id === id
+            ? { ...req, status, completed_at: status === 'completed' ? new Date().toISOString() : null }
+            : req
+        )
+      );
+      toast({ title: 'Status updated' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
   };
 
   const resetForm = () => {

@@ -104,7 +104,8 @@ export default function Maintenance() {
   useEffect(() => {
     if (currentLocation) {
       fetchData();
-      subscribeToRequests();
+      const cleanup = subscribeToRequests();
+      return cleanup;
     }
   }, [currentLocation]);
 
@@ -122,19 +123,43 @@ export default function Maintenance() {
         .from('hotel_rooms')
         .select('id, room_number')
         .eq('location_id', currentLocation.id),
-      supabase.from('profiles').select('id, full_name'),
+      supabase
+        .from('user_roles')
+        .select('user_id, profiles:user_id(id, full_name)')
+        .eq('organization_id', currentLocation.organization_id),
     ]);
+
+    // Build staff lookup from org-scoped user_roles
+    const staffList = (staffRes.data || [])
+      .filter((s: any) => s.profiles)
+      .map((s: any) => ({
+        id: s.profiles.id ?? s.user_id,
+        full_name: s.profiles.full_name ?? '',
+      }));
 
     if (requestsRes.data) {
       const enriched = requestsRes.data.map((req: any) => {
         const room = roomsRes.data?.find((r: any) => r.id === req.room_id);
-        const assignee = staffRes.data?.find((s: any) => s.id === req.assigned_to);
-        return { ...req, room, assignee };
+        const assignee = staffList.find((s: any) => s.id === req.assigned_to);
+        return {
+          ...req,
+          title: req.title ?? '',
+          category: req.category ?? 'general',
+          priority: req.priority ?? 'normal',
+          status: req.status ?? 'open',
+          estimated_cost: req.estimated_cost ?? 0,
+          actual_cost: req.actual_cost ?? 0,
+          room: room ? { room_number: room.room_number ?? '' } : undefined,
+          assignee: assignee ? { full_name: assignee.full_name ?? '' } : undefined,
+        };
       });
       setRequests(enriched);
     }
-    if (roomsRes.data) setRooms(roomsRes.data);
-    if (staffRes.data) setStaff(staffRes.data);
+    if (roomsRes.data) setRooms(roomsRes.data.map((r: any) => ({
+      ...r,
+      room_number: r.room_number ?? '',
+    })));
+    setStaff(staffList);
 
     setLoading(false);
   };

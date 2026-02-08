@@ -9,6 +9,8 @@ interface CurrencyConfig {
   symbol: string;
   locale: string;
   name: string;
+  /** True for zero-decimal currencies like UGX, RWF */
+  zeroDecimal?: boolean;
 }
 
 export const CURRENCIES: Record<SupportedCurrency, CurrencyConfig> = {
@@ -53,12 +55,14 @@ export const CURRENCIES: Record<SupportedCurrency, CurrencyConfig> = {
     symbol: 'USh',
     locale: 'en-UG',
     name: 'Ugandan Shilling',
+    zeroDecimal: true,
   },
   RWF: {
     code: 'RWF',
     symbol: 'FRw',
     locale: 'rw-RW',
     name: 'Rwandan Franc',
+    zeroDecimal: true,
   },
 };
 
@@ -72,17 +76,19 @@ export function formatCurrency(
 ): string {
   const config = CURRENCIES[currency];
   
+  const decimals = config.zeroDecimal ? 0 : 2;
+  
   try {
     return new Intl.NumberFormat(config.locale, {
       style: 'currency',
       currency: config.code,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
       ...options,
     }).format(amount);
   } catch {
     // Fallback for unsupported locales
-    return `${config.symbol}${amount.toFixed(2)}`;
+    return `${config.symbol}${config.zeroDecimal ? Math.round(amount).toLocaleString() : amount.toFixed(2)}`;
   }
 }
 

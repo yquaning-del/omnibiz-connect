@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminSearchBar } from "@/components/admin/AdminSearchBar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -45,12 +46,15 @@ interface QuickLookupResult {
 }
 
 export default function AdminSupport() {
-  const { user } = useAuth();
+  const { user, setCurrentOrganization, setCurrentLocation } = useAuth();
+  const navigate = useNavigate();
   const [lookupQuery, setLookupQuery] = useState("");
   const [lookupResult, setLookupResult] = useState<QuickLookupResult | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [impersonating, setImpersonating] = useState(false);
   const [readOnlyMode, setReadOnlyMode] = useState(true);
+  const [diagOrgId, setDiagOrgId] = useState("");
+  const [diagResults, setDiagResults] = useState("");
 
   const handleQuickLookup = async () => {
     if (!lookupQuery.trim()) {
@@ -144,9 +148,14 @@ export default function AdminSupport() {
       return;
     }
 
+    if (!user?.id) {
+      toast.error("User not authenticated");
+      return;
+    }
+
     // Log impersonation session
     await supabase.from("admin_audit_logs").insert({
-      admin_user_id: user?.id,
+      admin_user_id: user.id,
       action_type: "impersonation_start",
       target_type: "organization",
       target_id: lookupResult.organization.id,
@@ -156,16 +165,40 @@ export default function AdminSupport() {
       },
     });
 
+    // Switch the app context to the target organization
+    setCurrentOrganization({
+      id: lookupResult.organization.id,
+      name: lookupResult.organization.name,
+      slug: lookupResult.organization.slug || '',
+      primary_vertical: lookupResult.organization.primary_vertical as any,
+      settings: {},
+      created_at: '',
+      updated_at: '',
+    });
+
+    // Fetch and set the first location for this org
+    const { data: locations } = await supabase
+      .from('locations')
+      .select('*')
+      .eq('organization_id', lookupResult.organization.id)
+      .eq('is_active', true)
+      .limit(1);
+
+    if (locations && locations.length > 0) {
+      setCurrentLocation(locations[0] as any);
+    }
+
     setImpersonating(true);
     toast.success(
       `Viewing as ${lookupResult.organization.name} (${readOnlyMode ? "Read-only" : "Full access"})`
     );
+    navigate('/dashboard');
   };
 
   const stopImpersonation = async () => {
-    if (lookupResult?.organization) {
+    if (lookupResult?.organization && user?.id) {
       await supabase.from("admin_audit_logs").insert({
-        admin_user_id: user?.id,
+        admin_user_id: user.id,
         action_type: "impersonation_end",
         target_type: "organization",
         target_id: lookupResult.organization.id,
@@ -173,6 +206,63 @@ export default function AdminSupport() {
     }
     setImpersonating(false);
     toast.info("Impersonation ended");
+  };
+
+  const runDiagnostic = async (type: 'rls' | 'roles' | 'data') => {
+    if (!diagOrgId.trim()) {
+      toast.error("Enter an organization ID first");
+      return;
+    }
+    setDiagResults(`Running ${type} check for ${diagOrgId}...\n`);
+
+    try {
+      if (type === 'rls' || type === 'data') {
+        const { data: org, error: orgErr } = await supabase
+          .from('organizations')
+          .select('id, name, primary_vertical')
+          .eq('id', diagOrgId.trim())
+          .single();
+        
+        if (orgErr || !org) {
+          setDiagResults(`ERROR: Organization not found (${orgErr?.message || 'no data'})`);
+          return;
+        }
+
+        const { count: locCount } = await supabase
+          .from('locations')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', diagOrgId.trim());
+
+        const { count: prodCount } = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', diagOrgId.trim());
+
+        setDiagResults(prev => prev + `Organization: ${org.name} (${org.primary_vertical})\n`
+          + `Locations: ${locCount ?? 0}\n`
+          + `Products: ${prodCount ?? 0}\n`);
+      }
+
+      if (type === 'roles') {
+        const { data: roles, error: rolesErr } = await supabase
+          .from('user_roles')
+          .select('id, role, user_id, profiles:user_id(full_name)')
+          .eq('organization_id', diagOrgId.trim());
+
+        if (rolesErr) {
+          setDiagResults(`ERROR: ${rolesErr.message}`);
+          return;
+        }
+
+        setDiagResults(prev => prev + `User roles (${roles?.length ?? 0}):\n`
+          + (roles || []).map((r: any) => `  - ${r.profiles?.full_name || r.user_id}: ${r.role}`).join('\n')
+          + '\n');
+      }
+
+      setDiagResults(prev => prev + `\n✓ ${type.toUpperCase()} check complete`);
+    } catch (err: any) {
+      setDiagResults(`ERROR: ${err.message}`);
+    }
   };
 
   // Mock system health data
@@ -427,16 +517,20 @@ export default function AdminSupport() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Organization ID</Label>
-                <Input placeholder="Enter organization ID to diagnose" />
+                <Input
+                  placeholder="Enter organization ID to diagnose"
+                  value={diagOrgId}
+                  onChange={(e) => setDiagOrgId(e.target.value)}
+                />
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1">
+                <Button variant="outline" className="flex-1" onClick={() => runDiagnostic('rls')}>
                   Check RLS
                 </Button>
-                <Button variant="outline" className="flex-1">
+                <Button variant="outline" className="flex-1" onClick={() => runDiagnostic('roles')}>
                   Check Roles
                 </Button>
-                <Button variant="outline" className="flex-1">
+                <Button variant="outline" className="flex-1" onClick={() => runDiagnostic('data')}>
                   Check Data
                 </Button>
               </div>
@@ -444,6 +538,7 @@ export default function AdminSupport() {
                 placeholder="Diagnostic results will appear here..."
                 className="h-[100px] font-mono text-xs"
                 readOnly
+                value={diagResults}
               />
             </CardContent>
           </Card>

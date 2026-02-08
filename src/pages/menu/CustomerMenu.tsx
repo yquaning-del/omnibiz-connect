@@ -105,11 +105,21 @@ export default function CustomerMenu() {
         .from('products')
         .select('*')
         .eq('organization_id', org.id)
+        .eq('location_id', locationId!)
         .eq('is_active', true)
         .order('category')
         .order('name');
 
-      setProducts(menuItems || []);
+      setProducts((menuItems || []).map((item: any) => ({
+        ...item,
+        name: item.name ?? '',
+        description: item.description ?? null,
+        unit_price: item.unit_price ?? 0,
+        category: item.category ?? null,
+        image_url: item.image_url ?? null,
+        is_active: item.is_active ?? true,
+        metadata: item.metadata ?? {},
+      })));
     } catch (error) {
       console.error('Error fetching menu:', error);
       toast({
@@ -178,7 +188,7 @@ export default function CustomerMenu() {
         .from('orders')
         .insert({
           organization_id: organization!.id,
-          location_id: locationId,
+          location_id: locationId!,
           order_number: orderNumber,
           vertical: 'restaurant',
           status: 'pending',

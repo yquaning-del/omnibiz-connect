@@ -1,10 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { handleCorsPreFlight, getCorsHeaders } from "../_shared/cors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
+import { validateRequired, validateEmail, validateEnum, sanitizeString } from "../_shared/validation.ts";
+import { jsonResponse, errorResponse } from "../_shared/response.ts";
 
 interface NotificationRequest {
   type: 'rent_reminder' | 'lease_expiry' | 'maintenance_update' | 'payment_confirmation';
@@ -15,17 +13,27 @@ interface NotificationRequest {
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const preflight = handleCorsPreFlight(req);
+  if (preflight) return preflight;
+
+  const cors = getCorsHeaders(req);
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Verify JWT authentication
+    const { supabaseClient: supabaseClient } = await verifyAuth(req);
 
-    const { type, recipientEmail, recipientName, organizationName, data } = await req.json() as NotificationRequest;
+    const body = await req.json();
+    validateRequired(body, ["type", "recipientEmail", "recipientName", "organizationName"]);
+
+    const type = validateEnum(
+      body.type,
+      ["rent_reminder", "lease_expiry", "maintenance_update", "payment_confirmation"],
+      "type"
+    );
+    const recipientEmail = validateEmail(body.recipientEmail, "recipientEmail");
+    const recipientName = sanitizeString(body.recipientName, "recipientName", 200);
+    const organizationName = sanitizeString(body.organizationName, "organizationName", 200);
+    const data = body.data || {};
 
     // Check if Resend API key is configured
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
@@ -33,21 +41,16 @@ serve(async (req) => {
     if (!resendApiKey) {
       console.log('RESEND_API_KEY not configured - logging notification instead');
       
-      // Log the notification for demo purposes
       const logMessage = generateEmailContent(type, recipientName, organizationName, data);
       console.log('Would send email to:', recipientEmail);
       console.log('Subject:', logMessage.subject);
-      console.log('Content:', logMessage.body);
 
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          demo: true,
-          message: 'Notification logged (Resend not configured)',
-          preview: logMessage
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ 
+        success: true, 
+        demo: true,
+        message: 'Notification logged (Resend not configured)',
+        preview: logMessage
+      }, cors);
     }
 
     // Generate email content based on notification type
@@ -75,28 +78,26 @@ serve(async (req) => {
 
     const result = await response.json();
 
-    // Log notification in database
-    await supabaseClient
-      .from('user_notifications')
-      .insert({
-        user_id: data.userId,
-        type: type,
-        title: emailContent.subject,
-        message: emailContent.body,
-        link: data.link || null,
-      });
+    // Log notification in database (best effort)
+    try {
+      await supabaseClient
+        .from('user_notifications')
+        .insert({
+          user_id: data.userId,
+          type: type,
+          title: emailContent.subject,
+          message: emailContent.body,
+          link: data.link || null,
+        });
+    } catch (dbError) {
+      console.error("Failed to log notification to database:", dbError);
+    }
 
-    return new Response(
-      JSON.stringify({ success: true, emailId: result.id }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ success: true, emailId: result.id }, cors);
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Notification error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return errorResponse(error, cors);
   }
 });
 

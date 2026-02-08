@@ -95,6 +95,7 @@ export default function Kitchen() {
         )
       `)
       .eq('location_id', currentLocation.id)
+      .eq('vertical', 'restaurant')
       .in('status', ['pending', 'preparing', 'ready'])
       .order('created_at', { ascending: true });
 

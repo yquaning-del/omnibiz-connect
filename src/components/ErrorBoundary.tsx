@@ -43,10 +43,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur">
+          <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur" role="alert">
             <CardHeader className="text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10 mx-auto mb-4">
-                <AlertTriangle className="h-8 w-8 text-destructive" />
+                <AlertTriangle className="h-8 w-8 text-destructive" aria-hidden="true" />
               </div>
               <CardTitle className="text-2xl">Something went wrong</CardTitle>
               <CardDescription>
@@ -82,8 +82,8 @@ export class ErrorBoundary extends Component<Props, State> {
               
               <p className="text-xs text-center text-muted-foreground">
                 If this problem persists, please contact{' '}
-                <a href="mailto:support@hospitalityos.com" className="text-primary hover:underline">
-                  support@hospitalityos.com
+                <a href="mailto:support@omnibizconnect.com" className="text-primary hover:underline">
+                  support@omnibizconnect.com
                 </a>
               </p>
             </CardContent>

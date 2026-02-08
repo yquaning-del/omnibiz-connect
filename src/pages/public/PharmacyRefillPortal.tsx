@@ -147,17 +147,40 @@ export default function PharmacyRefillPortal() {
 
     setPrescriptionsLoading(true);
     try {
+      // Build OR filter for customer lookup by email/phone
+      const filters: string[] = [];
+      if (loginEmail) filters.push(`email.eq.${loginEmail}`);
+      if (loginPhone) filters.push(`phone.eq.${loginPhone}`);
+
+      // First find the customer by email or phone
+      const { data: customer, error: customerError } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('organization_id', pharmacy.id)
+        .or(filters.join(','))
+        .single();
+
+      if (customerError || !customer) {
+        toast({
+          title: 'Patient Not Found',
+          description: 'No patient record found with that information. Please register or contact the pharmacy.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Then find the patient profile linked to this customer
       const { data: patient, error: patientError } = await supabase
         .from('patient_profiles')
         .select('id')
         .eq('organization_id', pharmacy.id)
-        .or(`email.eq.${loginEmail},phone.eq.${loginPhone}`)
+        .eq('customer_id', customer.id)
         .single();
 
       if (patientError || !patient) {
         toast({
           title: 'Patient Not Found',
-          description: 'No patient record found with that information. Please register or contact the pharmacy.',
+          description: 'No patient profile found. Please register or contact the pharmacy.',
           variant: 'destructive',
         });
         return;
@@ -183,29 +206,60 @@ export default function PharmacyRefillPortal() {
     if (!pharmacy) return;
 
     try {
-      const { data: existing } = await supabase
-        .from('patient_profiles')
+      // Check if a customer with this email or phone already exists
+      const filters: string[] = [];
+      if (registerEmail) filters.push(`email.eq.${registerEmail}`);
+      if (registerPhone) filters.push(`phone.eq.${registerPhone}`);
+
+      const { data: existingCustomer } = await supabase
+        .from('customers')
         .select('id')
         .eq('organization_id', pharmacy.id)
-        .or(`email.eq.${registerEmail},phone.eq.${registerPhone}`)
+        .or(filters.join(','))
         .single();
 
-      if (existing) {
-        toast({
-          title: 'Already Registered',
-          description: 'A patient with this email or phone already exists. Please use patient lookup.',
-          variant: 'destructive',
-        });
-        return;
+      if (existingCustomer) {
+        // Check if a patient profile already exists for this customer
+        const { data: existingProfile } = await supabase
+          .from('patient_profiles')
+          .select('id')
+          .eq('customer_id', existingCustomer.id)
+          .single();
+
+        if (existingProfile) {
+          toast({
+            title: 'Already Registered',
+            description: 'A patient with this email or phone already exists. Please use patient lookup.',
+            variant: 'destructive',
+          });
+          return;
+        }
       }
 
+      // Create the customer record first (or reuse existing)
+      let customerId = existingCustomer?.id;
+      if (!customerId) {
+        const { data: newCustomer, error: customerError } = await supabase
+          .from('customers')
+          .insert({
+            organization_id: pharmacy.id,
+            full_name: registerName,
+            email: registerEmail || null,
+            phone: registerPhone || null,
+          })
+          .select()
+          .single();
+
+        if (customerError) throw customerError;
+        customerId = newCustomer.id;
+      }
+
+      // Create the patient profile linked to the customer
       const { data: newPatient, error } = await supabase
         .from('patient_profiles')
         .insert({
           organization_id: pharmacy.id,
-          full_name: registerName,
-          email: registerEmail,
-          phone: registerPhone,
+          customer_id: customerId,
           date_of_birth: registerDob || null,
         })
         .select()

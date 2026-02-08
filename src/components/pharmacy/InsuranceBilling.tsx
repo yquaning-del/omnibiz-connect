@@ -66,7 +66,15 @@ const InsuranceBilling = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setClaims(data || []);
+      setClaims((data || []).map((claim: any) => ({
+        ...claim,
+        prescriptions: claim.prescriptions
+          ? {
+              ...claim.prescriptions,
+              patient_profiles: claim.prescriptions.patient_profiles ?? undefined,
+            }
+          : undefined,
+      })));
     } catch (error) {
       console.error('Error fetching claims:', error);
       toast({ title: "Error", description: "Failed to load insurance claims", variant: "destructive" });

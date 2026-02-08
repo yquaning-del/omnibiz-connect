@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,8 +57,71 @@ export default function Settings() {
   const [leaseExpiryAlerts, setLeaseExpiryAlerts] = useState(true);
   const [newApplicationAlerts, setNewApplicationAlerts] = useState(true);
   const [maintenanceUpdates, setMaintenanceUpdates] = useState(true);
+  const [savingNotificationPrefs, setSavingNotificationPrefs] = useState(false);
 
   const isPropertyVertical = currentOrganization?.primary_vertical === 'property';
+
+  // Accumulate pending notification pref changes and debounce the save
+  const pendingPrefsRef = useRef<Record<string, boolean>>({});
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushNotificationPreferences = useCallback(async () => {
+    if (!user?.id) return;
+    const pending = { ...pendingPrefsRef.current };
+    pendingPrefsRef.current = {};
+
+    setSavingNotificationPrefs(true);
+    try {
+      const allPrefs = {
+        email_notifications: pending.emailNotifications ?? emailNotifications,
+        low_stock_alerts: pending.lowStockAlerts ?? lowStockAlerts,
+        order_notifications: pending.orderNotifications ?? orderNotifications,
+        rent_due_reminders: pending.rentDueReminders ?? rentDueReminders,
+        overdue_alerts: pending.overdueAlerts ?? overdueAlerts,
+        lease_expiry_alerts: pending.leaseExpiryAlerts ?? leaseExpiryAlerts,
+        new_application_alerts: pending.newApplicationAlerts ?? newApplicationAlerts,
+        maintenance_updates: pending.maintenanceUpdates ?? maintenanceUpdates,
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ notification_preferences: allPrefs })
+        .eq('id', user.id);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error saving notification prefs:', error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to save notification preferences' });
+    } finally {
+      setSavingNotificationPrefs(false);
+    }
+  }, [user?.id, emailNotifications, lowStockAlerts, orderNotifications, rentDueReminders, overdueAlerts, leaseExpiryAlerts, newApplicationAlerts, maintenanceUpdates, toast]);
+
+  const saveNotificationPreferences = useCallback((prefs: Record<string, boolean>) => {
+    // Merge into pending changes
+    Object.assign(pendingPrefsRef.current, prefs);
+
+    // Debounce: wait 500ms after last toggle before saving
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      flushNotificationPreferences();
+    }, 500);
+  }, [flushNotificationPreferences]);
+
+  // Wrapper functions for notification toggles that also persist
+  const handleToggleNotification = (key: string, value: boolean) => {
+    switch (key) {
+      case 'emailNotifications': setEmailNotifications(value); break;
+      case 'lowStockAlerts': setLowStockAlerts(value); break;
+      case 'orderNotifications': setOrderNotifications(value); break;
+      case 'rentDueReminders': setRentDueReminders(value); break;
+      case 'overdueAlerts': setOverdueAlerts(value); break;
+      case 'leaseExpiryAlerts': setLeaseExpiryAlerts(value); break;
+      case 'newApplicationAlerts': setNewApplicationAlerts(value); break;
+      case 'maintenanceUpdates': setMaintenanceUpdates(value); break;
+    }
+    saveNotificationPreferences({ [key]: value });
+  };
 
   useEffect(() => {
     if (currentOrganization) {
@@ -76,6 +139,19 @@ export default function Settings() {
       setUserName(profile.full_name || '');
       setUserEmail(profile.email || '');
       setUserPhone(profile.phone || '');
+
+      // Load saved notification preferences from profile
+      const prefs = (profile as any)?.notification_preferences as Record<string, boolean> | undefined;
+      if (prefs) {
+        setEmailNotifications(prefs.email_notifications ?? true);
+        setLowStockAlerts(prefs.low_stock_alerts ?? true);
+        setOrderNotifications(prefs.order_notifications ?? true);
+        setRentDueReminders(prefs.rent_due_reminders ?? true);
+        setOverdueAlerts(prefs.overdue_alerts ?? true);
+        setLeaseExpiryAlerts(prefs.lease_expiry_alerts ?? true);
+        setNewApplicationAlerts(prefs.new_application_alerts ?? true);
+        setMaintenanceUpdates(prefs.maintenance_updates ?? true);
+      }
     }
   }, [currentOrganization, currentLocation, profile]);
 
@@ -371,7 +447,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={emailNotifications}
-                    onCheckedChange={setEmailNotifications}
+                    onCheckedChange={(v) => handleToggleNotification('emailNotifications', v)}
                   />
                 </div>
 
@@ -382,7 +458,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={lowStockAlerts}
-                    onCheckedChange={setLowStockAlerts}
+                    onCheckedChange={(v) => handleToggleNotification('lowStockAlerts', v)}
                   />
                 </div>
 
@@ -393,7 +469,7 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={orderNotifications}
-                    onCheckedChange={setOrderNotifications}
+                    onCheckedChange={(v) => handleToggleNotification('orderNotifications', v)}
                   />
                 </div>
 
@@ -411,7 +487,7 @@ export default function Settings() {
                       </div>
                       <Switch
                         checked={rentDueReminders}
-                        onCheckedChange={setRentDueReminders}
+                        onCheckedChange={(v) => handleToggleNotification('rentDueReminders', v)}
                       />
                     </div>
 
@@ -422,7 +498,7 @@ export default function Settings() {
                       </div>
                       <Switch
                         checked={overdueAlerts}
-                        onCheckedChange={setOverdueAlerts}
+                        onCheckedChange={(v) => handleToggleNotification('overdueAlerts', v)}
                       />
                     </div>
 
@@ -433,7 +509,7 @@ export default function Settings() {
                       </div>
                       <Switch
                         checked={leaseExpiryAlerts}
-                        onCheckedChange={setLeaseExpiryAlerts}
+                        onCheckedChange={(v) => handleToggleNotification('leaseExpiryAlerts', v)}
                       />
                     </div>
 
@@ -444,7 +520,7 @@ export default function Settings() {
                       </div>
                       <Switch
                         checked={newApplicationAlerts}
-                        onCheckedChange={setNewApplicationAlerts}
+                        onCheckedChange={(v) => handleToggleNotification('newApplicationAlerts', v)}
                       />
                     </div>
 
@@ -455,7 +531,7 @@ export default function Settings() {
                       </div>
                       <Switch
                         checked={maintenanceUpdates}
-                        onCheckedChange={setMaintenanceUpdates}
+                        onCheckedChange={(v) => handleToggleNotification('maintenanceUpdates', v)}
                       />
                     </div>
                   </>

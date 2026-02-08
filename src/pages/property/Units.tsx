@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { 
   Building2, 
   Plus, 
@@ -34,6 +35,8 @@ import {
   Filter,
   MapPin,
   ImageIcon,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { LEASE_COUNTRIES, getStatesForCountry, getCitiesForCountry } from '@/lib/leaseLocations';
@@ -69,11 +72,14 @@ const statusColors: Record<string, string> = {
 export default function Units() {
   const { currentOrganization, currentLocation } = useAuth();
   const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [units, setUnits] = useState<PropertyUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingUnit, setEditingUnit] = useState<PropertyUnit | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Form state
@@ -134,36 +140,71 @@ export default function Units() {
 
     setSaving(true);
     try {
-      const { error } = await (supabase as any)
-        .from('property_units')
-        .insert({
-          organization_id: currentOrganization.id,
-          location_id: currentLocation?.id || null,
-          unit_number: formData.unit_number,
-          unit_type: formData.unit_type,
-          floor: formData.floor ? parseInt(formData.floor) : null,
-          square_footage: formData.square_footage ? parseFloat(formData.square_footage) : null,
-          bedrooms: parseInt(formData.bedrooms),
-          bathrooms: parseFloat(formData.bathrooms),
-          monthly_rent: parseFloat(formData.monthly_rent) || 0,
-          security_deposit: parseFloat(formData.security_deposit) || 0,
-          notes: formData.notes || null,
-          status: 'available',
-          // Location fields
-          address: formData.address || null,
-          city: formData.city || null,
-          state: formData.state || null,
-          country: formData.country || 'US',
+      if (editingUnit) {
+        // Update existing unit
+        const { error } = await (supabase as any)
+          .from('property_units')
+          .update({
+            unit_number: formData.unit_number,
+            unit_type: formData.unit_type,
+            floor: formData.floor ? parseInt(formData.floor) : null,
+            square_footage: formData.square_footage ? parseFloat(formData.square_footage) : null,
+            bedrooms: parseInt(formData.bedrooms),
+            bathrooms: parseFloat(formData.bathrooms),
+            monthly_rent: parseFloat(formData.monthly_rent) || 0,
+            security_deposit: parseFloat(formData.security_deposit) || 0,
+            notes: formData.notes || null,
+            // Location fields
+            address: formData.address || null,
+            city: formData.city || null,
+            state: formData.state || null,
+            country: formData.country || 'US',
+          })
+          .eq('id', editingUnit.id);
+
+        if (error) throw error;
+
+        toast({
+          title: 'Unit updated',
+          description: `Unit ${formData.unit_number} has been updated successfully.`,
         });
 
-      if (error) throw error;
+        setEditDialogOpen(false);
+        setEditingUnit(null);
+      } else {
+        // Create new unit
+        const { error } = await (supabase as any)
+          .from('property_units')
+          .insert({
+            organization_id: currentOrganization.id,
+            location_id: currentLocation?.id || null,
+            unit_number: formData.unit_number,
+            unit_type: formData.unit_type,
+            floor: formData.floor ? parseInt(formData.floor) : null,
+            square_footage: formData.square_footage ? parseFloat(formData.square_footage) : null,
+            bedrooms: parseInt(formData.bedrooms),
+            bathrooms: parseFloat(formData.bathrooms),
+            monthly_rent: parseFloat(formData.monthly_rent) || 0,
+            security_deposit: parseFloat(formData.security_deposit) || 0,
+            notes: formData.notes || null,
+            status: 'available',
+            // Location fields
+            address: formData.address || null,
+            city: formData.city || null,
+            state: formData.state || null,
+            country: formData.country || 'US',
+          });
 
-      toast({
-        title: 'Unit added',
-        description: `Unit ${formData.unit_number} has been added successfully.`,
-      });
+        if (error) throw error;
 
-      setIsDialogOpen(false);
+        toast({
+          title: 'Unit added',
+          description: `Unit ${formData.unit_number} has been added successfully.`,
+        });
+
+        setIsDialogOpen(false);
+      }
+
       setFormData({
         unit_number: '',
         unit_type: 'apartment',
@@ -183,11 +224,60 @@ export default function Units() {
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Error adding unit',
+        title: editingUnit ? 'Error updating unit' : 'Error adding unit',
         description: error.message,
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleEdit = (unit: PropertyUnit) => {
+    setEditingUnit(unit);
+    setFormData({
+      unit_number: unit.unit_number,
+      unit_type: unit.unit_type,
+      floor: unit.floor?.toString() || '',
+      square_footage: unit.square_footage?.toString() || '',
+      bedrooms: unit.bedrooms.toString(),
+      bathrooms: unit.bathrooms.toString(),
+      monthly_rent: unit.monthly_rent.toString(),
+      security_deposit: unit.security_deposit.toString(),
+      notes: unit.notes || '',
+      address: (unit as any).address || '',
+      city: (unit as any).city || '',
+      state: (unit as any).state || '',
+      country: (unit as any).country || 'US',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleDelete = async (unit: PropertyUnit) => {
+    const confirmed = await confirm({ title: `Delete Unit ${unit.unit_number}?`, description: 'This action cannot be undone.', variant: 'destructive', confirmLabel: 'Delete' });
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const { error } = await (supabase as any)
+        .from('property_units')
+        .delete()
+        .eq('id', unit.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Unit deleted',
+        description: `Unit ${unit.unit_number} has been deleted successfully.`,
+      });
+
+      fetchUnits();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error deleting unit',
+        description: error.message,
+      });
     }
   };
 
@@ -208,6 +298,7 @@ export default function Units() {
   return (
     <PermissionGate permission="property.units">
     <div className="space-y-6 animate-fade-in">
+      <ConfirmDialog />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -440,6 +531,231 @@ export default function Units() {
             </form>
           </DialogContent>
         </Dialog>
+        
+        {/* Edit Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Edit Unit</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_unit_number">Unit Number *</Label>
+                  <Input
+                    id="edit_unit_number"
+                    value={formData.unit_number}
+                    onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
+                    placeholder="e.g., 101, A1"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_unit_type">Type</Label>
+                  <Select value={formData.unit_type} onValueChange={(v) => setFormData({ ...formData, unit_type: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {unitTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_bedrooms">Bedrooms</Label>
+                  <Input
+                    id="edit_bedrooms"
+                    type="number"
+                    min="0"
+                    value={formData.bedrooms}
+                    onChange={(e) => setFormData({ ...formData, bedrooms: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_bathrooms">Bathrooms</Label>
+                  <Input
+                    id="edit_bathrooms"
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={formData.bathrooms}
+                    onChange={(e) => setFormData({ ...formData, bathrooms: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_floor">Floor</Label>
+                  <Input
+                    id="edit_floor"
+                    type="number"
+                    value={formData.floor}
+                    onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_monthly_rent">Monthly Rent *</Label>
+                  <Input
+                    id="edit_monthly_rent"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.monthly_rent}
+                    onChange={(e) => setFormData({ ...formData, monthly_rent: e.target.value })}
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_security_deposit">Security Deposit</Label>
+                  <Input
+                    id="edit_security_deposit"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.security_deposit}
+                    onChange={(e) => setFormData({ ...formData, security_deposit: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit_square_footage">Square Footage</Label>
+                <Input
+                  id="edit_square_footage"
+                  type="number"
+                  min="0"
+                  value={formData.square_footage}
+                  onChange={(e) => setFormData({ ...formData, square_footage: e.target.value })}
+                  placeholder="e.g., 750"
+                />
+              </div>
+
+              {/* Location Section */}
+              <div className="border-t pt-4 mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="h-4 w-4 text-property" />
+                  <Label className="font-medium">Unit Location</Label>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_address">Address</Label>
+                    <Input
+                      id="edit_address"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      placeholder="123 Main Street, Apt 101"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit_country">Country</Label>
+                      <Select 
+                        value={formData.country} 
+                        onValueChange={(v) => setFormData({ ...formData, country: v, state: '', city: '' })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background">
+                          {LEASE_COUNTRIES.map((country) => (
+                            <SelectItem key={country.code} value={country.code}>
+                              {country.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {selectedCountry?.requiresState && states.length > 0 ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_state">{formData.country === 'CA' ? 'Province' : 'State'}</Label>
+                        <Select 
+                          value={formData.state} 
+                          onValueChange={(v) => setFormData({ ...formData, state: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background max-h-[200px]">
+                            {states.map((state) => (
+                              <SelectItem key={state.code} value={state.code}>
+                                {state.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : selectedCountry?.requiresCity && cities.length > 0 ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_city">City</Label>
+                        <Select 
+                          value={formData.city} 
+                          onValueChange={(v) => setFormData({ ...formData, city: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background max-h-[200px]">
+                            {cities.map((city) => (
+                              <SelectItem key={city.name} value={city.name}>
+                                {city.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_city">City</Label>
+                        <Input
+                          id="edit_city"
+                          value={formData.city}
+                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                          placeholder="City name"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit_notes">Notes</Label>
+                <Textarea
+                  id="edit_notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Additional notes about this unit..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => {
+                  setEditDialogOpen(false);
+                  setEditingUnit(null);
+                }}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving ? 'Updating...' : 'Update Unit'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats */}
@@ -587,6 +903,28 @@ export default function Units() {
                     <span className="text-sm text-muted-foreground">/mo</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(unit);
+                      }}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(unit);
+                      }}
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                     <UnitPhotosManager
                       unitId={unit.id}
                       unitNumber={unit.unit_number}

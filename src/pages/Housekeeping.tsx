@@ -99,7 +99,8 @@ const Housekeeping = () => {
   useEffect(() => {
     if (currentLocation) {
       fetchData();
-      subscribeToTasks();
+      const cleanup = subscribeToTasks();
+      return cleanup;
     }
   }, [currentLocation]);
 
@@ -117,20 +118,44 @@ const Housekeeping = () => {
         .from("hotel_rooms")
         .select("id, room_number, room_type, floor, housekeeping_status")
         .eq("location_id", currentLocation.id),
-      supabase.from("profiles").select("id, full_name"),
+      supabase
+        .from("user_roles")
+        .select("user_id, profiles:user_id(id, full_name)")
+        .eq("organization_id", currentLocation.organization_id || currentLocation.id),
     ]);
 
     if (tasksRes.data) {
       // Enrich tasks with room and assignee info
-      const enrichedTasks = tasksRes.data.map((task) => {
-        const room = roomsRes.data?.find((r) => r.id === task.room_id);
-        const assignee = staffRes.data?.find((s) => s.id === task.assigned_to);
-        return { ...task, room, assignee };
+      const enrichedTasks = tasksRes.data.map((task: any) => {
+        const room = roomsRes.data?.find((r: any) => r.id === task.room_id);
+        const assignee = staffRes.data?.find((s: any) => s.id === task.assigned_to);
+        return {
+          ...task,
+          task_type: task.task_type ?? 'cleaning',
+          priority: task.priority ?? 'normal',
+          status: task.status ?? 'pending',
+          scheduled_date: task.scheduled_date ?? new Date().toISOString().split('T')[0],
+          room: room
+            ? { room_number: room.room_number ?? '', room_type: room.room_type ?? '', floor: room.floor ?? 0 }
+            : undefined,
+          assignee: assignee ? { full_name: assignee.full_name ?? '' } : undefined,
+        };
       });
       setTasks(enrichedTasks);
     }
-    if (roomsRes.data) setRooms(roomsRes.data);
-    if (staffRes.data) setStaff(staffRes.data);
+    if (roomsRes.data) setRooms(roomsRes.data.map((r: any) => ({
+      ...r,
+      room_number: r.room_number ?? '',
+      room_type: r.room_type ?? '',
+      floor: r.floor ?? 0,
+      housekeeping_status: r.housekeeping_status ?? 'dirty',
+    })));
+    if (staffRes.data) setStaff(staffRes.data
+      .filter((s: any) => s.profiles)
+      .map((s: any) => ({
+        id: s.profiles.id ?? s.user_id,
+        full_name: s.profiles.full_name ?? '',
+      })));
 
     setLoading(false);
   };

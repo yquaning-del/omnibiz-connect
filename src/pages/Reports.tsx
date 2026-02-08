@@ -4,13 +4,15 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Download, TrendingUp, DollarSign, ShoppingCart, Users, Lock, Crown } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, Download, TrendingUp, DollarSign, ShoppingCart, Users, Lock, Crown, Printer, Filter } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { LockedFeatureOverlay } from '@/components/subscription/UpgradePrompt';
+import { exportToCSV, printContent, generateHTMLTable, type ExportColumn } from '@/lib/export';
 
 interface SalesData {
   date: string;
@@ -29,7 +31,13 @@ export default function Reports() {
   const hasAdvancedReports = !isExpired && canAccess('advanced_reports');
   const hasDataExport = !isExpired && canAccess('data_export');
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState('7');
+  
+  // Date range state - default to last 30 days
+  const defaultStartDate = format(subDays(new Date(), 30), 'yyyy-MM-dd');
+  const defaultEndDate = format(new Date(), 'yyyy-MM-dd');
+  const [startDate, setStartDate] = useState(defaultStartDate);
+  const [endDate, setEndDate] = useState(defaultEndDate);
+  
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
   const [stats, setStats] = useState({
@@ -44,33 +52,39 @@ export default function Reports() {
   useEffect(() => {
     if (!currentOrganization) return;
     fetchReportData();
-  }, [currentOrganization, dateRange]);
+  }, [currentOrganization]);
 
   const fetchReportData = async () => {
     if (!currentOrganization) return;
     setLoading(true);
 
     try {
-      const days = parseInt(dateRange);
-      const startDate = startOfDay(subDays(new Date(), days)).toISOString();
-      const endDate = endOfDay(new Date()).toISOString();
+      const startDateISO = startOfDay(new Date(startDate)).toISOString();
+      const endDateISO = endOfDay(new Date(endDate)).toISOString();
+      
+      // Calculate days difference for chart initialization
+      const days = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
 
       // Fetch orders in date range
       const { data: orders } = await supabase
         .from('orders')
         .select('*, order_items(*)')
         .eq('organization_id', currentOrganization.id)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate)
+        .gte('created_at', startDateISO)
+        .lte('created_at', endDateISO)
         .order('created_at', { ascending: true });
 
       if (orders) {
         // Calculate daily sales
         const dailySales: Record<string, { total: number; orders: number }> = {};
         
-        for (let i = days; i >= 0; i--) {
-          const date = format(subDays(new Date(), i), 'MMM dd');
-          dailySales[date] = { total: 0, orders: 0 };
+        // Initialize all dates in range
+        const currentDate = new Date(startDate);
+        const endDateObj = new Date(endDate);
+        while (currentDate <= endDateObj) {
+          const dateKey = format(currentDate, 'MMM dd');
+          dailySales[dateKey] = { total: 0, orders: 0 };
+          currentDate.setDate(currentDate.getDate() + 1);
         }
 
         orders.forEach(order => {
@@ -104,8 +118,8 @@ export default function Reports() {
         orders.forEach(order => {
           const items = order.order_items as any[];
           items?.forEach(item => {
-            const cat = 'Sales'; // Simplified - would need product category
-            categories[cat] = (categories[cat] || 0) + Number(item.total_price);
+            const cat = item.product_category || item.category || 'Uncategorized';
+            categories[cat] = (categories[cat] || 0) + Number(item.total_price || 0);
           });
         });
 
@@ -126,18 +140,31 @@ export default function Reports() {
     }
   };
 
-  const exportToCSV = () => {
-    const headers = ['Date', 'Total Sales', 'Orders'];
-    const rows = salesData.map(d => [d.date, d.total.toFixed(2), d.orders]);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const handleExportCSV = () => {
+    const columns: ExportColumn<SalesData>[] = [
+      { header: 'Date', accessor: (row) => row.date },
+      { header: 'Total Sales', accessor: (row) => row.total.toFixed(2) },
+      { header: 'Orders', accessor: (row) => row.orders },
+    ];
     
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sales-report-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const filename = `sales-report-${startDate}-to-${endDate}`;
+    exportToCSV(filename, columns, salesData);
+  };
+
+  const handlePrint = () => {
+    const columns: ExportColumn<SalesData>[] = [
+      { header: 'Date', accessor: (row) => row.date },
+      { header: 'Total Sales', accessor: (row) => `$${row.total.toFixed(2)}` },
+      { header: 'Orders', accessor: (row) => row.orders },
+    ];
+    
+    const tableHTML = generateHTMLTable(columns, salesData);
+    const title = `Sales Report - ${format(new Date(startDate), 'MMM dd, yyyy')} to ${format(new Date(endDate), 'MMM dd, yyyy')}`;
+    printContent(title, tableHTML);
+  };
+
+  const handleFilter = () => {
+    fetchReportData();
   };
 
   if (loading) {
@@ -151,39 +178,77 @@ export default function Reports() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Reports</h1>
-          <p className="text-muted-foreground">Sales analytics and insights</p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-display text-foreground">Reports</h1>
+            <p className="text-muted-foreground">Sales analytics and insights</p>
+          </div>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Last 7 days</SelectItem>
-              <SelectItem value="14">Last 14 days</SelectItem>
-              <SelectItem value="30" disabled={!hasAdvancedReports}>Last 30 days {!hasAdvancedReports && '🔒'}</SelectItem>
-              <SelectItem value="90" disabled={!hasAdvancedReports}>Last 90 days {!hasAdvancedReports && '🔒'}</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          {hasDataExport ? (
-            <Button variant="outline" onClick={exportToCSV}>
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-          ) : (
-            <Button variant="outline" asChild>
-              <Link to="/subscription">
-                <Lock className="w-4 h-4 mr-2" />
-                Export
-              </Link>
-            </Button>
-          )}
-        </div>
+
+        {/* Date Range Filter */}
+        <Card className="border-border/50 bg-card/50">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4 items-end">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    max={endDate}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">End Date</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    min={startDate}
+                    max={format(new Date(), 'yyyy-MM-dd')}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleFilter} variant="default">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filter
+                </Button>
+                {hasDataExport ? (
+                  <>
+                    <Button variant="outline" onClick={handleExportCSV}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Export CSV
+                    </Button>
+                    <Button variant="outline" onClick={handlePrint}>
+                      <Printer className="w-4 h-4 mr-2" />
+                      Print
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" asChild>
+                      <Link to="/subscription">
+                        <Lock className="w-4 h-4 mr-2" />
+                        Export CSV
+                      </Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link to="/subscription">
+                        <Lock className="w-4 h-4 mr-2" />
+                        Print
+                      </Link>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Stats Cards */}

@@ -18,6 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import {
@@ -79,6 +80,7 @@ const statusColors: Record<string, string> = {
 export default function Billing() {
   const { currentOrganization, currentLocation, user } = useAuth();
   const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const [loading, setLoading] = useState(true);
   const [folios, setFolios] = useState<GuestFolio[]>([]);
@@ -219,7 +221,7 @@ export default function Billing() {
 
   const voidCharge = async (chargeId: string, amount: number) => {
     if (!selectedFolio || !user) return;
-    if (!confirm('Void this charge?')) return;
+    const confirmed = await confirm({ title: 'Void this charge?', description: 'This will reverse the charge amount.', variant: 'destructive', confirmLabel: 'Void Charge' }); if (!confirmed) return;
 
     try {
       await supabase
@@ -285,6 +287,7 @@ export default function Billing() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <ConfirmDialog />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

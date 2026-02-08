@@ -44,10 +44,15 @@ export default function TenantAuth() {
       if (error) throw error;
       
       // Check if user has tenant role
+      const currentUserId = (await supabase.auth.getUser()).data.user?.id;
+      if (!currentUserId) {
+        toast.error('Authentication failed. Please try again.');
+        return;
+      }
       const { data: roles } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+        .eq('user_id', currentUserId);
       
       const isTenant = roles?.some(r => r.role === 'tenant');
       

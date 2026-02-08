@@ -1,30 +1,37 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { handleCorsPreFlight, getCorsHeaders } from "../_shared/cors.ts";
+import { verifyAuth, verifyOrgAccess } from "../_shared/auth.ts";
+import { validateRequired, validateUUID, validateEnum } from "../_shared/validation.ts";
+import { jsonResponse, errorResponse } from "../_shared/response.ts";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflight = handleCorsPreFlight(req);
+  if (preflight) return preflight;
+
+  const cors = getCorsHeaders(req);
 
   try {
-    const { type, organizationId, data } = await req.json();
-    console.log(`AI Insights request: ${type} for org ${organizationId}`);
+    // Verify JWT authentication
+    const { userId, supabaseClient: supabase } = await verifyAuth(req);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const body = await req.json();
+    validateRequired(body, ["type", "organizationId"]);
+
+    const type = validateEnum(body.type, ["sales_forecast", "inventory_forecast", "daily_summary"], "type");
+    const organizationId = validateUUID(body.organizationId, "organizationId");
+
+    // Verify user has access to the organization
+    const hasAccess = await verifyOrgAccess(supabase, userId, organizationId);
+    if (!hasAccess) {
+      return jsonResponse({ success: false, error: "Access denied to this organization" }, cors, 403);
+    }
+
+    console.log(`AI Insights request: ${type} for org ${organizationId}`);
 
     let prompt = "";
     let context = "";
 
     if (type === "sales_forecast") {
-      // Fetch recent sales data
       const { data: orders } = await supabase
         .from("orders")
         .select("created_at, total_amount, status")
@@ -105,8 +112,6 @@ Provide a brief, friendly summary including:
 3. One actionable insight
 
 Keep it under 100 words. Be conversational and helpful.`;
-    } else {
-      throw new Error(`Unknown insight type: ${type}`);
     }
 
     console.log("Calling Lovable AI Gateway...");
@@ -145,25 +150,17 @@ Keep it under 100 words. Be conversational and helpful.`;
 
     console.log("AI response received successfully");
 
-    // Try to parse JSON response, fallback to text
     let result;
     try {
-      // Extract JSON from markdown code blocks if present
       const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || content.match(/\{[\s\S]*\}/);
       result = JSON.parse(jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content);
     } catch {
       result = { text: content };
     }
 
-    return new Response(JSON.stringify({ success: true, data: result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ success: true, data: result }, cors);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error("AI Insights error:", errorMessage);
-    return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("AI Insights error:", error);
+    return errorResponse(error, cors);
   }
 });

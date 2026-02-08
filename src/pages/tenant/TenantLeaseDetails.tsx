@@ -47,6 +47,7 @@ export default function TenantLeaseDetails() {
   }, [id]);
 
   const fetchLease = async () => {
+    if (!id) return;
     try {
       const { data, error } = await supabase
         .from('leases')

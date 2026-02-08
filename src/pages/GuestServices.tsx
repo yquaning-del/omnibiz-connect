@@ -120,7 +120,8 @@ export default function GuestServices() {
   useEffect(() => {
     if (currentLocation) {
       fetchData();
-      subscribeToUpdates();
+      const cleanup = subscribeToUpdates();
+      return cleanup;
     }
   }, [currentLocation]);
 
@@ -212,7 +213,51 @@ export default function GuestServices() {
 
       if (error) throw error;
 
-      toast({ title: 'Room service order created' });
+      // Auto-post charge to guest folio if room number is provided
+      const totalAmount = parseFloat(orderForm.total_amount) || 0;
+      if (orderForm.room_number && totalAmount > 0) {
+        try {
+          // Find open folio for this room
+          const { data: folio } = await supabase
+            .from('guest_folios')
+            .select('id, incidental_charges, total_amount, balance_due')
+            .eq('location_id', currentLocation.id)
+            .eq('room_number', orderForm.room_number)
+            .eq('status', 'open')
+            .single();
+
+          if (folio) {
+            // Add charge to folio
+            await supabase.from('folio_charges').insert({
+              folio_id: folio.id,
+              charge_type: 'room_service',
+              description: `Room Service Order #${orderNumber}`,
+              amount: totalAmount,
+            });
+
+            // Update folio totals
+            const newIncidentals = Number(folio.incidental_charges || 0) + totalAmount;
+            const newTotal = Number(folio.total_amount || 0) + totalAmount;
+            const newBalance = Number(folio.balance_due || 0) + totalAmount;
+
+            await supabase.from('guest_folios').update({
+              incidental_charges: newIncidentals,
+              total_amount: newTotal,
+              balance_due: newBalance,
+            }).eq('id', folio.id);
+
+            toast({ title: 'Room service order created and posted to folio' });
+          } else {
+            toast({ title: 'Room service order created (no open folio found)' });
+          }
+        } catch (folioErr) {
+          console.error('Error posting to folio:', folioErr);
+          toast({ title: 'Room service order created (folio posting failed)' });
+        }
+      } else {
+        toast({ title: 'Room service order created' });
+      }
+
       setOrderDialogOpen(false);
       setOrderForm({ guest_name: '', room_number: '', items: '', special_instructions: '', total_amount: '' });
     } catch (error: any) {

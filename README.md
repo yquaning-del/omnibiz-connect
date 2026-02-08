@@ -1,73 +1,110 @@
-# Welcome to your Lovable project
+# OmniBiz Connect
 
-## Project info
+A multi-vertical business management platform supporting **restaurant**, **hotel**, **pharmacy**, **retail**, and **property management** verticals with POS, AI insights, offline support, and multi-tenant architecture.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Tech Stack
 
-## How can I edit this code?
+- **Frontend**: React 18, TypeScript (strict mode), Vite, Tailwind CSS, shadcn/ui
+- **Backend**: Supabase (Auth, Postgres with RLS, Edge Functions)
+- **Payments**: Paystack integration
+- **AI**: OpenAI-powered copilot, demand forecasting, dynamic pricing, customer insights
+- **PWA**: Service worker with offline POS via IndexedDB
 
-There are several ways of editing your application.
+## Getting Started
 
-**Use Lovable**
+### Prerequisites
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- Node.js 18+
+- npm 9+
+- A Supabase project (see [Supabase docs](https://supabase.com/docs))
 
-Changes made via Lovable will be committed automatically to this repo.
+### Setup
 
-**Use your preferred IDE**
+1. Clone the repository:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```bash
+git clone <repository-url>
+cd omnibiz-connect
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. Install dependencies:
 
-Follow these steps:
+```bash
+npm install
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3. Create your environment file:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```bash
+cp .env.example .env
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+4. Fill in your Supabase credentials in `.env`:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```
+VITE_SUPABASE_PROJECT_ID="your-project-id"
+VITE_SUPABASE_PUBLISHABLE_KEY="your-anon-key"
+VITE_SUPABASE_URL="https://your-project.supabase.co"
+```
+
+5. Start the development server:
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be available at `http://localhost:8080`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Available Scripts
 
-**Use GitHub Codespaces**
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Production build |
+| `npm run build:dev` | Development mode build |
+| `npm run lint` | Run ESLint |
+| `npm run preview` | Preview production build |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Project Structure
 
-## What technologies are used for this project?
+```
+src/
+  components/     # Reusable UI components (grouped by feature)
+  contexts/       # React contexts (Auth, Language, Subscription)
+  hooks/          # Custom hooks (permissions, offline, notifications)
+  integrations/   # Supabase client and auto-generated types
+  lib/            # Utility functions (currency, permissions, offline DB)
+  pages/          # Route page components
+  types/          # Core TypeScript interfaces
 
-This project is built with:
+supabase/
+  functions/      # Edge functions (AI, payments, notifications)
+  migrations/     # Database migration files
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Business Verticals
 
-## How can I deploy this project?
+- **Restaurant**: POS, kitchen display, table management, QR ordering, reservations
+- **Hotel**: Room management, housekeeping, front desk, guest services, booking
+- **Pharmacy**: Prescriptions, drug interactions, insurance billing, controlled substances
+- **Retail**: POS, inventory, e-commerce, customer management
+- **Property**: Unit management, leases, rent collection, tenant portal, maintenance
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Key Features
 
-## Can I connect a custom domain to my Lovable project?
+- **Multi-tenant**: Organization and location hierarchy with row-level security
+- **Role-based access**: 6 roles with vertical-specific permission templates
+- **Subscription tiers**: Starter, Professional, Enterprise with feature gating
+- **Offline POS**: Process sales offline with automatic sync when online
+- **AI Copilot**: Natural language business queries with real-time data
+- **Multi-language**: 7 languages with RTL support
+- **Public Portals**: Customer-facing pages for each vertical
 
-Yes, you can!
+## Testing
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+See [docs/TESTING.md](docs/TESTING.md) for comprehensive test users, credentials, and scenarios.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Documentation
+
+- [Testing Guide](docs/TESTING.md) - Test users and scenarios
+- [User Manual](docs/USER_MANUAL.md) - End-user documentation

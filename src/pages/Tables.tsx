@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { Loader2, Plus, UtensilsCrossed, Users, Clock, Edit, Trash2, LayoutGrid, Map, QrCode } from 'lucide-react';
 import { FloorPlanEditor } from '@/components/restaurant/FloorPlanEditor';
@@ -44,6 +45,7 @@ const statusLabels: Record<string, string> = {
 export default function Tables() {
   const { currentLocation, currentOrganization } = useAuth();
   const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,7 +151,7 @@ export default function Tables() {
   };
 
   const deleteTable = async (table: RestaurantTable) => {
-    if (!confirm(`Delete table ${table.table_number}?`)) return;
+    const confirmed = await confirm({ title: `Delete table ${table.table_number}?`, description: 'This action cannot be undone.', variant: 'destructive', confirmLabel: 'Delete' }); if (!confirmed) return;
 
     const { error } = await supabase
       .from('restaurant_tables')
@@ -196,6 +198,7 @@ export default function Tables() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <ConfirmDialog />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

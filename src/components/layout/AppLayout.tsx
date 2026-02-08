@@ -16,6 +16,8 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Loader2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
+import { SkipNavigation } from '@/components/SkipNavigation';
+import { OfflineBanner } from '@/components/layout/OfflineBanner';
 
 // Inner component that can access subscription context
 function AppLayoutContent() {
@@ -56,6 +58,8 @@ function AppLayoutContent() {
 
   return (
     <>
+      <SkipNavigation />
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only" />
       {showExpiredOverlay && <ExpiredTrialOverlay />}
       {showTour && (
         <ProductTour 
@@ -97,8 +101,11 @@ function AppLayoutContent() {
               </div>
             </header>
 
+            {/* Global offline / sync status banner */}
+            <OfflineBanner />
+
             {/* Main content */}
-            <main className="flex-1 overflow-auto">
+            <main id="main-content" className="flex-1 overflow-auto">
               <div className="p-6">
                 <Outlet />
               </div>

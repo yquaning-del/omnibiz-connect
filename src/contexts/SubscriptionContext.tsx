@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -185,69 +185,63 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     fetchSubscription();
   }, [currentOrganization?.id]);
 
-  // Calculate trial status
-  const isTrialing = subscription?.status === 'trial' || subscription?.status === 'trialing';
+  // Memoize computed subscription values
+  const isTrialing = useMemo(
+    () => subscription?.status === 'trial' || subscription?.status === 'trialing',
+    [subscription?.status]
+  );
   
-  const daysRemaining = (() => {
+  const daysRemaining = useMemo(() => {
     if (!subscription?.trial_ends_at) return 0;
     const trialEnd = new Date(subscription.trial_ends_at);
     const now = new Date();
     const diff = trialEnd.getTime() - now.getTime();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  })();
+  }, [subscription?.trial_ends_at]);
 
-  const isPaid = subscription?.status === 'active' && !isTrialing;
+  const isPaid = useMemo(
+    () => subscription?.status === 'active' && !isTrialing,
+    [subscription?.status, isTrialing]
+  );
   
-  // Super admins never have expired subscriptions
-  const isExpired = (() => {
+  const isExpired = useMemo(() => {
     if (isSuperAdmin) return false;
     if (subscription?.status === 'cancelled' || subscription?.status === 'expired') return true;
     if (isTrialing && daysRemaining === 0) return true;
     return false;
-  })();
+  }, [isSuperAdmin, subscription?.status, isTrialing, daysRemaining]);
 
-  // Feature gating function
-  const canAccess = (feature: string): boolean => {
-    // Super admins can access ALL features
-    if (isSuperAdmin) {
-      return true;
-    }
+  // Memoize feature gating function
+  const canAccess = useCallback((feature: string): boolean => {
+    if (isSuperAdmin) return true;
 
-    // If no subscription or plan, only allow basic features
     if (!subscription || !plan) {
       return FEATURE_TIERS[feature]?.includes('starter') ?? false;
     }
 
-    // If trial is expired, no access
-    if (isExpired && !isPaid) {
-      return false;
-    }
+    if (isExpired && !isPaid) return false;
 
-    // Check if the current plan tier allows this feature
     const allowedTiers = FEATURE_TIERS[feature];
-    if (!allowedTiers) {
-      // Unknown feature - allow by default
-      return true;
-    }
+    if (!allowedTiers) return false; // Unknown features are denied by default
 
     return allowedTiers.includes(plan.tier.toLowerCase());
-  };
+  }, [isSuperAdmin, subscription, plan, isExpired, isPaid]);
+
+  const contextValue = useMemo(() => ({
+    subscription,
+    plan,
+    loading,
+    isTrialing,
+    daysRemaining,
+    isPaid,
+    isExpired,
+    isSuperAdmin,
+    canAccess,
+    refresh: fetchSubscription,
+  }), [subscription, plan, loading, isTrialing, daysRemaining, isPaid, isExpired, isSuperAdmin, canAccess]);
 
   return (
-    <SubscriptionContext.Provider
-      value={{
-        subscription,
-        plan,
-        loading,
-        isTrialing,
-        daysRemaining,
-        isPaid,
-        isExpired,
-        isSuperAdmin,
-        canAccess,
-        refresh: fetchSubscription,
-      }}
-    >
+    <SubscriptionContext.Provider value={contextValue}>
       {children}
     </SubscriptionContext.Provider>
   );

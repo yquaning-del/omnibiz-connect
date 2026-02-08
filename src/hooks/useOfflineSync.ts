@@ -21,24 +21,26 @@ export function useOfflineSync() {
   });
   const syncInProgress = useRef(false);
 
+  // Ref to always hold the latest syncOrders without re-registering listeners
+  const syncOrdersRef = useRef<() => void>(() => {});
+
   // Update online status
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      toast({
-        title: 'Back online!',
-        description: 'Syncing pending orders...',
-      });
-      syncOrders();
+      toast({ title: 'Back online! Syncing pending orders...' });
+      syncOrdersRef.current();
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      toast({
-        title: 'You\'re offline',
-        description: 'Orders will be saved locally and synced when you\'re back online.',
-        variant: 'destructive',
-      });
+      toast({ variant: 'destructive', title: 'You\'re offline', description: 'Orders will be saved locally and synced when you\'re back online.' });
+    };
+
+    const handleSWMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'SYNC_ORDERS') {
+        syncOrdersRef.current();
+      }
     };
 
     window.addEventListener('online', handleOnline);
@@ -46,16 +48,15 @@ export function useOfflineSync() {
 
     // Listen for SW sync messages
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data?.type === 'SYNC_ORDERS') {
-          syncOrders();
-        }
-      });
+      navigator.serviceWorker.addEventListener('message', handleSWMessage);
     }
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSWMessage);
+      }
     };
   }, []);
 
@@ -102,18 +103,11 @@ export function useOfflineSync() {
       }
 
       if (successCount > 0) {
-        toast({
-          title: 'Orders synced!',
-          description: `${successCount} order(s) synced successfully.`,
-        });
+        toast({ title: `Orders synced! ${successCount} order(s) synced successfully.` });
       }
 
       if (failCount > 0) {
-        toast({
-          title: 'Some orders failed to sync',
-          description: `${failCount} order(s) need attention.`,
-          variant: 'destructive',
-        });
+        toast({ variant: 'destructive', title: 'Sync incomplete', description: `${failCount} order(s) failed to sync and need attention.` });
       }
 
       setSyncStatus((prev) => ({
@@ -125,11 +119,15 @@ export function useOfflineSync() {
       await updatePendingCount();
     } catch (error) {
       console.error('[Sync] Error syncing orders:', error);
+      toast({ variant: 'destructive', title: 'Sync failed', description: 'Failed to sync orders. Please try again.' });
     } finally {
       syncInProgress.current = false;
       setSyncStatus((prev) => ({ ...prev, isSyncing: false }));
     }
-  }, [toast, updatePendingCount]);
+  }, [updatePendingCount]);
+
+  // Keep the ref in sync so event listeners always call the latest version
+  syncOrdersRef.current = syncOrders;
 
   const syncSingleOrder = async (order: OfflineOrder): Promise<void> => {
     // Create the order in Supabase
@@ -172,19 +170,32 @@ export function useOfflineSync() {
 
     if (itemsError) throw itemsError;
 
-    // Update stock for each item
+    // Update stock for each item using atomic decrement via RPC or
+    // read-then-write with optimistic locking (check current value).
     for (const item of order.items) {
-      const { data: product } = await supabase
-        .from('products')
-        .select('stock_quantity')
-        .eq('id', item.productId)
-        .single();
-
-      if (product) {
-        await supabase
+      // Use a retry loop to handle concurrent updates
+      let retries = 3;
+      while (retries > 0) {
+        const { data: product } = await supabase
           .from('products')
-          .update({ stock_quantity: Math.max(0, product.stock_quantity - item.quantity) })
-          .eq('id', item.productId);
+          .select('stock_quantity')
+          .eq('id', item.productId)
+          .single();
+
+        if (product && product.stock_quantity !== null) {
+          const newQty = Math.max(0, product.stock_quantity - item.quantity);
+          // Only update if the stock hasn't changed since we read it
+          const { error: updateError } = await supabase
+            .from('products')
+            .update({ stock_quantity: newQty })
+            .eq('id', item.productId)
+            .eq('stock_quantity', product.stock_quantity); // optimistic lock
+
+          if (!updateError) break; // Success
+        } else {
+          break; // Product not found or null stock, skip
+        }
+        retries--;
       }
     }
   };

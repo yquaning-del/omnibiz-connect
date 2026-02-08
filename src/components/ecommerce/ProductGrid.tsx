@@ -56,7 +56,12 @@ export function ProductGrid({
 
       const { data, error } = await query;
       if (error) throw error;
-      setProducts(data || []);
+      setProducts((data || []).map(p => ({
+        ...p,
+        description: p.description ?? undefined,
+        stock_quantity: p.stock_quantity ?? 0,
+        is_active: p.is_active ?? true,
+      })) as Product[]);
     } catch (error) {
       console.error('Error loading products:', error);
     } finally {
@@ -164,6 +169,7 @@ export function ProductGrid({
               imageUrl={product.image_url}
               category={product.category}
               inStock={product.stock_quantity > 0}
+              organizationId={organizationId}
               onAddToCart={() => onAddToCart(product.id, product.unit_price)}
               onViewDetails={() => onViewProduct(product.id)}
             />

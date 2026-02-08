@@ -1,11 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Product } from '@/types';
 import { cn } from '@/lib/utils';
@@ -56,7 +58,14 @@ interface ReceiptData {
 export default function POS() {
   const { currentOrganization, currentLocation, user } = useAuth();
   const { toast } = useToast();
-  
+
+  const isRestaurant = currentLocation?.vertical === 'restaurant';
+
+  // Table assignment state (restaurant vertical) — must be declared before useOfflinePOS
+  const [selectedTableId, setSelectedTableId] = useState<string>('');
+  const [orderType, setOrderType] = useState<'dine_in' | 'takeout' | 'delivery'>('dine_in');
+  const [tables, setTables] = useState<Array<{ id: string; table_number: string; status: string; capacity: number }>>([]);
+
   // Use offline-capable POS hook
   const {
     products,
@@ -71,6 +80,8 @@ export default function POS() {
     locationId: currentLocation?.id,
     vertical: currentLocation?.vertical,
     userId: user?.id,
+    tableId: selectedTableId || undefined,
+    orderType,
   });
   
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -85,7 +96,20 @@ export default function POS() {
   
   // Tip state (restaurant vertical)
   const [tipAmount, setTipAmount] = useState(0);
-  const isRestaurant = currentLocation?.vertical === 'restaurant';
+
+  // Fetch restaurant tables
+  useEffect(() => {
+    if (isRestaurant && currentLocation?.id) {
+      supabase
+        .from('restaurant_tables')
+        .select('id, table_number, status, capacity')
+        .eq('location_id', currentLocation.id)
+        .order('table_number')
+        .then(({ data }) => {
+          if (data) setTables(data);
+        });
+    }
+  }, [isRestaurant, currentLocation?.id]);
   
   // Receipt state
   const [showReceipt, setShowReceipt] = useState(false);
@@ -184,7 +208,9 @@ export default function POS() {
     : 0;
   
   const afterDiscount = Math.max(0, subtotal - discountAmount);
-  const taxRate = 0.1; // 10% tax
+  // Tax rate from org/location settings, default to 0% if not configured
+  const orgSettings = currentOrganization?.settings as Record<string, unknown> | undefined;
+  const taxRate = typeof orgSettings?.tax_rate === 'number' ? orgSettings.tax_rate / 100 : 0;
   const tax = afterDiscount * taxRate;
   const total = afterDiscount + tax + tipAmount;
 
@@ -381,7 +407,7 @@ export default function POS() {
             </div>
           )}
           <div className="flex justify-between text-muted-foreground">
-            <span>Tax (10%)</span>
+            <span>Tax ({(taxRate * 100).toFixed(0)}%)</span>
             <span>${tax.toFixed(2)}</span>
           </div>
           {tipAmount > 0 && (
@@ -459,6 +485,41 @@ export default function POS() {
             </Button>
           </div>
           
+          {/* Restaurant: Order type and table selection */}
+          {isRestaurant && (
+            <div className="flex gap-2 items-center">
+              <Select value={orderType} onValueChange={(v: 'dine_in' | 'takeout' | 'delivery') => { setOrderType(v); if (v !== 'dine_in') setSelectedTableId(''); }}>
+                <SelectTrigger className="w-32 h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dine_in">Dine In</SelectItem>
+                  <SelectItem value="takeout">Takeout</SelectItem>
+                  <SelectItem value="delivery">Delivery</SelectItem>
+                </SelectContent>
+              </Select>
+              {orderType === 'dine_in' && (
+                <Select value={selectedTableId} onValueChange={setSelectedTableId}>
+                  <SelectTrigger className="w-40 h-9">
+                    <SelectValue placeholder="Select Table" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tables.filter(t => t.status === 'available').map((table) => (
+                      <SelectItem key={table.id} value={table.id}>
+                        Table {table.table_number} ({table.capacity} seats)
+                      </SelectItem>
+                    ))}
+                    {tables.filter(t => t.status !== 'available').map((table) => (
+                      <SelectItem key={table.id} value={table.id} disabled>
+                        Table {table.table_number} ({table.status})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
+
           <div className="flex gap-2 overflow-x-auto pb-2">
             <Button
               variant={selectedCategory === null ? 'default' : 'outline'}
@@ -492,13 +553,13 @@ export default function POS() {
                 <button
                   key={product.id}
                   onClick={() => addToCart(product)}
-                  disabled={product.stock_quantity <= 0}
+                  disabled={(product.stock_quantity ?? 0) <= 0}
                   className={cn(
                     'relative flex flex-col p-4 rounded-xl border border-border/50',
                     'bg-card/50 backdrop-blur transition-all duration-200',
                     'hover:bg-card hover:border-primary/30 hover:shadow-lg',
                     'active:scale-[0.97] text-left',
-                    product.stock_quantity <= 0 && 'opacity-50 cursor-not-allowed'
+                    (product.stock_quantity ?? 0) <= 0 && 'opacity-50 cursor-not-allowed'
                   )}
                 >
                   {product.image_url ? (
@@ -514,10 +575,10 @@ export default function POS() {
                   <p className="font-medium text-foreground text-sm truncate">{product.name}</p>
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-lg font-bold text-primary">${product.unit_price.toFixed(2)}</span>
-                    <span className="text-xs text-muted-foreground">{product.stock_quantity} left</span>
+                    <span className="text-xs text-muted-foreground">{product.stock_quantity ?? 0} left</span>
                   </div>
 
-                  {product.stock_quantity <= product.low_stock_threshold && product.stock_quantity > 0 && (
+                  {(product.stock_quantity ?? 0) <= product.low_stock_threshold && (product.stock_quantity ?? 0) > 0 && (
                     <Badge variant="outline" className="absolute top-2 right-2 bg-warning/20 text-warning border-warning/30 text-xs">
                       Low
                     </Badge>

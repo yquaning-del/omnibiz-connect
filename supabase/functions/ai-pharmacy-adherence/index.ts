@@ -1,24 +1,31 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { handleCorsPreFlight, getCorsHeaders } from "../_shared/cors.ts";
+import { verifyAuth, verifyOrgAccess } from "../_shared/auth.ts";
+import { validateRequired, validateUUID } from "../_shared/validation.ts";
+import { jsonResponse, errorResponse } from "../_shared/response.ts";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflight = handleCorsPreFlight(req);
+  if (preflight) return preflight;
+
+  const cors = getCorsHeaders(req);
 
   try {
-    const { organizationId, locationId } = await req.json();
-    console.log(`AI Pharmacy Adherence for org ${organizationId}`);
+    // Verify JWT authentication
+    const { userId, supabaseClient: supabase } = await verifyAuth(req);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const body = await req.json();
+    validateRequired(body, ["organizationId"]);
+
+    const organizationId = validateUUID(body.organizationId, "organizationId");
+
+    // Verify user has access to the organization
+    const hasAccess = await verifyOrgAccess(supabase, userId, organizationId);
+    if (!hasAccess) {
+      return jsonResponse({ success: false, error: "Access denied to this organization" }, cors, 403);
+    }
+
+    console.log(`AI Pharmacy Adherence for org ${organizationId}`);
 
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
@@ -80,7 +87,6 @@ serve(async (req) => {
       patientData[patientId].refillsUsed += (rx.refills_authorized || 0) - (rx.refills_remaining || 0);
       patientData[patientId].refillsAvailable += rx.refills_remaining || 0;
 
-      // Check for overdue refills (has remaining refills but hasn't filled in 30+ days)
       if (rx.refills_remaining > 0 && rx.date_filled) {
         const daysSinceFill = Math.floor((Date.now() - new Date(rx.date_filled).getTime()) / 86400000);
         if (daysSinceFill > 30) {
@@ -122,7 +128,6 @@ serve(async (req) => {
       .sort((a, b) => a.adherenceRate - b.adherenceRate)
       .slice(0, 10);
 
-    // Calculate upcoming refills
     const upcomingRefills = patients.filter(([_, data]) => data.refillsAvailable > 0).length;
 
     const contextData = {
@@ -215,15 +220,9 @@ Focus on actionable outreach recommendations to improve patient adherence.`;
       };
     }
 
-    return new Response(JSON.stringify({ success: true, data: result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ success: true, data: result }, cors);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("AI Pharmacy Adherence error:", errorMessage);
-    return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("AI Pharmacy Adherence error:", error);
+    return errorResponse(error, cors);
   }
 });

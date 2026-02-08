@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Building2, ArrowRight, Shield, Clock, Headphones, ArrowLeft } from 'lucide-react';
+import { ArrowRight, Shield, Clock, Headphones } from 'lucide-react';
 import { BusinessVertical } from '@/types';
 import { PricingCard } from '@/components/pricing/PricingCard';
 import { PricingToggle } from '@/components/pricing/PricingToggle';
@@ -10,6 +10,7 @@ import { VerticalTabs } from '@/components/pricing/VerticalTabs';
 import { FeatureTable } from '@/components/pricing/FeatureTable';
 import { PricingFAQ } from '@/components/pricing/PricingFAQ';
 import { CountrySelector, Country, SUPPORTED_COUNTRIES } from '@/components/payment/CountrySelector';
+import { PublicLayout } from '@/components/layout/PublicLayout';
 
 type PlanData = {
   name: string;
@@ -355,30 +356,7 @@ export default function Pricing() {
   const isGhana = selectedCountry.code === "GH";
   const currencySymbol = selectedCountry.symbol;
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Building2 className="h-8 w-8 text-primary" />
-            <span className="text-xl font-display font-bold text-foreground">HospitalityOS</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link to="/">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Home
-              </Button>
-            </Link>
-            <Link to="/auth">
-              <Button size="sm" className="gap-2">
-                Get Started <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
-
+    <PublicLayout>
       {/* Header */}
       <section className="relative pt-32 pb-12 overflow-hidden">
         <div className="absolute inset-0 gradient-glow" />
@@ -506,24 +484,6 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 border-t border-border/50">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-muted-foreground text-sm">
-              © {new Date().getFullYear()} HospitalityOS. All rights reserved.
-            </p>
-            <div className="flex items-center gap-4 text-sm">
-              <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
-                Terms of Service
-              </Link>
-              <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
-                Privacy Policy
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </PublicLayout>
   );
 }

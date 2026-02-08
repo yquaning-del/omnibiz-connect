@@ -32,7 +32,7 @@ interface DemoModalProps {
 
 const demoSteps = [
   {
-    title: 'Welcome to HospitalityOS',
+    title: 'Welcome to OmniBiz Connect',
     description: 'Your all-in-one platform for managing restaurants, hotels, pharmacies, and retail businesses.',
     icon: Sparkles,
     color: 'text-primary',

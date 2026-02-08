@@ -82,6 +82,16 @@ export function NightAuditDialog() {
         .gte('check_in', today + 'T00:00:00')
         .lte('check_in', today + 'T23:59:59');
 
+      // Fetch today's departures (checked-out today)
+      const { data: departures } = await supabase
+        .from('reservations')
+        .select('id')
+        .eq('location_id', currentLocation.id)
+        .eq('reservation_type', 'room')
+        .eq('status', 'checked-out')
+        .gte('actual_check_out', today + 'T00:00:00')
+        .lte('actual_check_out', today + 'T23:59:59');
+
       // Step 3: Fetch today's folios (60%)
       setProgress(60);
       const { data: folios } = await supabase
@@ -140,7 +150,7 @@ export function NightAuditDialog() {
         incidentalRevenue,
         totalRevenue: roomRevenue + incidentalRevenue,
         arrivalsCount,
-        departuresCount: 0, // Would need yesterday's checkouts
+        departuresCount: departures?.length || 0,
         inHouseGuests: checkedInCount,
         noShowsCount: noShows,
         discrepancies

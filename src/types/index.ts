@@ -6,7 +6,7 @@ export interface Organization {
   id: string;
   name: string;
   slug: string;
-  logo_url?: string;
+  logo_url?: string | null;
   primary_vertical: BusinessVertical;
   settings: Record<string, unknown>;
   created_at: string;
@@ -17,11 +17,11 @@ export interface Location {
   id: string;
   organization_id: string;
   name: string;
-  address?: string;
-  city?: string;
-  country?: string;
-  phone?: string;
-  email?: string;
+  address?: string | null;
+  city?: string | null;
+  country?: string | null;
+  phone?: string | null;
+  email?: string | null;
   vertical: BusinessVertical;
   is_active: boolean;
   settings: Record<string, unknown>;
@@ -31,10 +31,10 @@ export interface Location {
 
 export interface Profile {
   id: string;
-  email?: string;
-  full_name?: string;
-  avatar_url?: string;
-  phone?: string;
+  email?: string | null;
+  full_name?: string | null;
+  avatar_url?: string | null;
+  phone?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,8 +42,8 @@ export interface Profile {
 export interface UserRole {
   id: string;
   user_id: string;
-  organization_id?: string;
-  location_id?: string;
+  organization_id?: string | null;
+  location_id?: string | null;
   role: AppRole;
   created_at: string;
 }
@@ -51,21 +51,21 @@ export interface UserRole {
 export interface Product {
   id: string;
   organization_id: string;
-  location_id?: string;
+  location_id?: string | null;
   name: string;
-  description?: string;
-  sku?: string;
-  barcode?: string;
-  category?: string;
-  subcategory?: string;
+  description?: string | null;
+  sku?: string | null;
+  barcode?: string | null;
+  category?: string | null;
+  subcategory?: string | null;
   vertical: BusinessVertical;
   unit_price: number;
-  cost_price?: number;
-  tax_rate?: number;
-  stock_quantity: number;
+  cost_price?: number | null;
+  tax_rate?: number | null;
+  stock_quantity: number | null;
   low_stock_threshold: number;
   is_active: boolean;
-  image_url?: string;
+  image_url?: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -75,11 +75,11 @@ export interface Customer {
   id: string;
   organization_id: string;
   full_name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
   loyalty_points: number;
-  notes?: string;
+  notes?: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -89,7 +89,7 @@ export interface Order {
   id: string;
   organization_id: string;
   location_id: string;
-  customer_id?: string;
+  customer_id?: string | null;
   order_number: string;
   vertical: BusinessVertical;
   status: string;
@@ -97,11 +97,11 @@ export interface Order {
   tax_amount: number;
   discount_amount: number;
   total_amount: number;
-  payment_method?: string;
+  payment_method?: string | null;
   payment_status: string;
-  notes?: string;
+  notes?: string | null;
   metadata: Record<string, unknown>;
-  created_by?: string;
+  created_by?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -109,12 +109,12 @@ export interface Order {
 export interface OrderItem {
   id: string;
   order_id: string;
-  product_id?: string;
+  product_id?: string | null;
   product_name: string;
   quantity: number;
   unit_price: number;
   total_price: number;
-  notes?: string;
+  notes?: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
 }
@@ -126,7 +126,7 @@ export interface StaffSchedule {
   shift_date: string;
   start_time: string;
   end_time: string;
-  notes?: string;
+  notes?: string | null;
   created_at: string;
   updated_at: string;
 }

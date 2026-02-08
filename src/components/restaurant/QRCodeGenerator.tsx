@@ -23,7 +23,7 @@ export function QRCodeGenerator({ tableId, tableNumber, locationId, organization
   // Generate the menu URL for this table
   const menuUrl = `${window.location.origin}/menu/${organizationSlug}/${locationId}?table=${tableId}`;
   
-  // Generate QR code using a canvas-based approach
+  // Generate QR code using external QR service API
   useEffect(() => {
     if (dialogOpen) {
       generateQRCode(menuUrl);
@@ -31,112 +31,65 @@ export function QRCodeGenerator({ tableId, tableNumber, locationId, organization
   }, [dialogOpen, menuUrl]);
 
   const generateQRCode = async (text: string) => {
-    // Using a simple QR code generation approach with SVG
-    const size = 200;
-    const moduleCount = 25; // QR version
-    const moduleSize = size / moduleCount;
-    
-    // Simple QR code pattern (placeholder - in production use a proper QR library)
-    // This generates a visual representation
-    const qrPattern = generateQRPattern(text);
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = size + 40; // padding
-    canvas.height = size + 80; // padding + label
-    const ctx = canvas.getContext('2d');
-    
-    if (ctx) {
-      // White background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    try {
+      // Use external QR code service to generate real QR code
+      const qrSize = 256;
+      const qrServiceUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(text)}`;
       
-      // Draw QR modules
-      ctx.fillStyle = '#000000';
-      const offsetX = 20;
-      const offsetY = 20;
+      // Load the QR code image from the service
+      const qrImage = new Image();
+      qrImage.crossOrigin = 'anonymous'; // Enable CORS for canvas operations
       
-      for (let row = 0; row < qrPattern.length; row++) {
-        for (let col = 0; col < qrPattern[row].length; col++) {
-          if (qrPattern[row][col]) {
-            ctx.fillRect(
-              offsetX + col * moduleSize,
-              offsetY + row * moduleSize,
-              moduleSize,
-              moduleSize
-            );
-          }
-        }
-      }
-      
-      // Add table label
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 14px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillText(`Table ${tableNumber}`, canvas.width / 2, size + 50);
-      ctx.font = '10px system-ui';
-      ctx.fillStyle = '#666666';
-      ctx.fillText('Scan to view menu & order', canvas.width / 2, size + 68);
-      
-      setQrDataUrl(canvas.toDataURL('image/png'));
-    }
-  };
-
-  // Generate a simple QR-like pattern based on text hash
-  const generateQRPattern = (text: string): boolean[][] => {
-    const size = 25;
-    const pattern: boolean[][] = [];
-    
-    // Create hash from text
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-      hash = ((hash << 5) - hash) + text.charCodeAt(i);
-      hash |= 0;
-    }
-    
-    // Initialize pattern
-    for (let i = 0; i < size; i++) {
-      pattern[i] = [];
-      for (let j = 0; j < size; j++) {
-        pattern[i][j] = false;
-      }
-    }
-    
-    // Add finder patterns (corners)
-    const addFinderPattern = (startRow: number, startCol: number) => {
-      for (let r = 0; r < 7; r++) {
-        for (let c = 0; c < 7; c++) {
-          if (r === 0 || r === 6 || c === 0 || c === 6 || 
-              (r >= 2 && r <= 4 && c >= 2 && c <= 4)) {
-            pattern[startRow + r][startCol + c] = true;
-          }
-        }
-      }
-    };
-    
-    addFinderPattern(0, 0);
-    addFinderPattern(0, size - 7);
-    addFinderPattern(size - 7, 0);
-    
-    // Add timing patterns
-    for (let i = 8; i < size - 8; i++) {
-      pattern[6][i] = i % 2 === 0;
-      pattern[i][6] = i % 2 === 0;
-    }
-    
-    // Fill data area with pseudo-random pattern based on hash
-    let seed = Math.abs(hash);
-    for (let r = 0; r < size; r++) {
-      for (let c = 0; c < size; c++) {
-        // Skip finder patterns and timing
-        if ((r < 8 && c < 8) || (r < 8 && c >= size - 8) || (r >= size - 8 && c < 8)) continue;
-        if (r === 6 || c === 6) continue;
+      qrImage.onload = () => {
+        // Create canvas to add table label and maintain download functionality
+        const canvas = document.createElement('canvas');
+        const qrDisplaySize = 200; // Size for display
+        const padding = 20;
+        const labelHeight = 50;
         
-        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-        pattern[r][c] = (seed % 100) < 45;
-      }
+        canvas.width = qrDisplaySize + (padding * 2);
+        canvas.height = qrDisplaySize + padding + labelHeight;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          // White background
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Draw the QR code image (scaled to display size)
+          ctx.drawImage(qrImage, padding, padding, qrDisplaySize, qrDisplaySize);
+          
+          // Add table label
+          ctx.fillStyle = '#000000';
+          ctx.font = 'bold 14px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillText(`Table ${tableNumber}`, canvas.width / 2, qrDisplaySize + padding + 20);
+          ctx.font = '10px system-ui';
+          ctx.fillStyle = '#666666';
+          ctx.fillText('Scan to view menu & order', canvas.width / 2, qrDisplaySize + padding + 38);
+          
+          setQrDataUrl(canvas.toDataURL('image/png'));
+        }
+      };
+      
+      qrImage.onerror = () => {
+        // Fallback: if image fails to load, show error toast
+        toast({ 
+          title: 'Failed to generate QR code',
+          description: 'Please try again later',
+          variant: 'destructive'
+        });
+      };
+      
+      qrImage.src = qrServiceUrl;
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      toast({ 
+        title: 'Failed to generate QR code',
+        description: 'Please try again later',
+        variant: 'destructive'
+      });
     }
-    
-    return pattern;
   };
 
   const handleDownload = () => {

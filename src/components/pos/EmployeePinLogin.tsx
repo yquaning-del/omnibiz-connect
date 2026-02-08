@@ -20,6 +20,18 @@ interface EmployeePinLoginProps {
   currentUserId?: string;
 }
 
+const MAX_PIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
+/** Simple SHA-256 hash for PIN before sending to server */
+async function hashPin(pin: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinLoginProps) {
   const { toast } = useToast();
   
@@ -28,6 +40,8 @@ export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinL
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'email' | 'pin'>('email');
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -36,6 +50,9 @@ export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinL
       setPin('');
     }
   }, [open, step]);
+
+  // Check if currently locked out
+  const isLockedOut = lockedUntil !== null && Date.now() < lockedUntil;
 
   const handleEmailSubmit = () => {
     if (!email.trim()) {
@@ -46,6 +63,7 @@ export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinL
   };
 
   const handlePinDigit = (digit: string) => {
+    if (isLockedOut) return;
     if (pin.length < 4) {
       const newPin = pin + digit;
       setPin(newPin);
@@ -62,24 +80,44 @@ export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinL
   };
 
   const verifyPin = async (pinToVerify: string) => {
+    if (isLockedOut) {
+      const remainingMs = (lockedUntil || 0) - Date.now();
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      toast({ variant: 'destructive', title: 'Too many failed attempts', description: `Try again in ${remainingMin} minute(s)` });
+      setPin('');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Call the security definer function to verify PIN
+      // Hash PIN before sending to server
+      const hashedPin = await hashPin(pinToVerify);
+
       const { data, error } = await supabase
         .rpc('verify_pos_pin', { 
           user_email: email.toLowerCase().trim(), 
-          pin: pinToVerify 
+          pin: hashedPin 
         });
 
       if (error) throw error;
 
       if (data) {
+        setFailedAttempts(0);
+        setLockedUntil(null);
         toast({ title: 'Logged in successfully' });
         onLoginSuccess(data, email);
         setOpen(false);
         resetForm();
       } else {
-        toast({ variant: 'destructive', title: 'Invalid PIN', description: 'Please try again' });
+        const newAttempts = failedAttempts + 1;
+        setFailedAttempts(newAttempts);
+
+        if (newAttempts >= MAX_PIN_ATTEMPTS) {
+          setLockedUntil(Date.now() + LOCKOUT_DURATION_MS);
+          toast({ variant: 'destructive', title: 'Account locked', description: 'Too many failed attempts. Try again in 5 minutes.' });
+        } else {
+          toast({ variant: 'destructive', title: 'Invalid PIN', description: `${MAX_PIN_ATTEMPTS - newAttempts} attempt(s) remaining` });
+        }
         setPin('');
       }
     } catch (error: any) {
@@ -190,6 +228,12 @@ export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinL
               ))}
             </div>
 
+            {isLockedOut && (
+              <p className="text-center text-sm text-destructive font-medium">
+                Too many failed attempts. Try again in a few minutes.
+              </p>
+            )}
+
             {loading && (
               <div className="flex justify-center">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -225,10 +269,13 @@ export function SetupPinForm() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Hash the PIN before storing
+      const hashedPin = await hashPin(pin);
+
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          pos_pin: pin,
+          pos_pin: hashedPin,
           pos_pin_enabled: true 
         })
         .eq('id', user.id);

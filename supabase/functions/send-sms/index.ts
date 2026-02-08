@@ -1,30 +1,36 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-interface SMSRequest {
-  to: string;
-  message: string;
-  type?: 'order_confirmation' | 'order_shipped' | 'order_delivered' | 'general';
-}
+import { handleCorsPreFlight, getCorsHeaders } from "../_shared/cors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
+import { validateRequired, sanitizeString, validateEnum } from "../_shared/validation.ts";
+import { jsonResponse, errorResponse } from "../_shared/response.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const preflight = handleCorsPreFlight(req);
+  if (preflight) return preflight;
+
+  const cors = getCorsHeaders(req);
 
   try {
-    const { to, message, type = 'general' } = await req.json() as SMSRequest;
+    // Verify JWT authentication
+    await verifyAuth(req);
 
-    if (!to || !message) {
-      throw new Error('Missing required fields: to, message');
-    }
+    const body = await req.json();
+    validateRequired(body, ["to", "message"]);
+
+    const to = sanitizeString(body.to, "to", 20);
+    const message = sanitizeString(body.message, "message", 1600);
+    const type = body.type
+      ? validateEnum(body.type, ["order_confirmation", "order_shipped", "order_delivered", "general"], "type")
+      : "general";
 
     // Normalize phone number (ensure it starts with +)
     const phoneNumber = to.startsWith('+') ? to : `+${to}`;
+
+    // Basic phone number validation
+    const phoneRegex = /^\+[1-9]\d{6,14}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      return jsonResponse({ success: false, error: "Invalid phone number format" }, cors, 400);
+    }
 
     // Check if Africa's Talking credentials are configured
     const apiKey = Deno.env.get('AFRICASTALKING_API_KEY');
@@ -34,17 +40,13 @@ serve(async (req) => {
       console.log('SMS credentials not configured - logging message instead');
       console.log(`Would send SMS to: ${phoneNumber}`);
       console.log(`Message type: ${type}`);
-      console.log(`Message: ${message}`);
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          demo: true,
-          message: 'SMS logged (credentials not configured)',
-          preview: { to: phoneNumber, message, type }
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({
+        success: true,
+        demo: true,
+        message: 'SMS logged (credentials not configured)',
+        preview: { to: phoneNumber, message, type }
+      }, cors);
     }
 
     // Send via Africa's Talking API
@@ -75,16 +77,10 @@ serve(async (req) => {
 
     console.log('SMS sent successfully:', result);
 
-    return new Response(
-      JSON.stringify({ success: true, result }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ success: true, result }, cors);
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('SMS error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return errorResponse(error, cors);
   }
 });

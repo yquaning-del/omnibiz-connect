@@ -83,7 +83,15 @@ export default function TenantMaintenance() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRequests(data || []);
+      setRequests((data || []).map((req: any) => ({
+        ...req,
+        title: req.title ?? '',
+        description: req.description ?? null,
+        category: req.category ?? 'general',
+        priority: req.priority ?? 'normal',
+        status: req.status ?? 'open',
+        completed_at: req.completed_at ?? null,
+      })));
     } catch (error) {
       console.error('Error fetching requests:', error);
     } finally {
@@ -114,13 +122,13 @@ export default function TenantMaintenance() {
       const { data: unit } = await supabase
         .from('property_units')
         .select('location_id')
-        .eq('id', lease.unit_id)
+        .eq('id', lease.unit_id ?? '')
         .maybeSingle();
 
       const { error } = await supabase
         .from('maintenance_requests')
         .insert({
-          location_id: unit?.location_id || lease.organization_id, // Fallback to org if no location
+          location_id: unit?.location_id ?? lease.organization_id ?? '', // Fallback to org if no location
           title: formData.title,
           description: formData.description || null,
           category: formData.category,

@@ -10,6 +10,10 @@ interface UseOfflinePOSOptions {
   locationId: string | undefined;
   vertical: string | undefined;
   userId: string | undefined;
+  /** For restaurant vertical, the table ID to link the order to */
+  tableId?: string | undefined;
+  /** Order type: dine-in, takeout, delivery */
+  orderType?: 'dine_in' | 'takeout' | 'delivery';
 }
 
 interface CartItem {
@@ -17,7 +21,7 @@ interface CartItem {
   quantity: number;
 }
 
-export function useOfflinePOS({ organizationId, locationId, vertical, userId }: UseOfflinePOSOptions) {
+export function useOfflinePOS({ organizationId, locationId, vertical, userId, tableId, orderType }: UseOfflinePOSOptions) {
   const { toast } = useToast();
   const { isOnline, syncStatus, requestSync, updatePendingCount } = useOfflineSync();
   
@@ -87,7 +91,7 @@ export function useOfflinePOS({ organizationId, locationId, vertical, userId }: 
     setProducts((prev) =>
       prev.map((p) =>
         p.id === productId
-          ? { ...p, stock_quantity: Math.max(0, p.stock_quantity - quantityUsed) }
+          ? { ...p, stock_quantity: Math.max(0, (p.stock_quantity ?? 0) - quantityUsed) }
           : p
       )
     );
@@ -95,7 +99,7 @@ export function useOfflinePOS({ organizationId, locationId, vertical, userId }: 
     // Update in IndexedDB
     const product = products.find((p) => p.id === productId);
     if (product) {
-      await offlineDB.updateProductStock(productId, Math.max(0, product.stock_quantity - quantityUsed));
+      await offlineDB.updateProductStock(productId, Math.max(0, (product.stock_quantity ?? 0) - quantityUsed));
     }
   }, [products]);
 
@@ -118,6 +122,11 @@ export function useOfflinePOS({ organizationId, locationId, vertical, userId }: 
     // Try online first
     if (navigator.onLine && !offlineMode) {
       try {
+        // Restaurant dine-in orders start as 'pending' so they flow to kitchen display
+        const isRestaurantDineIn = vertical === 'restaurant' && orderType !== 'takeout';
+        const orderStatus = isRestaurantDineIn ? 'pending' : 'completed';
+        const paymentStatus = isRestaurantDineIn ? 'pending' : 'paid';
+
         const { data: order, error: orderError } = await supabase
           .from('orders')
           .insert({
@@ -125,14 +134,18 @@ export function useOfflinePOS({ organizationId, locationId, vertical, userId }: 
             location_id: locationId,
             order_number: orderNumber,
             vertical: vertical as any,
-            status: 'completed',
+            status: orderStatus,
             subtotal,
             tax_amount: taxAmount,
             discount_amount: discountAmount,
             total_amount: totalAmount,
             payment_method: paymentMethod,
-            payment_status: 'paid',
+            payment_status: paymentStatus,
             created_by: userId,
+            metadata: {
+              ...(tableId ? { table_id: tableId } : {}),
+              ...(orderType ? { order_type: orderType } : {}),
+            },
           })
           .select()
           .single();
@@ -150,12 +163,23 @@ export function useOfflinePOS({ organizationId, locationId, vertical, userId }: 
 
         await supabase.from('order_items').insert(orderItems);
 
-        // Update stock
+        // Update table status to occupied if a table was assigned
+        if (tableId && vertical === 'restaurant') {
+          await supabase
+            .from('restaurant_tables')
+            .update({ status: 'occupied' })
+            .eq('id', tableId);
+        }
+
+        // Update stock with optimistic locking to prevent race conditions
         for (const item of cart) {
+          const currentQty = item.product.stock_quantity ?? 0;
+          const newQty = Math.max(0, currentQty - item.quantity);
           await supabase
             .from('products')
-            .update({ stock_quantity: item.product.stock_quantity - item.quantity })
-            .eq('id', item.product.id);
+            .update({ stock_quantity: newQty })
+            .eq('id', item.product.id)
+            .eq('stock_quantity', currentQty); // optimistic lock: only update if unchanged
           
           await updateLocalStock(item.product.id, item.quantity);
         }

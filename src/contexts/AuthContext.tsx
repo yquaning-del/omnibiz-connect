@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, UserRole, Organization, Location } from '@/types';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -37,6 +38,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Guard to prevent duplicate fetchUserData calls from onAuthStateChange + getSession racing
+  const initializingRef = useRef<string | null>(null);
 
   // Log user session for analytics (fire and forget)
   const logUserSession = async (userId: string) => {
@@ -89,11 +93,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const typedLocations = locsData as Location[];
         setLocations(typedLocations);
         
-        // Try to restore from localStorage first
+        // Try to restore from localStorage first, with validation
         const savedLocationId = localStorage.getItem('currentLocationId');
         const savedOrgId = localStorage.getItem('currentOrganizationId');
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         
-        if (savedLocationId && savedOrgId && orgsData) {
+        if (
+          savedLocationId && savedOrgId && orgsData &&
+          uuidRegex.test(savedLocationId) && uuidRegex.test(savedOrgId)
+        ) {
+          // Validate that the IDs exist in the user's actual data
           const savedLocation = typedLocations.find(l => l.id === savedLocationId);
           const typedOrgs = orgsData as Organization[];
           const savedOrg = typedOrgs.find(o => o.id === savedOrgId);
@@ -102,7 +111,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setCurrentLocation(savedLocation);
             setCurrentOrganization(savedOrg);
             return;
+          } else {
+            // Clear invalid localStorage entries
+            localStorage.removeItem('currentLocationId');
+            localStorage.removeItem('currentOrganizationId');
           }
+        } else if (savedLocationId || savedOrgId) {
+          // Clear malformed localStorage entries
+          localStorage.removeItem('currentLocationId');
+          localStorage.removeItem('currentOrganizationId');
         }
         
         // Set first location/org as current if none saved
@@ -118,6 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
+      toast.error('Failed to load user data. Please try refreshing the page.');
     }
   };
 
@@ -129,6 +147,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          // Skip if we've already started initializing for this user
+          if (initializingRef.current === session.user.id) return;
+          initializingRef.current = session.user.id;
+
           // Log session on SIGNED_IN event only (new login)
           const isNewSession = event === 'SIGNED_IN';
           
@@ -137,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             fetchUserData(session.user.id, isNewSession);
           }, 0);
         } else {
+          initializingRef.current = null;
           // Clear all state on logout
           setProfile(null);
           setRoles([]);
@@ -154,6 +177,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        // Skip if onAuthStateChange already started this
+        if (initializingRef.current === session.user.id) return;
+        initializingRef.current = session.user.id;
         fetchUserData(session.user.id, false);
       }
       setLoading(false);
@@ -210,44 +236,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const hasRole = (role: string) => {
+  const hasRole = useCallback((role: string) => {
     return roles.some(r => r.role === role);
-  };
+  }, [roles]);
 
-  const isOrgAdmin = hasRole('org_admin') || hasRole('super_admin');
-  const isSuperAdmin = hasRole('super_admin');
-  const isTenant = hasRole('tenant');
+  const isOrgAdmin = useMemo(() => hasRole('org_admin') || hasRole('super_admin'), [hasRole]);
+  const isSuperAdmin = useMemo(() => hasRole('super_admin'), [hasRole]);
+  const isTenant = useMemo(() => hasRole('tenant'), [hasRole]);
 
-  const refreshUserData = async () => {
+  const refreshUserData = useCallback(async () => {
     if (user) {
       await fetchUserData(user.id, false);
     }
-  };
+  }, [user]);
+
+  const contextValue = useMemo(() => ({
+    user,
+    session,
+    profile,
+    roles,
+    organizations,
+    locations,
+    currentOrganization,
+    currentLocation,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    setCurrentOrganization,
+    setCurrentLocation,
+    hasRole,
+    isOrgAdmin,
+    isSuperAdmin,
+    isTenant,
+    refreshUserData,
+  }), [user, session, profile, roles, organizations, locations, currentOrganization, currentLocation, loading, hasRole, isOrgAdmin, isSuperAdmin, isTenant, refreshUserData]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        profile,
-        roles,
-        organizations,
-        locations,
-        currentOrganization,
-        currentLocation,
-        loading,
-        signIn,
-        signUp,
-        signOut,
-        setCurrentOrganization,
-        setCurrentLocation,
-        hasRole,
-        isOrgAdmin,
-        isSuperAdmin,
-        isTenant,
-        refreshUserData,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

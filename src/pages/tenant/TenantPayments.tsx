@@ -13,6 +13,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { openPaystackPopup, convertToSmallestUnit, generateTransactionReference } from '@/lib/paystack';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 
@@ -54,7 +55,13 @@ export default function TenantPayments() {
         .eq('tenant_id', tenantData.id)
         .order('payment_date', { ascending: false });
 
-      setPayments(paymentData || []);
+      setPayments((paymentData || []).map((p: any) => ({
+        ...p,
+        amount: p.amount ?? 0,
+        payment_date: p.payment_date ?? '',
+        status: p.status ?? 'pending',
+        late_fee: p.late_fee ?? 0,
+      })));
 
       // Fetch active lease for payment info
       const { data: leaseData } = await supabase
@@ -104,7 +111,7 @@ export default function TenantPayments() {
 
     setPaying(true);
     try {
-      // For now, just create a payment record (in production, this would integrate with Paystack)
+      // Create payment record and initiate Paystack payment flow
       const { error } = await supabase
         .from('rent_payments')
         .insert({
@@ -119,8 +126,39 @@ export default function TenantPayments() {
 
       if (error) throw error;
 
-      toast.success('Payment initiated! Redirecting to payment gateway...');
-      // In production, redirect to Paystack checkout
+      // Open Paystack payment popup
+      const txRef = generateTransactionReference();
+      try {
+        await openPaystackPopup({
+          key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || '',
+          email: tenantData.email || '',
+          amount: convertToSmallestUnit(lease.monthly_rent),
+          currency: 'GHS',
+          ref: txRef,
+          metadata: {
+            lease_id: lease.id,
+            tenant_id: tenantData.id,
+          },
+          callback: async (response) => {
+            // Update payment record with Paystack reference
+            await supabase
+              .from('rent_payments')
+              .update({ status: 'completed', payment_reference: response.reference })
+              .eq('lease_id', lease.id)
+              .eq('status', 'pending')
+              .order('created_at', { ascending: false })
+              .limit(1);
+            toast.success('Payment completed successfully!');
+            fetchData();
+          },
+          onClose: () => {
+            toast.info('Payment window closed. Your pending payment is saved.');
+          },
+        });
+      } catch {
+        toast.error('Unable to open payment gateway. Please try again later.');
+      }
+
       await fetchData();
     } catch (error) {
       console.error('Error initiating payment:', error);

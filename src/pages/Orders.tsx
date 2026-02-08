@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,7 +25,9 @@ import {
   Calendar,
   DollarSign,
   Clock,
+  Download,
 } from 'lucide-react';
+import { exportToCSV, ExportColumn } from '@/lib/export';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +55,9 @@ export default function Orders() {
   
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -108,11 +114,21 @@ export default function Orders() {
     }
   };
 
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter]);
+
   const filteredOrders = orders.filter(o => {
-    const matchesSearch = o.order_number.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = o.order_number.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const totalItems = filteredOrders.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
 
   const stats = {
     total: orders.length,
@@ -138,6 +154,27 @@ export default function Orders() {
             View and manage all orders
           </p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={() => {
+            const cols: ExportColumn<Order>[] = [
+              { header: 'Order #', accessor: (o) => o.order_number },
+              { header: 'Date', accessor: (o) => o.created_at ? format(new Date(o.created_at), 'yyyy-MM-dd HH:mm') : '' },
+              { header: 'Status', accessor: (o) => o.status },
+              { header: 'Payment', accessor: (o) => o.payment_method ?? '' },
+              { header: 'Subtotal', accessor: (o) => o.subtotal },
+              { header: 'Tax', accessor: (o) => o.tax_amount },
+              { header: 'Total', accessor: (o) => o.total_amount },
+            ];
+            exportToCSV('orders', cols, orders);
+          }}
+          disabled={orders.length === 0}
+        >
+          <Download className="h-4 w-4" />
+          Export CSV
+        </Button>
       </div>
 
       {/* Stats */}
@@ -216,7 +253,7 @@ export default function Orders() {
       </div>
 
       {/* Orders List */}
-      {filteredOrders.length === 0 ? (
+      {totalItems === 0 ? (
         <Card className="border-border/50 bg-card/50">
           <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Receipt className="w-12 h-12 mb-4" />
@@ -225,7 +262,7 @@ export default function Orders() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {filteredOrders.map(order => (
+          {paginatedOrders.map(order => (
             <Card 
               key={order.id} 
               className="border-border/50 bg-card/50 hover:bg-card transition-colors cursor-pointer"
@@ -271,6 +308,22 @@ export default function Orders() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {totalItems > 0 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-muted-foreground">
+            Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} items
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages}>
+              Next
+            </Button>
+          </div>
         </div>
       )}
 

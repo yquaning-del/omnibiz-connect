@@ -30,7 +30,7 @@ const Pharmacy = () => {
 
   const fetchStats = async () => {
     try {
-      const [prescriptions, patients, claims] = await Promise.all([
+      const [prescriptions, patients, claims, lowStock] = await Promise.all([
         supabase
           .from('prescriptions')
           .select('status')
@@ -42,18 +42,26 @@ const Pharmacy = () => {
         supabase
           .from('insurance_claims')
           .select('status')
+          .eq('organization_id', currentOrganization!.id),
+        supabase
+          .from('products')
+          .select('id, stock_quantity, low_stock_threshold')
           .eq('organization_id', currentOrganization!.id)
+          .eq('is_active', true),
       ]);
 
       const pending = prescriptions.data?.filter(p => p.status === 'pending' || p.status === 'processing').length || 0;
       const ready = prescriptions.data?.filter(p => p.status === 'ready').length || 0;
       const pendingClaims = claims.data?.filter(c => c.status === 'pending' || c.status === 'submitted').length || 0;
+      const lowStockCount = lowStock.data?.filter(p =>
+        (p.stock_quantity ?? 0) <= (p.low_stock_threshold ?? 10) && (p.stock_quantity ?? 0) > 0
+      ).length || 0;
 
       setStats({
         pendingPrescriptions: pending,
         readyForPickup: ready,
         totalPatients: patients.data?.length || 0,
-        lowStockMeds: 0,
+        lowStockMeds: lowStockCount,
         pendingClaims
       });
     } catch (error) {

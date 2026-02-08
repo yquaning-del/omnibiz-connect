@@ -12,6 +12,7 @@ interface RoomCardProps {
     price_per_night: number;
     amenities: string[] | null;
     status: string;
+    image_url?: string | null;
   };
   onBook: (roomId: string) => void;
   currencySymbol?: string;
@@ -52,11 +53,19 @@ export function RoomCard({ room, onBook, currencySymbol = '$', nights = 1 }: Roo
 
   return (
     <Card className="group overflow-hidden border-border/50 bg-card/50 transition-all duration-300 hover:border-hotel/30 hover:shadow-xl hover:shadow-hotel/5">
-      {/* Room Image Placeholder */}
-      <div className="relative h-52 bg-gradient-to-br from-hotel/20 via-hotel/10 to-muted/50 overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <BedDouble className="h-20 w-20 text-hotel/20 group-hover:scale-110 transition-transform duration-300" />
-        </div>
+      {/* Room Image */}
+      <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-hotel/20 via-hotel/10 to-muted/50">
+        {room.image_url ? (
+          <img
+            src={room.image_url}
+            alt={`${roomConfig.label} Room ${room.room_number}`}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
+            <BedDouble className="h-20 w-20 text-hotel/20 group-hover:scale-110 transition-transform duration-300" />
+          </div>
+        )}
         
         {/* Room type badge */}
         <Badge className={`absolute left-3 top-3 ${roomConfig.bgColor} ${roomConfig.color} border-0 shadow-sm`}>

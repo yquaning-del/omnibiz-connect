@@ -10,7 +10,7 @@ export default function Privacy() {
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <Building2 className="h-8 w-8 text-primary" />
-            <span className="text-xl font-display font-bold text-foreground">HospitalityOS</span>
+            <span className="text-xl font-display font-bold text-foreground">OmniBiz Connect</span>
           </Link>
           <Link to="/">
             <Button variant="ghost" size="sm" className="gap-2">
@@ -30,7 +30,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-2xl font-semibold text-foreground mb-4">1. Introduction</h2>
             <p className="text-muted-foreground leading-relaxed">
-              HospitalityOS ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy 
+              OmniBiz Connect ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy 
               explains how we collect, use, disclose, and safeguard your information when you use our service.
             </p>
           </section>
@@ -154,7 +154,7 @@ export default function Privacy() {
             <h2 className="text-2xl font-semibold text-foreground mb-4">12. Contact Us</h2>
             <p className="text-muted-foreground leading-relaxed">
               If you have any questions about this Privacy Policy, please contact us at{' '}
-              <a href="mailto:privacy@hospitalityos.com" className="text-primary hover:underline">privacy@hospitalityos.com</a>
+              <a href="mailto:privacy@omnibizconnect.com" className="text-primary hover:underline">privacy@omnibizconnect.com</a>
             </p>
           </section>
         </div>
@@ -163,7 +163,7 @@ export default function Privacy() {
       {/* Footer */}
       <footer className="py-8 border-t border-border/50">
         <div className="container mx-auto px-6 text-center text-muted-foreground text-sm">
-          <p>© {new Date().getFullYear()} HospitalityOS. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} OmniBiz Connect. All rights reserved.</p>
         </div>
       </footer>
     </div>

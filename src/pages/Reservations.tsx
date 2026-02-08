@@ -12,8 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
-import { Loader2, Plus, CalendarIcon, UtensilsCrossed, BedDouble, Clock, Users, Phone, Mail, Trash2 } from 'lucide-react';
+import { Loader2, Plus, CalendarIcon, UtensilsCrossed, BedDouble, Clock, Users, Phone, Mail, Trash2, Pencil } from 'lucide-react';
 import { format, addDays, isSameDay } from 'date-fns';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 
@@ -55,12 +56,15 @@ const statusColors: Record<string, string> = {
 export default function Reservations() {
   const { currentOrganization, currentLocation } = useAuth();
   const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [tables, setTables] = useState<TableOption[]>([]);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -138,6 +142,35 @@ export default function Reservations() {
     setSelectedTableId('');
     setSelectedRoomId('');
     setResNotes('');
+    setEditingReservation(null);
+  };
+
+  const populateFormFromReservation = (reservation: Reservation) => {
+    setResType(reservation.reservation_type as 'table' | 'room');
+    setGuestName(reservation.guest_name);
+    setGuestPhone(reservation.guest_phone || '');
+    setGuestEmail(reservation.guest_email || '');
+    setGuestCount(reservation.guest_count.toString());
+    
+    const checkInDateObj = new Date(reservation.check_in);
+    setCheckInDate(checkInDateObj);
+    setCheckInTime(format(checkInDateObj, 'HH:mm'));
+    
+    if (reservation.check_out) {
+      setCheckOutDate(new Date(reservation.check_out));
+    } else {
+      setCheckOutDate(undefined);
+    }
+    
+    setSelectedTableId(reservation.table_id || '');
+    setSelectedRoomId(reservation.room_id || '');
+    setResNotes(reservation.notes || '');
+  };
+
+  const handleEditClick = (reservation: Reservation) => {
+    setEditingReservation(reservation);
+    populateFormFromReservation(reservation);
+    setEditDialogOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -150,6 +183,64 @@ export default function Reservations() {
       const checkInDateTime = new Date(checkInDate);
       const [hours, minutes] = checkInTime.split(':');
       checkInDateTime.setHours(parseInt(hours), parseInt(minutes));
+
+      // Check for reservation conflicts (overlapping dates on same room/table)
+      // Exclude the current reservation if editing
+      const excludeId = editingReservation?.id;
+
+      if (resType === 'room' && selectedRoomId && checkOutDate) {
+        let query = supabase
+          .from('reservations')
+          .select('id')
+          .eq('location_id', currentLocation.id)
+          .eq('reservation_type', 'room')
+          .eq('room_id', selectedRoomId)
+          .neq('status', 'cancelled')
+          .lt('check_in', checkOutDate.toISOString())
+          .gt('check_out', checkInDateTime.toISOString());
+
+        if (excludeId) {
+          query = query.neq('id', excludeId);
+        }
+
+        const { data: conflicts } = await query;
+
+        if (conflicts && conflicts.length > 0) {
+          toast({ variant: 'destructive', title: 'Conflict detected', description: 'This room is already reserved for the selected dates. Please choose different dates or another room.' });
+          setSaving(false);
+          return;
+        }
+      }
+
+      if (resType === 'table' && selectedTableId) {
+        // Check for table conflicts on same date/time (within 2-hour window)
+        const windowStart = new Date(checkInDateTime);
+        windowStart.setHours(windowStart.getHours() - 2);
+        const windowEnd = new Date(checkInDateTime);
+        windowEnd.setHours(windowEnd.getHours() + 2);
+
+        let query = supabase
+          .from('reservations')
+          .select('id')
+          .eq('location_id', currentLocation.id)
+          .eq('reservation_type', 'table')
+          .eq('table_id', selectedTableId)
+          .neq('status', 'cancelled')
+          .gte('check_in', windowStart.toISOString())
+          .lte('check_in', windowEnd.toISOString());
+
+        if (excludeId) {
+          query = query.neq('id', excludeId);
+        }
+
+        const { data: tableConflicts } = await query;
+
+        if (tableConflicts && tableConflicts.length > 0) {
+          toast({ variant: 'destructive', title: 'Conflict detected', description: 'This table is already reserved near the selected time. Please choose a different time or table.' });
+          setSaving(false);
+          return;
+        }
+      }
 
       const reservationData = {
         organization_id: currentOrganization.id,
@@ -164,17 +255,32 @@ export default function Reservations() {
         table_id: resType === 'table' && selectedTableId ? selectedTableId : null,
         room_id: resType === 'room' && selectedRoomId ? selectedRoomId : null,
         notes: resNotes.trim() || null,
-        status: 'confirmed',
+        status: editingReservation?.status || 'confirmed',
       };
 
-      const { error } = await supabase
-        .from('reservations')
-        .insert(reservationData);
+      if (editingReservation) {
+        // Update existing reservation
+        const { error } = await supabase
+          .from('reservations')
+          .update(reservationData)
+          .eq('id', editingReservation.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({ title: 'Reservation created' });
-      setDialogOpen(false);
+        toast({ title: 'Reservation updated' });
+        setEditDialogOpen(false);
+      } else {
+        // Create new reservation
+        const { error } = await supabase
+          .from('reservations')
+          .insert(reservationData);
+
+        if (error) throw error;
+
+        toast({ title: 'Reservation created' });
+        setDialogOpen(false);
+      }
+
       resetForm();
       fetchReservations();
     } catch (error: any) {
@@ -199,7 +305,7 @@ export default function Reservations() {
   };
 
   const cancelReservation = async (id: string) => {
-    if (!confirm('Cancel this reservation?')) return;
+    const confirmed = await confirm({ title: 'Cancel this reservation?', description: 'This action cannot be undone.', variant: 'destructive', confirmLabel: 'Cancel Reservation' }); if (!confirmed) return;
     await updateStatus(id, 'cancelled');
   };
 
@@ -226,6 +332,7 @@ export default function Reservations() {
   return (
     <FeatureGate feature="reservations" requiredTier="Professional">
       <div className="space-y-6 animate-fade-in">
+        <ConfirmDialog />
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -420,6 +527,189 @@ export default function Reservations() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Edit Reservation</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Reservation Type */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={resType === 'table' ? 'default' : 'outline'}
+                  className="flex-1"
+                  onClick={() => setResType('table')}
+                >
+                  <UtensilsCrossed className="w-4 h-4 mr-2" />
+                  Table
+                </Button>
+                <Button
+                  type="button"
+                  variant={resType === 'room' ? 'default' : 'outline'}
+                  className="flex-1"
+                  onClick={() => setResType('room')}
+                >
+                  <BedDouble className="w-4 h-4 mr-2" />
+                  Room
+                </Button>
+              </div>
+
+              {/* Guest Info */}
+              <div className="space-y-2">
+                <Label>Guest Name *</Label>
+                <Input
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  placeholder="John Doe"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Phone</Label>
+                  <Input
+                    value={guestPhone}
+                    onChange={(e) => setGuestPhone(e.target.value)}
+                    placeholder="+1 234 567 8900"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                    placeholder="guest@email.com"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Guests</Label>
+                  <Select value={guestCount} onValueChange={setGuestCount}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map(n => (
+                        <SelectItem key={n} value={n.toString()}>{n} guests</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>{resType === 'table' ? 'Select Table' : 'Select Room'}</Label>
+                  {resType === 'table' ? (
+                    <Select value={selectedTableId} onValueChange={setSelectedTableId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select table" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tables.map(t => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.table_number} ({t.capacity} seats)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Select value={selectedRoomId} onValueChange={setSelectedRoomId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select room" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {rooms.map(r => (
+                          <SelectItem key={r.id} value={r.id}>
+                            {r.room_number} ({r.room_type})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </div>
+
+              {/* Date & Time */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{resType === 'table' ? 'Date & Time' : 'Check-in'}</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !checkInDate && 'text-muted-foreground')}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {checkInDate ? format(checkInDate, 'PPP') : 'Pick date'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={checkInDate}
+                        onSelect={setCheckInDate}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                {resType === 'table' ? (
+                  <div className="space-y-2">
+                    <Label>Time</Label>
+                    <Input
+                      type="time"
+                      value={checkInTime}
+                      onChange={(e) => setCheckInTime(e.target.value)}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Check-out</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !checkOutDate && 'text-muted-foreground')}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {checkOutDate ? format(checkOutDate, 'PPP') : 'Pick date'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={checkOutDate}
+                          onSelect={setCheckOutDate}
+                          disabled={(date) => date <= (checkInDate || new Date())}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Notes</Label>
+                <Input
+                  value={resNotes}
+                  onChange={(e) => setResNotes(e.target.value)}
+                  placeholder="Special requests..."
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={saving}>
+                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Update Reservation
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -521,14 +811,23 @@ export default function Reservations() {
                           </Button>
                         )}
                         {res.status !== 'cancelled' && res.status !== 'completed' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive"
-                            onClick={() => cancelReservation(res.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditClick(res)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                              onClick={() => cancelReservation(res.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>

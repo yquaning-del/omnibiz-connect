@@ -56,13 +56,13 @@ interface RevenueData {
 }
 
 // Helper to group folios by day
-const groupFoliosByDay = (folios: { total_amount: number; created_at: string }[] | null): RevenueData[] => {
+const groupFoliosByDay = (folios: { total_amount: number | null; created_at: string }[] | null): RevenueData[] => {
   if (!folios) return [];
   
   const dayMap: Record<string, number> = {};
   folios.forEach(folio => {
     const dateStr = folio.created_at.split('T')[0];
-    dayMap[dateStr] = (dayMap[dateStr] || 0) + Number(folio.total_amount || 0);
+    dayMap[dateStr] = (dayMap[dateStr] || 0) + Number(folio.total_amount ?? 0);
   });
 
   // Generate last 7 days
@@ -133,7 +133,7 @@ export default function HotelDashboard() {
           .eq('reservation_type', 'room')
           .gte('check_in', today + 'T00:00:00')
           .lte('check_in', today + 'T23:59:59')
-          .in('status', ['confirmed', 'checked_in'])
+          .in('status', ['confirmed', 'checked-in'])
           .limit(10),
         // Today's departures
         supabase
@@ -174,7 +174,7 @@ export default function HotelDashboard() {
           .select('check_in, check_out, status')
           .eq('location_id', currentLocation.id)
           .eq('reservation_type', 'room')
-          .eq('status', 'checked_in')
+          .eq('status', 'checked-in')
           .lte('check_in', new Date().toISOString())
           .gte('check_out', weekStart.toISOString()),
       ]);
@@ -212,7 +212,7 @@ export default function HotelDashboard() {
 
       // Process today's revenue
       if (todayFoliosResult.data) {
-        setTodayRevenue(todayFoliosResult.data.reduce((sum, f) => sum + Number(f.total_amount || 0), 0));
+        setTodayRevenue(todayFoliosResult.data.reduce((sum, f) => sum + Number(f.total_amount ?? 0), 0));
       }
 
       // Process weekly revenue
@@ -230,9 +230,9 @@ export default function HotelDashboard() {
         const dayName = date.toLocaleDateString('en', { weekday: 'short' });
 
         // Count reservations that were active on this day
-        const activeOnDay = reservations.filter(r => {
-          const checkIn = r.check_in.split('T')[0];
-          const checkOut = r.check_out?.split('T')[0] || dateStr;
+        const activeOnDay = reservations.filter((r: any) => {
+          const checkIn = (r.check_in ?? '').split('T')[0];
+          const checkOut = (r.check_out ?? '').split('T')[0] || dateStr;
           return checkIn <= dateStr && checkOut >= dateStr;
         }).length;
 
@@ -371,8 +371,8 @@ export default function HotelDashboard() {
                       <p className="font-medium">{arrival.guest_name}</p>
                       <p className="text-sm text-muted-foreground">Room {arrival.room_number}</p>
                     </div>
-                    <Badge variant={arrival.status === 'checked_in' ? 'default' : 'outline'}>
-                      {arrival.status === 'checked_in' ? 'Arrived' : 'Expected'}
+                    <Badge variant={arrival.status === 'checked-in' ? 'default' : 'outline'}>
+                      {arrival.status === 'checked-in' ? 'Arrived' : 'Expected'}
                     </Badge>
                   </div>
                 ))}

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +28,10 @@ import {
   Trash2,
   MoreVertical,
   Globe,
+  X,
+  Download,
 } from 'lucide-react';
+import { exportToCSV, ExportColumn } from '@/lib/export';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,9 +43,13 @@ import {
 export default function Products() {
   const { currentOrganization, currentLocation } = useAuth();
   const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -55,6 +64,15 @@ export default function Products() {
   const [formStock, setFormStock] = useState('');
   const [formThreshold, setFormThreshold] = useState('10');
   const [formAvailableOnline, setFormAvailableOnline] = useState(false);
+  
+  // Variant state
+  interface ProductVariant {
+    name: string;
+    value: string;
+    price_adjustment: number;
+    sku: string;
+  }
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
 
   useEffect(() => {
     if (!currentOrganization) return;
@@ -87,6 +105,7 @@ export default function Products() {
     setFormStock('');
     setFormThreshold('10');
     setFormAvailableOnline(false);
+    setVariants([]);
     setEditingProduct(null);
   };
 
@@ -97,9 +116,14 @@ export default function Products() {
     setFormCategory(product.category || '');
     setFormPrice(product.unit_price.toString());
     setFormCost(product.cost_price?.toString() || '');
-    setFormStock(product.stock_quantity.toString());
+    setFormStock((product.stock_quantity ?? 0).toString());
     setFormThreshold(product.low_stock_threshold.toString());
     setFormAvailableOnline((product as any).is_available_online || false);
+    
+    // Load variants from metadata
+    const productVariants = (product.metadata?.variants as ProductVariant[]) || [];
+    setVariants(productVariants);
+    
     setDialogOpen(true);
   };
 
@@ -110,6 +134,18 @@ export default function Products() {
     setSaving(true);
 
     try {
+      // Prepare metadata with variants
+      // Preserve existing metadata when editing
+      const existingMetadata = editingProduct?.metadata || {};
+      const metadata: Record<string, unknown> = { ...existingMetadata };
+      
+      if (variants.length > 0) {
+        metadata.variants = variants;
+      } else {
+        // Remove variants if empty
+        delete metadata.variants;
+      }
+      
       const productData = {
         name: formName.trim(),
         sku: formSku.trim() || null,
@@ -122,6 +158,7 @@ export default function Products() {
         location_id: currentLocation.id,
         vertical: currentLocation.vertical,
         is_available_online: formAvailableOnline,
+        metadata: Object.keys(metadata).length > 0 ? metadata : (editingProduct ? existingMetadata : null),
       };
 
       if (editingProduct) {
@@ -158,7 +195,8 @@ export default function Products() {
   };
 
   const deleteProduct = async (product: Product) => {
-    if (!confirm(`Delete "${product.name}"?`)) return;
+    const confirmed = await confirm({ title: `Delete "${product.name}"?`, description: 'This action cannot be undone.', variant: 'destructive', confirmLabel: 'Delete' });
+    if (!confirmed) return;
 
     const { error } = await supabase
       .from('products')
@@ -191,11 +229,21 @@ export default function Products() {
     }
   };
 
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
   const filteredProducts = products.filter(p =>
     p.is_active &&
-    (p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     p.sku?.toLowerCase().includes(searchQuery.toLowerCase()))
+    (p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+     p.sku?.toLowerCase().includes(debouncedSearch.toLowerCase()))
   );
+
+  const totalItems = filteredProducts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
   if (loading) {
     return (
@@ -207,6 +255,7 @@ export default function Products() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <ConfirmDialog />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -220,6 +269,27 @@ export default function Products() {
           setDialogOpen(open);
           if (!open) resetForm();
         }}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => {
+              const cols: ExportColumn<Product>[] = [
+                { header: 'Name', accessor: (p) => p.name },
+                { header: 'SKU', accessor: (p) => p.sku ?? '' },
+                { header: 'Category', accessor: (p) => p.category ?? '' },
+                { header: 'Price', accessor: (p) => p.unit_price },
+                { header: 'Stock', accessor: (p) => p.stock_quantity ?? 0 },
+                { header: 'Low Stock Threshold', accessor: (p) => p.low_stock_threshold },
+                { header: 'Active', accessor: (p) => p.is_active ? 'Yes' : 'No' },
+              ];
+              exportToCSV('products', cols, products);
+            }}
+            disabled={products.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
@@ -332,6 +402,105 @@ export default function Products() {
                 />
               </div>
 
+              {/* Variants Section */}
+              <div className="space-y-3 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <Label>Product Variants</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setVariants([...variants, { name: '', value: '', price_adjustment: 0, sku: '' }])}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Variant
+                  </Button>
+                </div>
+                
+                {variants.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-2">
+                    No variants added. Click "Add Variant" to create size, color, or other options.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {variants.map((variant, index) => (
+                      <div key={index} className="border rounded-lg p-3 space-y-2 bg-muted/30">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Variant {index + 1}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => setVariants(variants.filter((_, i) => i !== index))}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label htmlFor={`variant-name-${index}`} className="text-xs">Name</Label>
+                            <Input
+                              id={`variant-name-${index}`}
+                              placeholder="e.g., Size, Color"
+                              value={variant.name}
+                              onChange={(e) => {
+                                const updated = [...variants];
+                                updated[index].name = e.target.value;
+                                setVariants(updated);
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor={`variant-value-${index}`} className="text-xs">Value</Label>
+                            <Input
+                              id={`variant-value-${index}`}
+                              placeholder="e.g., Small, Red"
+                              value={variant.value}
+                              onChange={(e) => {
+                                const updated = [...variants];
+                                updated[index].value = e.target.value;
+                                setVariants(updated);
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label htmlFor={`variant-price-${index}`} className="text-xs">Price Adjustment</Label>
+                            <Input
+                              id={`variant-price-${index}`}
+                              type="number"
+                              step="0.01"
+                              placeholder="0.00"
+                              value={variant.price_adjustment || ''}
+                              onChange={(e) => {
+                                const updated = [...variants];
+                                updated[index].price_adjustment = parseFloat(e.target.value) || 0;
+                                setVariants(updated);
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor={`variant-sku-${index}`} className="text-xs">SKU</Label>
+                            <Input
+                              id={`variant-sku-${index}`}
+                              placeholder="Variant SKU"
+                              value={variant.sku}
+                              onChange={(e) => {
+                                const updated = [...variants];
+                                updated[index].sku = e.target.value;
+                                setVariants(updated);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <Button type="submit" className="w-full" disabled={saving}>
                 {saving ? (
                   <>
@@ -362,7 +531,7 @@ export default function Products() {
       </div>
 
       {/* Products Grid */}
-      {filteredProducts.length === 0 ? (
+      {totalItems === 0 ? (
         <Card className="border-border/50 bg-card/50">
           <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Package className="w-12 h-12 mb-4" />
@@ -372,7 +541,7 @@ export default function Products() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredProducts.map(product => (
+          {paginatedProducts.map(product => (
             <Card key={product.id} className="border-border/50 bg-card/50 hover:bg-card transition-colors">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
@@ -412,7 +581,7 @@ export default function Products() {
                 </div>
 
                 <h3 className="font-medium text-foreground mb-1 truncate">{product.name}</h3>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
                   {product.sku && (
                     <span className="text-xs text-muted-foreground">SKU: {product.sku}</span>
                   )}
@@ -422,6 +591,14 @@ export default function Products() {
                       Online
                     </Badge>
                   )}
+                  {(() => {
+                    const productVariants = Array.isArray(product.metadata?.variants) ? product.metadata.variants : [];
+                    return productVariants.length > 0 ? (
+                      <Badge variant="outline" className="text-xs">
+                        {productVariants.length} variant{productVariants.length !== 1 ? 's' : ''}
+                      </Badge>
+                    ) : null;
+                  })()}
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -431,17 +608,33 @@ export default function Products() {
                   <Badge 
                     variant="outline"
                     className={cn(
-                      product.stock_quantity <= product.low_stock_threshold
+                      (product.stock_quantity ?? 0) <= product.low_stock_threshold
                         ? 'bg-warning/20 text-warning border-warning/30'
                         : 'bg-success/20 text-success border-success/30'
                     )}
                   >
-                    {product.stock_quantity} in stock
+                    {product.stock_quantity ?? 0} in stock
                   </Badge>
                 </div>
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {totalItems > 0 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-muted-foreground">
+            Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} items
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages}>
+              Next
+            </Button>
+          </div>
         </div>
       )}
     </div>

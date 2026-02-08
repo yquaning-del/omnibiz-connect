@@ -146,13 +146,15 @@ export default function AdminDashboard() {
 
       if (historicalMetrics && historicalMetrics.length > 0) {
         setRevenueData(
-          historicalMetrics.map((m) => ({
-            date: new Date(m.metric_date).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            }),
-            mrr: Number(m.metric_value) || 0,
-          }))
+          historicalMetrics
+            .filter((m) => m.metric_date != null)
+            .map((m) => ({
+              date: new Date(m.metric_date as string).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              }),
+              mrr: Number(m.metric_value) || 0,
+            }))
         );
       } else {
         // Generate trend data based on current MRR (for new installations)
@@ -185,20 +187,22 @@ export default function AdminDashboard() {
 
       // Add org creations
       recentOrgs?.forEach((org) => {
-        activityList.push({
-          id: org.id,
-          type: "org_created",
-          title: `New organization: ${org.name}`,
-          description: `Registered as ${org.primary_vertical}`,
-          timestamp: new Date(org.created_at),
-          metadata: { vertical: org.primary_vertical },
-        });
+        if (org.created_at) {
+          activityList.push({
+            id: org.id,
+            type: "org_created",
+            title: `New organization: ${org.name}`,
+            description: `Registered as ${org.primary_vertical}`,
+            timestamp: new Date(org.created_at),
+            metadata: { vertical: org.primary_vertical },
+          });
+        }
       });
 
       // Add subscription changes
       recentSubs?.forEach((sub) => {
         const orgName = (sub.organizations as { name: string } | null)?.name || "Unknown";
-        if (sub.status === "active") {
+        if (sub.status === "active" && sub.updated_at) {
           activityList.push({
             id: sub.id,
             type: "subscription_change",
@@ -228,7 +232,7 @@ export default function AdminDashboard() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Platform Dashboard</h1>
             <p className="text-muted-foreground">
-              Monitor and manage the HospitalityOS platform
+              Monitor and manage the OmniBiz Connect platform
             </p>
           </div>
           <AdminSearchBar

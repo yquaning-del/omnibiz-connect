@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, UtensilsCrossed, Pill, ShoppingCart } from 'lucide-react';
+import { Loader2, Building2, UtensilsCrossed, Pill, ShoppingCart, Globe } from 'lucide-react';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -20,6 +22,9 @@ const signupSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
+  acceptTerms: z.boolean().refine((val) => val === true, {
+    message: 'You must accept the terms and conditions',
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -39,7 +44,9 @@ export default function Auth() {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+  const [signupAcceptTerms, setSignupAcceptTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isOAuthLoading, setIsOAuthLoading] = useState(false);
 
   useEffect(() => {
     if (user && !loading) {
@@ -106,6 +113,7 @@ export default function Auth() {
         email: signupEmail,
         password: signupPassword,
         confirmPassword: signupConfirmPassword,
+        acceptTerms: signupAcceptTerms,
       });
       
       if (!result.success) {
@@ -141,7 +149,7 @@ export default function Auth() {
       } else {
         toast({
           title: 'Account created!',
-          description: 'Welcome to HospitalityOS. Setting up your account...',
+          description: 'Welcome to OmniBiz Connect. Setting up your account...',
         });
         navigate('/onboarding');
       }
@@ -153,6 +161,37 @@ export default function Auth() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleOAuth = async () => {
+    setIsOAuthLoading(true);
+    setErrors({});
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+
+      if (error) {
+        toast({
+          variant: 'destructive',
+          title: 'OAuth sign-in failed',
+          description: error.message || 'Failed to sign in with Google. Please try again.',
+        });
+        setIsOAuthLoading(false);
+      }
+      // Note: If successful, the user will be redirected, so we don't need to handle success here
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+      });
+      setIsOAuthLoading(false);
     }
   };
 
@@ -173,11 +212,11 @@ export default function Auth() {
         
         <div className="relative z-10 text-center space-y-8 max-w-md">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/20 border border-primary/30 shadow-glow mb-4">
-            <span className="text-3xl font-bold text-gradient">HOS</span>
+            <span className="text-3xl font-bold text-gradient">OB</span>
           </div>
           
           <h1 className="text-4xl font-display font-bold text-foreground">
-            HospitalityOS
+            OmniBiz Connect
           </h1>
           
           <p className="text-lg text-muted-foreground">
@@ -218,7 +257,7 @@ export default function Auth() {
         <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur">
           <CardHeader className="text-center">
             <div className="lg:hidden inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 mx-auto mb-4">
-              <span className="text-xl font-bold text-gradient">HOS</span>
+              <span className="text-xl font-bold text-gradient">OB</span>
             </div>
             <CardTitle className="text-2xl font-display">
               {activeTab === 'login' ? 'Welcome back' : 'Create account'}
@@ -226,7 +265,7 @@ export default function Auth() {
             <CardDescription>
               {activeTab === 'login' 
                 ? 'Sign in to access your dashboard' 
-                : 'Get started with HospitalityOS'}
+                : 'Get started with OmniBiz Connect'}
             </CardDescription>
           </CardHeader>
           
@@ -244,13 +283,16 @@ export default function Auth() {
                     <Input
                       id="login-email"
                       type="email"
+                      autoComplete="email"
                       placeholder="you@company.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       className={errors.email ? 'border-destructive' : ''}
                     />
                     {errors.email && (
-                      <p className="text-sm text-destructive">{errors.email}</p>
+                      <div role="alert" aria-live="polite">
+                        <p className="text-sm text-destructive">{errors.email}</p>
+                      </div>
                     )}
                   </div>
                   
@@ -259,13 +301,16 @@ export default function Auth() {
                     <Input
                       id="login-password"
                       type="password"
+                      autoComplete="current-password"
                       placeholder="••••••••"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       className={errors.password ? 'border-destructive' : ''}
                     />
                     {errors.password && (
-                      <p className="text-sm text-destructive">{errors.password}</p>
+                      <div role="alert" aria-live="polite">
+                        <p className="text-sm text-destructive">{errors.password}</p>
+                      </div>
                     )}
                   </div>
 
@@ -289,6 +334,37 @@ export default function Auth() {
                       Forgot your password?
                     </Link>
                   </div>
+
+                  {/* Divider */}
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">or</span>
+                    </div>
+                  </div>
+
+                  {/* Google OAuth Button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleGoogleOAuth}
+                    disabled={isLoading || isOAuthLoading}
+                  >
+                    {isOAuthLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="mr-2 h-4 w-4" />
+                        Continue with Google
+                      </>
+                    )}
+                  </Button>
                 </form>
               </TabsContent>
 
@@ -299,13 +375,16 @@ export default function Auth() {
                     <Input
                       id="signup-name"
                       type="text"
+                      autoComplete="name"
                       placeholder="John Doe"
                       value={signupName}
                       onChange={(e) => setSignupName(e.target.value)}
                       className={errors.fullName ? 'border-destructive' : ''}
                     />
                     {errors.fullName && (
-                      <p className="text-sm text-destructive">{errors.fullName}</p>
+                      <div role="alert" aria-live="polite">
+                        <p className="text-sm text-destructive">{errors.fullName}</p>
+                      </div>
                     )}
                   </div>
 
@@ -314,13 +393,16 @@ export default function Auth() {
                     <Input
                       id="signup-email"
                       type="email"
+                      autoComplete="email"
                       placeholder="you@company.com"
                       value={signupEmail}
                       onChange={(e) => setSignupEmail(e.target.value)}
                       className={errors.email ? 'border-destructive' : ''}
                     />
                     {errors.email && (
-                      <p className="text-sm text-destructive">{errors.email}</p>
+                      <div role="alert" aria-live="polite">
+                        <p className="text-sm text-destructive">{errors.email}</p>
+                      </div>
                     )}
                   </div>
                   
@@ -329,13 +411,16 @@ export default function Auth() {
                     <Input
                       id="signup-password"
                       type="password"
+                      autoComplete="new-password"
                       placeholder="••••••••"
                       value={signupPassword}
                       onChange={(e) => setSignupPassword(e.target.value)}
                       className={errors.password ? 'border-destructive' : ''}
                     />
                     {errors.password && (
-                      <p className="text-sm text-destructive">{errors.password}</p>
+                      <div role="alert" aria-live="polite">
+                        <p className="text-sm text-destructive">{errors.password}</p>
+                      </div>
                     )}
                   </div>
 
@@ -344,14 +429,46 @@ export default function Auth() {
                     <Input
                       id="signup-confirm"
                       type="password"
+                      autoComplete="new-password"
                       placeholder="••••••••"
                       value={signupConfirmPassword}
                       onChange={(e) => setSignupConfirmPassword(e.target.value)}
                       className={errors.confirmPassword ? 'border-destructive' : ''}
                     />
                     {errors.confirmPassword && (
-                      <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                      <div role="alert" aria-live="polite">
+                        <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                      </div>
                     )}
+                  </div>
+
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="signup-terms"
+                      checked={signupAcceptTerms}
+                      onCheckedChange={(checked) => setSignupAcceptTerms(checked === true)}
+                      className={errors.acceptTerms ? 'border-destructive' : ''}
+                    />
+                    <div className="grid gap-1.5 leading-none">
+                      <Label
+                        htmlFor="signup-terms"
+                        className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        I accept the{' '}
+                        <Link to="/legal/terms" className="text-primary hover:underline">
+                          Terms and Conditions
+                        </Link>
+                        {' '}and{' '}
+                        <Link to="/legal/privacy" className="text-primary hover:underline">
+                          Privacy Policy
+                        </Link>
+                      </Label>
+                      {errors.acceptTerms && (
+                        <div role="alert" aria-live="polite">
+                          <p className="text-sm text-destructive">{errors.acceptTerms}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <Button 
@@ -366,6 +483,37 @@ export default function Auth() {
                       </>
                     ) : (
                       'Create Account'
+                    )}
+                  </Button>
+
+                  {/* Divider */}
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">or</span>
+                    </div>
+                  </div>
+
+                  {/* Google OAuth Button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleGoogleOAuth}
+                    disabled={isLoading || isOAuthLoading}
+                  >
+                    {isOAuthLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="mr-2 h-4 w-4" />
+                        Continue with Google
+                      </>
                     )}
                   </Button>
                 </form>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,14 @@ const TIP_PRESETS = [10, 15, 18, 20];
 export function TipInput({ subtotal, tipAmount, onTipChange }: TipInputProps) {
   const [customTip, setCustomTip] = useState('');
   const [activePreset, setActivePreset] = useState<number | null>(null);
+
+  // Recalculate tip when subtotal changes and a preset is active
+  useEffect(() => {
+    if (activePreset !== null) {
+      const newAmount = (subtotal * activePreset) / 100;
+      onTipChange(newAmount);
+    }
+  }, [subtotal, activePreset]);
 
   const handlePresetClick = (percent: number) => {
     const amount = (subtotal * percent) / 100;

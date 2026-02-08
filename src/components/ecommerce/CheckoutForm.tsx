@@ -12,6 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { formatCurrency, type SupportedCurrency } from '@/lib/currency';
 import { Loader2, CreditCard, Smartphone, Truck } from 'lucide-react';
 import type { CartItem } from '@/hooks/useCart';
+import { useToast } from '@/hooks/use-toast';
+import { openPaystackPopup, convertToSmallestUnit, generateTransactionReference } from '@/lib/paystack';
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Name is required'),
@@ -23,7 +25,7 @@ const checkoutSchema = z.object({
   state: z.string().optional(),
   postalCode: z.string().optional(),
   country: z.string().default('Kenya'),
-  paymentMethod: z.enum(['card', 'mpesa', 'bank_transfer']),
+  paymentMethod: z.enum(['card', 'paystack', 'mpesa', 'bank_transfer']),
   shippingMethod: z.enum(['standard', 'express', 'pickup']),
 });
 
@@ -33,8 +35,9 @@ interface CheckoutFormProps {
   items: CartItem[];
   subtotal: number;
   currency?: SupportedCurrency;
-  onSubmit: (data: CheckoutFormData) => Promise<void>;
+  onSubmit: (data: CheckoutFormData, transactionReference?: string) => Promise<void>;
   onCancel: () => void;
+  paystackPublicKey?: string; // Paystack public key (defaults to test key placeholder)
 }
 
 const SHIPPING_RATES = {
@@ -49,8 +52,10 @@ export function CheckoutForm({
   currency = 'KES',
   onSubmit,
   onCancel,
+  paystackPublicKey = 'pk_test_xxxxxxxxxxxxx',
 }: CheckoutFormProps) {
   const [submitting, setSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
@@ -64,8 +69,76 @@ export function CheckoutForm({
   const shippingMethod = form.watch('shippingMethod');
   const shippingCost = SHIPPING_RATES[shippingMethod];
   const total = subtotal + shippingCost;
+  const paymentMethod = form.watch('paymentMethod');
 
   const handleSubmit = async (data: CheckoutFormData) => {
+    // Handle Paystack payment (card or paystack method)
+    if (data.paymentMethod === 'card' || data.paymentMethod === 'paystack') {
+      setSubmitting(true);
+      try {
+        const transactionRef = generateTransactionReference();
+        const amountInSmallestUnit = convertToSmallestUnit(total);
+
+        // Map currency codes to Paystack-supported currencies
+        // Paystack supports: NGN, GHS, ZAR, KES, USD, etc.
+        const paystackCurrency = currency === 'KES' ? 'KES' : currency;
+        
+        await openPaystackPopup({
+          key: paystackPublicKey,
+          email: data.email,
+          amount: amountInSmallestUnit,
+          currency: paystackCurrency,
+          ref: transactionRef,
+          callback: async (response) => {
+            // Payment successful
+            if (response.status === 'success' || response.reference) {
+              try {
+                await onSubmit(data, response.reference);
+              } catch (error) {
+                console.error('Error processing order after payment:', error);
+                toast({
+                  title: 'Payment successful, but order failed',
+                  description: 'Please contact support with your transaction reference: ' + response.reference,
+                  variant: 'destructive',
+                });
+                setSubmitting(false);
+              }
+            } else {
+              toast({
+                title: 'Payment failed',
+                description: response.message || 'Payment was not successful. Please try again.',
+                variant: 'destructive',
+              });
+              setSubmitting(false);
+            }
+          },
+          onClose: () => {
+            // User closed the popup
+            toast({
+              title: 'Payment cancelled',
+              description: 'You cancelled the payment. You can try again when ready.',
+            });
+            setSubmitting(false);
+          },
+          metadata: {
+            fullName: data.fullName,
+            phone: data.phone,
+            orderItems: items.length,
+          },
+        });
+      } catch (error) {
+        console.error('Error opening Paystack popup:', error);
+        toast({
+          title: 'Payment error',
+          description: error instanceof Error ? error.message : 'Failed to initialize payment. Please try again.',
+          variant: 'destructive',
+        });
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // Handle other payment methods (mpesa, bank_transfer)
     setSubmitting(true);
     try {
       await onSubmit(data);
@@ -287,8 +360,18 @@ export function CheckoutForm({
                             <Label htmlFor="card" className="flex cursor-pointer items-center gap-2">
                               <CreditCard className="h-5 w-5 text-blue-600" />
                               <div>
-                                <div className="font-medium">Card Payment</div>
-                                <div className="text-sm text-muted-foreground">Visa, Mastercard, etc.</div>
+                                <div className="font-medium">Card Payment (Paystack)</div>
+                                <div className="text-sm text-muted-foreground">Visa, Mastercard, etc. - Secure payment via Paystack</div>
+                              </div>
+                            </Label>
+                          </div>
+                          <div className="flex items-center gap-3 rounded-lg border p-4">
+                            <RadioGroupItem value="paystack" id="paystack" />
+                            <Label htmlFor="paystack" className="flex cursor-pointer items-center gap-2">
+                              <CreditCard className="h-5 w-5 text-purple-600" />
+                              <div>
+                                <div className="font-medium">Paystack</div>
+                                <div className="text-sm text-muted-foreground">Pay securely with card or mobile money</div>
                               </div>
                             </Label>
                           </div>
@@ -307,7 +390,7 @@ export function CheckoutForm({
               </Button>
               <Button type="submit" disabled={submitting} className="flex-1">
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Place Order
+                {paymentMethod === 'card' || paymentMethod === 'paystack' ? 'Pay Now' : 'Place Order'}
               </Button>
             </div>
           </form>

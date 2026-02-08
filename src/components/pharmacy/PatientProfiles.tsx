@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, User, AlertTriangle, Loader2, History, FileText } from "lucide-react";
+import { Plus, Search, User, AlertTriangle, Loader2, History, FileText, Pencil, Trash2 } from "lucide-react";
 
 interface PatientProfile {
   id: string;
@@ -45,6 +46,10 @@ const PatientProfiles = () => {
   const [selectedPatient, setSelectedPatient] = useState<PatientProfile | null>(null);
   const [saving, setSaving] = useState(false);
   const [prescriptionHistory, setPrescriptionHistory] = useState<any[]>([]);
+  const [editingItem, setEditingItem] = useState<PatientProfile | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [patientToDelete, setPatientToDelete] = useState<PatientProfile | null>(null);
 
   const [newPatient, setNewPatient] = useState({
     full_name: "",
@@ -87,7 +92,12 @@ const PatientProfiles = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPatients(data || []);
+      setPatients((data || []).map((p: any) => ({
+        ...p,
+        allergies: p.allergies ?? [],
+        medical_conditions: p.medical_conditions ?? [],
+        customers: p.customers ?? undefined,
+      })));
     } catch (error) {
       console.error('Error fetching patients:', error);
       toast({ title: "Error", description: "Failed to load patients", variant: "destructive" });
@@ -170,6 +180,113 @@ const PatientProfiles = () => {
     } catch (error) {
       console.error('Error creating patient:', error);
       toast({ title: "Error", description: "Failed to create patient", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEdit = (patient: PatientProfile) => {
+    setEditingItem(patient);
+    setNewPatient({
+      full_name: patient.customers?.full_name || "",
+      email: patient.customers?.email || "",
+      phone: patient.customers?.phone || "",
+      date_of_birth: patient.date_of_birth || "",
+      gender: patient.gender || "",
+      blood_type: patient.blood_type || "",
+      allergies: patient.allergies?.join(', ') || "",
+      medical_conditions: patient.medical_conditions?.join(', ') || "",
+      insurance_provider: patient.insurance_provider || "",
+      insurance_policy_number: patient.insurance_policy_number || "",
+      insurance_group_number: (patient as any).insurance_group_number || "",
+      insurance_expiry: patient.insurance_expiry || "",
+      emergency_contact_name: patient.emergency_contact_name || "",
+      emergency_contact_phone: patient.emergency_contact_phone || "",
+      notes: patient.notes || ""
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async () => {
+    if (!editingItem || !newPatient.full_name) {
+      toast({ title: "Error", description: "Patient name is required", variant: "destructive" });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Update customer
+      if (editingItem.customers?.id) {
+        const { error: customerError } = await supabase
+          .from('customers')
+          .update({
+            full_name: newPatient.full_name,
+            email: newPatient.email || null,
+            phone: newPatient.phone || null
+          })
+          .eq('id', editingItem.customers.id);
+
+        if (customerError) throw customerError;
+      }
+
+      // Update patient profile
+      const { error: profileError } = await supabase
+        .from('patient_profiles')
+        .update({
+          date_of_birth: newPatient.date_of_birth || null,
+          gender: newPatient.gender || null,
+          blood_type: newPatient.blood_type || null,
+          allergies: newPatient.allergies ? newPatient.allergies.split(',').map(a => a.trim()) : [],
+          medical_conditions: newPatient.medical_conditions ? newPatient.medical_conditions.split(',').map(c => c.trim()) : [],
+          insurance_provider: newPatient.insurance_provider || null,
+          insurance_policy_number: newPatient.insurance_policy_number || null,
+          insurance_group_number: newPatient.insurance_group_number || null,
+          insurance_expiry: newPatient.insurance_expiry || null,
+          emergency_contact_name: newPatient.emergency_contact_name || null,
+          emergency_contact_phone: newPatient.emergency_contact_phone || null,
+          notes: newPatient.notes || null
+        })
+        .eq('id', editingItem.id);
+
+      if (profileError) throw profileError;
+
+      toast({ title: "Success", description: "Patient profile updated successfully" });
+      setEditDialogOpen(false);
+      setEditingItem(null);
+      setNewPatient({
+        full_name: "", email: "", phone: "", date_of_birth: "", gender: "",
+        blood_type: "", allergies: "", medical_conditions: "", insurance_provider: "",
+        insurance_policy_number: "", insurance_group_number: "", insurance_expiry: "",
+        emergency_contact_name: "", emergency_contact_phone: "", notes: ""
+      });
+      fetchPatients();
+    } catch (error) {
+      console.error('Error updating patient:', error);
+      toast({ title: "Error", description: "Failed to update patient", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!patientToDelete) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('patient_profiles')
+        .delete()
+        .eq('id', patientToDelete.id);
+
+      if (error) throw error;
+
+      toast({ title: "Success", description: "Patient profile deleted successfully" });
+      setDeleteDialogOpen(false);
+      setPatientToDelete(null);
+      fetchPatients();
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+      toast({ title: "Error", description: "Failed to delete patient", variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -416,9 +533,24 @@ const PatientProfiles = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Button size="sm" variant="outline" onClick={() => viewPatientDetails(patient)}>
-                      View Details
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleEdit(patient)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setPatientToDelete(patient);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => viewPatientDetails(patient)}>
+                        View Details
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -548,6 +680,180 @@ const PatientProfiles = () => {
           </Tabs>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Patient Profile</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Full Name *</Label>
+                <Input
+                  value={newPatient.full_name}
+                  onChange={(e) => setNewPatient({ ...newPatient, full_name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={newPatient.email}
+                  onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input
+                  value={newPatient.phone}
+                  onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Date of Birth</Label>
+                <Input
+                  type="date"
+                  value={newPatient.date_of_birth}
+                  onChange={(e) => setNewPatient({ ...newPatient, date_of_birth: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <Select value={newPatient.gender} onValueChange={(v) => setNewPatient({ ...newPatient, gender: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Blood Type</Label>
+                <Select value={newPatient.blood_type} onValueChange={(v) => setNewPatient({ ...newPatient, blood_type: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Allergies (comma-separated)</Label>
+              <Input
+                value={newPatient.allergies}
+                onChange={(e) => setNewPatient({ ...newPatient, allergies: e.target.value })}
+                placeholder="Penicillin, Sulfa drugs, Aspirin"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Medical Conditions (comma-separated)</Label>
+              <Input
+                value={newPatient.medical_conditions}
+                onChange={(e) => setNewPatient({ ...newPatient, medical_conditions: e.target.value })}
+                placeholder="Diabetes, Hypertension"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Insurance Provider</Label>
+                <Input
+                  value={newPatient.insurance_provider}
+                  onChange={(e) => setNewPatient({ ...newPatient, insurance_provider: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Policy Number</Label>
+                <Input
+                  value={newPatient.insurance_policy_number}
+                  onChange={(e) => setNewPatient({ ...newPatient, insurance_policy_number: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Group Number</Label>
+                <Input
+                  value={newPatient.insurance_group_number}
+                  onChange={(e) => setNewPatient({ ...newPatient, insurance_group_number: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Insurance Expiry</Label>
+                <Input
+                  type="date"
+                  value={newPatient.insurance_expiry}
+                  onChange={(e) => setNewPatient({ ...newPatient, insurance_expiry: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Emergency Contact Name</Label>
+                <Input
+                  value={newPatient.emergency_contact_name}
+                  onChange={(e) => setNewPatient({ ...newPatient, emergency_contact_name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Emergency Contact Phone</Label>
+                <Input
+                  value={newPatient.emergency_contact_phone}
+                  onChange={(e) => setNewPatient({ ...newPatient, emergency_contact_phone: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea
+                value={newPatient.notes}
+                onChange={(e) => setNewPatient({ ...newPatient, notes: e.target.value })}
+              />
+            </div>
+
+            <Button onClick={handleEditSubmit} disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Update Patient
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete patient profile for {patientToDelete?.customers?.full_name}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPatientToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,7 +27,9 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowLeftRight,
+  Download,
 } from 'lucide-react';
+import { exportToCSV, ExportColumn } from '@/lib/export';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { StockTransferDialog } from '@/components/inventory/StockTransferDialog';
 
@@ -36,6 +39,9 @@ export default function Inventory() {
   
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
   const [loading, setLoading] = useState(true);
   const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
@@ -79,21 +85,32 @@ export default function Inventory() {
 
     setSaving(true);
     const qty = parseInt(adjustmentQty);
+    const expectedStock = selectedProduct.stock_quantity ?? 0;
     const newStock = adjustmentType === 'add' 
-      ? selectedProduct.stock_quantity + qty
-      : Math.max(0, selectedProduct.stock_quantity - qty);
+      ? expectedStock + qty
+      : Math.max(0, expectedStock - qty);
 
-    const { error } = await supabase
+    // Optimistic locking: only update if current stock matches what we read
+    const { data, error } = await supabase
       .from('products')
       .update({ stock_quantity: newStock })
-      .eq('id', selectedProduct.id);
+      .eq('id', selectedProduct.id)
+      .eq('stock_quantity', expectedStock)
+      .select('id');
 
     if (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } else if (!data || data.length === 0) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Stock changed', 
+        description: 'Someone else updated this product\'s stock. Please refresh and try again.' 
+      });
+      fetchProducts();
     } else {
       toast({ 
         title: 'Stock updated', 
-        description: `${selectedProduct.name}: ${selectedProduct.stock_quantity} → ${newStock}` 
+        description: `${selectedProduct.name}: ${expectedStock} → ${newStock}` 
       });
       fetchProducts();
       setAdjustDialogOpen(false);
@@ -101,14 +118,24 @@ export default function Inventory() {
     setSaving(false);
   };
 
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
   const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+    p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+    p.sku?.toLowerCase().includes(debouncedSearch.toLowerCase())
   );
 
-  const lowStockProducts = products.filter(p => p.stock_quantity <= p.low_stock_threshold);
-  const outOfStock = products.filter(p => p.stock_quantity === 0);
-  const totalValue = products.reduce((sum, p) => sum + (p.stock_quantity * p.unit_price), 0);
+  const totalItems = filteredProducts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+  const lowStockProducts = products.filter(p => (p.stock_quantity ?? 0) <= p.low_stock_threshold);
+  const outOfStock = products.filter(p => (p.stock_quantity ?? 0) === 0);
+  const totalValue = products.reduce((sum, p) => sum + ((p.stock_quantity ?? 0) * (p.cost_price ?? p.unit_price)), 0);
 
   if (loading) {
     return (
@@ -128,6 +155,26 @@ export default function Inventory() {
               Track and manage your stock levels
             </p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => {
+              const cols: ExportColumn<Product>[] = [
+                { header: 'Product', accessor: (p) => p.name },
+                { header: 'SKU', accessor: (p) => p.sku ?? '' },
+                { header: 'Category', accessor: (p) => p.category ?? '' },
+                { header: 'Stock', accessor: (p) => p.stock_quantity ?? 0 },
+                { header: 'Low Threshold', accessor: (p) => p.low_stock_threshold },
+                { header: 'Price', accessor: (p) => p.unit_price },
+              ];
+              exportToCSV('inventory', cols, products);
+            }}
+            disabled={products.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
           <Button onClick={() => setTransferDialogOpen(true)} variant="outline">
             <ArrowLeftRight className="w-4 h-4 mr-2" />
             Transfer Stock
@@ -201,8 +248,8 @@ export default function Inventory() {
           />
         </div>
 
-        {/* Inventory Table */}
-        {filteredProducts.length === 0 ? (
+      {/* Inventory Table */}
+      {totalItems === 0 ? (
           <Card className="border-border/50 bg-card/50">
             <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Warehouse className="w-12 h-12 mb-4" />
@@ -236,9 +283,10 @@ export default function Inventory() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProducts.map(product => {
-                    const isLowStock = product.stock_quantity <= product.low_stock_threshold;
-                    const isOutOfStock = product.stock_quantity === 0;
+                  {paginatedProducts.map(product => {
+                    const stockQty = product.stock_quantity ?? 0;
+                    const isLowStock = stockQty <= product.low_stock_threshold;
+                    const isOutOfStock = stockQty === 0;
                     
                     return (
                       <tr 
@@ -276,14 +324,14 @@ export default function Inventory() {
                                 : 'bg-success/20 text-success border-success/30'
                             )}
                           >
-                            {product.stock_quantity}
+                            {stockQty}
                           </Badge>
                         </td>
                         <td className="py-3 px-4 text-center text-sm text-muted-foreground">
                           {product.low_stock_threshold}
                         </td>
                         <td className="py-3 px-4 text-right font-medium text-foreground">
-                          ${(product.stock_quantity * product.unit_price).toFixed(2)}
+                          ${(stockQty * (product.cost_price ?? product.unit_price)).toFixed(2)}
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center justify-center gap-1">
@@ -314,6 +362,22 @@ export default function Inventory() {
           </Card>
         )}
 
+        {totalItems > 0 && (
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-sm text-muted-foreground">
+              Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} items
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                Previous
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages}>
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Stock Adjustment Dialog */}
         <Dialog open={adjustDialogOpen} onOpenChange={setAdjustDialogOpen}>
           <DialogContent className="max-w-sm">
@@ -333,7 +397,7 @@ export default function Inventory() {
                 <div className="p-3 rounded-lg bg-muted/30">
                   <p className="font-medium text-foreground">{selectedProduct.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    Current stock: {selectedProduct.stock_quantity}
+                    Current stock: {selectedProduct.stock_quantity ?? 0}
                   </p>
                 </div>
 
@@ -354,8 +418,8 @@ export default function Inventory() {
                     <p className="text-sm text-muted-foreground">New stock level</p>
                     <p className="text-2xl font-bold text-foreground">
                       {adjustmentType === 'add'
-                        ? selectedProduct.stock_quantity + parseInt(adjustmentQty || '0')
-                        : Math.max(0, selectedProduct.stock_quantity - parseInt(adjustmentQty || '0'))
+                        ? (selectedProduct.stock_quantity ?? 0) + parseInt(adjustmentQty || '0')
+                        : Math.max(0, (selectedProduct.stock_quantity ?? 0) - parseInt(adjustmentQty || '0'))
                       }
                     </p>
                   </div>

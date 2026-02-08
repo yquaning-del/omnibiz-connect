@@ -1,24 +1,33 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { handleCorsPreFlight, getCorsHeaders } from "../_shared/cors.ts";
+import { verifyAuth, verifyOrgAccess } from "../_shared/auth.ts";
+import { validateRequired, validateUUID, validateEnum, sanitizeString } from "../_shared/validation.ts";
+import { jsonResponse, errorResponse } from "../_shared/response.ts";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflight = handleCorsPreFlight(req);
+  if (preflight) return preflight;
+
+  const cors = getCorsHeaders(req);
 
   try {
-    const { vertical, organizationId, locationId } = await req.json();
-    console.log(`AI Demand Forecast: ${vertical} for org ${organizationId}`);
+    // Verify JWT authentication
+    const { userId, supabaseClient: supabase } = await verifyAuth(req);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const body = await req.json();
+    validateRequired(body, ["organizationId"]);
+
+    const organizationId = validateUUID(body.organizationId, "organizationId");
+    const locationId = body.locationId ? validateUUID(body.locationId, "locationId") : null;
+    const vertical = body.vertical ? validateEnum(body.vertical, ["restaurant", "hotel", "pharmacy", "retail", "property"], "vertical") : "restaurant";
+
+    // Verify user has access to the organization
+    const hasAccess = await verifyOrgAccess(supabase, userId, organizationId);
+    if (!hasAccess) {
+      return jsonResponse({ success: false, error: "Access denied to this organization" }, cors, 403);
+    }
+
+    console.log(`AI Demand Forecast: ${vertical} for org ${organizationId}`);
 
     // Fetch historical data based on vertical
     const thirtyDaysAgo = new Date();
@@ -27,7 +36,6 @@ serve(async (req) => {
     let contextData: any = {};
 
     if (vertical === "restaurant") {
-      // Get reservation and order patterns
       const [reservationsRes, ordersRes] = await Promise.all([
         supabase
           .from("reservations")
@@ -45,7 +53,6 @@ serve(async (req) => {
           .order("created_at", { ascending: false }),
       ]);
 
-      // Group by day of week and hour
       const hourlyPattern: Record<number, number[]> = {};
       const dayPattern: Record<number, number[]> = {};
       
@@ -99,7 +106,6 @@ serve(async (req) => {
           .gte("created_at", thirtyDaysAgo.toISOString()),
       ]);
 
-      // Group by day of week
       const dayPattern: Record<number, number> = {};
       reservationsRes.data?.forEach((res: any) => {
         const day = new Date(res.check_in).getDay();
@@ -193,15 +199,9 @@ Be specific and actionable. Base predictions on the patterns in the data.`;
       };
     }
 
-    return new Response(JSON.stringify({ success: true, data: result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ success: true, data: result }, cors);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("AI Demand Forecast error:", errorMessage);
-    return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("AI Demand Forecast error:", error);
+    return errorResponse(error, cors);
   }
 });

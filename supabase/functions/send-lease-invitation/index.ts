@@ -1,28 +1,35 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { handleCorsPreFlight, getCorsHeaders } from "../_shared/cors.ts";
+import { verifyAuth, verifyOrgAccess } from "../_shared/auth.ts";
+import { validateRequired, validateUUID, validateEmail } from "../_shared/validation.ts";
+import { jsonResponse, errorResponse } from "../_shared/response.ts";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflight = handleCorsPreFlight(req);
+  if (preflight) return preflight;
+
+  const cors = getCorsHeaders(req);
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Verify JWT authentication
+    const { userId, supabaseClient: supabase } = await verifyAuth(req);
 
-    const { leaseId, tenantId, email, tenantName, propertyAddress, monthlyRent, organizationId, organizationName } = await req.json();
+    const body = await req.json();
+    validateRequired(body, ["leaseId", "tenantId", "email", "organizationId"]);
 
-    if (!leaseId || !tenantId || !email || !organizationId) {
-      return new Response(JSON.stringify({ error: "Missing required fields" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const leaseId = validateUUID(body.leaseId, "leaseId");
+    const tenantId = validateUUID(body.tenantId, "tenantId");
+    const email = validateEmail(body.email, "email");
+    const organizationId = validateUUID(body.organizationId, "organizationId");
+    const tenantName = body.tenantName || "";
+    const propertyAddress = body.propertyAddress || "";
+    const monthlyRent = body.monthlyRent || "";
+    const organizationName = body.organizationName || "";
+
+    // Verify user has access to the organization
+    const hasAccess = await verifyOrgAccess(supabase, userId, organizationId);
+    if (!hasAccess) {
+      return jsonResponse({ success: false, error: "Access denied to this organization" }, cors, 403);
     }
 
     // Generate unique token
@@ -59,30 +66,13 @@ serve(async (req) => {
 
     console.log(`Invitation created for ${email}. URL: ${inviteUrl}`);
 
-    // Note: In production, integrate with Resend to send email
-    // For now, return the URL for manual sharing
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Invitation created successfully",
-        inviteUrl,
-        // In production, email would be sent automatically
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  } catch (error: unknown) {
+    return jsonResponse({
+      success: true,
+      message: "Invitation created successfully",
+      inviteUrl,
+    }, cors);
+  } catch (error) {
     console.error("Error in send-lease-invitation:", error);
-    const message = error instanceof Error ? error.message : "Internal server error";
-    return new Response(
-      JSON.stringify({ error: message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return errorResponse(error, cors);
   }
 });

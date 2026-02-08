@@ -48,6 +48,7 @@ interface Room {
   amenities: string[] | null;
   status: string;
   location_id: string;
+  image_url?: string | null;
 }
 
 interface Location {
@@ -172,8 +173,9 @@ export default function HotelBooking() {
         .select('room_id')
         .in('location_id', locationIds)
         .eq('reservation_type', 'room')
-        .in('status', ['confirmed', 'checked_in'])
-        .or(`check_in.lte.${checkOutDate.toISOString()},check_out.gte.${checkInDate.toISOString()}`);
+        .in('status', ['confirmed', 'checked-in'])
+        .lte('check_in', checkOutDate.toISOString())
+        .gte('check_out', checkInDate.toISOString());
 
       if (resError) throw resError;
 

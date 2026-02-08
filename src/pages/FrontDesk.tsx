@@ -83,6 +83,10 @@ export default function FrontDesk() {
   const [checkOutDialogOpen, setCheckOutDialogOpen] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [folioDialogOpen, setFolioDialogOpen] = useState(false);
+  const [selectedFolio, setSelectedFolio] = useState<any>(null);
+  const [folioCharges, setFolioCharges] = useState<any[]>([]);
+  const [checkoutBalance, setCheckoutBalance] = useState(0);
 
   // Check-in form state
   const [idVerified, setIdVerified] = useState(false);
@@ -125,6 +129,48 @@ export default function FrontDesk() {
     if (roomsRes.data) setRooms(roomsRes.data as HotelRoom[]);
 
     setLoading(false);
+  };
+
+  const viewFolio = async (reservation: Reservation) => {
+    if (!reservation.folio_id) {
+      toast({ variant: 'destructive', title: 'No folio found', description: 'This guest does not have an associated folio.' });
+      return;
+    }
+    try {
+      const { data: folio, error } = await supabase
+        .from('guest_folios')
+        .select('*')
+        .eq('id', reservation.folio_id)
+        .single();
+
+      if (error) throw error;
+
+      const { data: charges } = await supabase
+        .from('folio_charges')
+        .select('*')
+        .eq('folio_id', reservation.folio_id)
+        .order('created_at', { ascending: false });
+
+      setSelectedFolio(folio);
+      setFolioCharges(charges || []);
+      setFolioDialogOpen(true);
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
+  const fetchCheckoutBalance = async (reservation: Reservation): Promise<number> => {
+    if (!reservation.folio_id) return 0;
+    try {
+      const { data: folio } = await supabase
+        .from('guest_folios')
+        .select('balance_due')
+        .eq('id', reservation.folio_id)
+        .single();
+      return Number(folio?.balance_due ?? 0);
+    } catch {
+      return 0;
+    }
   };
 
   const handleCheckIn = async () => {
@@ -193,8 +239,9 @@ export default function FrontDesk() {
     }
   };
 
-  const handleCheckOut = async (expressCheckout = false) => {
-    if (!selectedReservation) return;
+  const handleCheckOut = async (expressCheckout = false, reservationOverride?: Reservation) => {
+    const reservation = reservationOverride || selectedReservation;
+    if (!reservation) return;
     setProcessing(true);
 
     try {
@@ -206,24 +253,24 @@ export default function FrontDesk() {
           actual_check_out: new Date().toISOString(),
           express_checkout: expressCheckout,
         })
-        .eq('id', selectedReservation.id);
+        .eq('id', reservation.id);
 
       if (resError) throw resError;
 
       // Update room status and housekeeping
-      if (selectedReservation.room_id) {
+      if (reservation.room_id) {
         await supabase
           .from('hotel_rooms')
           .update({ status: 'available', housekeeping_status: 'dirty' })
-          .eq('id', selectedReservation.room_id);
+          .eq('id', reservation.room_id);
       }
 
       // Close folio
-      if (selectedReservation.folio_id) {
+      if (reservation.folio_id) {
         await supabase
           .from('guest_folios')
           .update({ status: 'closed' })
-          .eq('id', selectedReservation.folio_id);
+          .eq('id', reservation.folio_id);
       }
 
       toast({ title: expressCheckout ? 'Express checkout completed' : 'Guest checked out successfully' });
@@ -426,7 +473,7 @@ export default function FrontDesk() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => viewFolio(res)}>
                           <FileText className="h-4 w-4 mr-2" />
                           View Folio
                         </Button>
@@ -468,16 +515,17 @@ export default function FrontDesk() {
                         <Button
                           variant="outline"
                           onClick={() => {
-                            setSelectedReservation(res);
-                            handleCheckOut(true);
+                            handleCheckOut(true, res);
                           }}
                         >
                           <Zap className="h-4 w-4 mr-2" />
                           Express
                         </Button>
                         <Button
-                          onClick={() => {
+                          onClick={async () => {
                             setSelectedReservation(res);
+                            const balance = await fetchCheckoutBalance(res);
+                            setCheckoutBalance(balance);
                             setCheckOutDialogOpen(true);
                           }}
                         >
@@ -556,6 +604,69 @@ export default function FrontDesk() {
         </DialogContent>
       </Dialog>
 
+      {/* View Folio Dialog */}
+      <Dialog open={folioDialogOpen} onOpenChange={setFolioDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Guest Folio</DialogTitle>
+          </DialogHeader>
+          {selectedFolio && (
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-semibold">{selectedFolio.guest_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Folio #{selectedFolio.folio_number} | Room {selectedFolio.room_number}
+                    </p>
+                  </div>
+                  <Badge variant="outline">{selectedFolio.status}</Badge>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Room Charges</span>
+                  <span>${Number(selectedFolio.room_charges || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Incidentals</span>
+                  <span>${Number(selectedFolio.incidental_charges || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Tax</span>
+                  <span>${Number(selectedFolio.tax_amount || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Payments</span>
+                  <span className="text-green-600">-${Number(selectedFolio.payments_total || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-bold pt-2 border-t">
+                  <span>Balance Due</span>
+                  <span className={Number(selectedFolio.balance_due || 0) > 0 ? 'text-destructive' : 'text-green-600'}>
+                    ${Number(selectedFolio.balance_due || 0).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {folioCharges.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Recent Charges</p>
+                  <div className="max-h-48 overflow-y-auto space-y-1">
+                    {folioCharges.map((charge: any) => (
+                      <div key={charge.id} className="flex justify-between text-sm p-2 bg-muted/50 rounded">
+                        <span>{charge.description || charge.charge_type}</span>
+                        <span>${Number(charge.amount || 0).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Check-Out Dialog */}
       <Dialog open={checkOutDialogOpen} onOpenChange={setCheckOutDialogOpen}>
         <DialogContent className="max-w-md">
@@ -573,8 +684,12 @@ export default function FrontDesk() {
 
               <div className="p-4 border rounded-lg">
                 <p className="text-sm text-muted-foreground mb-2">Outstanding Balance</p>
-                <p className="text-2xl font-bold">$0.00</p>
-                <p className="text-xs text-muted-foreground">All charges settled</p>
+                <p className={cn("text-2xl font-bold", checkoutBalance > 0 ? "text-destructive" : "text-green-600")}>
+                  ${checkoutBalance.toFixed(2)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {checkoutBalance > 0 ? 'Balance must be settled before checkout' : 'All charges settled'}
+                </p>
               </div>
 
               <DialogFooter>

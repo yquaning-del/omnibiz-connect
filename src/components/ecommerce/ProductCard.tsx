@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Eye } from 'lucide-react';
+import { ShoppingCart, Eye, Package, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatCurrency, type SupportedCurrency } from '@/lib/currency';
+import { ReviewsSection } from '@/components/reviews/ReviewsSection';
 
 interface ProductCardProps {
   id: string;
@@ -13,11 +15,13 @@ interface ProductCardProps {
   category?: string;
   inStock: boolean;
   currency?: SupportedCurrency;
+  organizationId: string;
   onAddToCart: () => void;
   onViewDetails: () => void;
 }
 
 export function ProductCard({
+  id,
   name,
   description,
   price,
@@ -25,12 +29,15 @@ export function ProductCard({
   category,
   inStock,
   currency = 'KES',
+  organizationId,
   onAddToCart,
   onViewDetails,
 }: ProductCardProps) {
+  const [showReviews, setShowReviews] = useState(false);
+
   return (
     <Card className="group overflow-hidden transition-all hover:shadow-lg">
-      <div className="relative aspect-square overflow-hidden bg-muted">
+      <div className="relative aspect-video overflow-hidden bg-muted">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -39,7 +46,7 @@ export function ProductCard({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-            <span className="text-4xl text-muted-foreground">📦</span>
+            <Package className="h-16 w-16 text-muted-foreground" />
           </div>
         )}
         {!inStock && (
@@ -78,6 +85,32 @@ export function ProductCard({
               <ShoppingCart className="h-4 w-4" />
             </Button>
           </div>
+        </div>
+        
+        {/* Reviews Section */}
+        <div className="mt-4 border-t pt-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-between"
+            onClick={() => setShowReviews(!showReviews)}
+          >
+            <span className="text-sm">Reviews</span>
+            {showReviews ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
+          {showReviews && (
+            <div className="mt-4">
+              <ReviewsSection
+                entityId={id}
+                entityType="product"
+                organizationId={organizationId}
+              />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -16,6 +16,7 @@ interface UnitListingCardProps {
     amenities: string[] | null;
     status: string;
     address?: string | null;
+    image_url?: string | null;
   };
   onApply: (unitId: string) => void;
   currencySymbol?: string;
@@ -36,11 +37,19 @@ export function UnitListingCard({ unit, onApply, currencySymbol = '$' }: UnitLis
   
   return (
     <Card className="group overflow-hidden border-border/50 bg-card/50 transition-all duration-300 hover:border-property/30 hover:shadow-xl hover:shadow-property/5">
-      {/* Unit Image Placeholder */}
-      <div className="relative h-52 bg-gradient-to-br from-property/20 via-property/10 to-muted/50 overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Home className="h-20 w-20 text-property/20 group-hover:scale-110 transition-transform duration-300" />
-        </div>
+      {/* Unit Image */}
+      <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-property/20 via-property/10 to-muted/50">
+        {unit.image_url ? (
+          <img
+            src={unit.image_url}
+            alt={`Unit ${unit.unit_number} - ${unitConfig.label}`}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
+            <Home className="h-20 w-20 text-property/20 group-hover:scale-110 transition-transform duration-300" />
+          </div>
+        )}
         
         {/* Unit type badge */}
         <Badge className={`absolute left-3 top-3 ${unitConfig.bgColor} ${unitConfig.color} border-0 shadow-sm`}>
@@ -95,7 +104,7 @@ export function UnitListingCard({ unit, onApply, currencySymbol = '$' }: UnitLis
               <span className="text-muted-foreground">bath{unit.bathrooms !== 1 ? 's' : ''}</span>
             </div>
           )}
-          {unit.square_feet !== null && (
+          {unit.square_feet != null && (
             <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5">
               <Square className="h-4 w-4 text-property" />
               <span className="text-foreground font-medium">{unit.square_feet.toLocaleString()}</span>

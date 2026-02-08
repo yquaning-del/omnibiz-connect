@@ -105,7 +105,18 @@ export default function OnlineOrders() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+      setOrders((data || []).map((order: any) => ({
+        ...order,
+        order_number: order.order_number ?? '',
+        status: order.status ?? 'pending',
+        fulfillment_status: order.fulfillment_status ?? 'pending',
+        payment_status: order.payment_status ?? 'pending',
+        total_amount: order.total_amount ?? 0,
+        currency: order.currency ?? 'KES',
+        shipping_method: order.shipping_method ?? 'standard',
+        shipping_addresses: order.shipping_addresses ?? undefined,
+        online_order_items: order.online_order_items ?? undefined,
+      })));
     } catch (error) {
       console.error('Error loading orders:', error);
       toast({
@@ -307,7 +318,9 @@ export default function OnlineOrders() {
                       <div>
                         <p className="font-medium">{order.shipping_addresses?.full_name || 'N/A'}</p>
                         <p className="text-sm text-muted-foreground">
-                          {order.shipping_addresses?.city}, {order.shipping_addresses?.country}
+                          {order.shipping_addresses
+                            ? `${order.shipping_addresses.city ?? ''}${order.shipping_addresses.city && order.shipping_addresses.country ? ', ' : ''}${order.shipping_addresses.country ?? ''}`
+                            : 'No address'}
                         </p>
                       </div>
                     </TableCell>

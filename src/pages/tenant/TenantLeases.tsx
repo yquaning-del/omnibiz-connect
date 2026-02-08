@@ -56,7 +56,15 @@ export default function TenantLeases() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setLeases(data || []);
+      setLeases((data || []).map((lease: any) => ({
+        ...lease,
+        lease_type: lease.lease_type ?? 'fixed',
+        start_date: lease.start_date ?? '',
+        monthly_rent: lease.monthly_rent ?? 0,
+        security_deposit: lease.security_deposit ?? 0,
+        status: lease.status ?? 'draft',
+        unit_id: lease.unit_id ?? '',
+      })));
     } catch (error) {
       console.error('Error fetching leases:', error);
     } finally {

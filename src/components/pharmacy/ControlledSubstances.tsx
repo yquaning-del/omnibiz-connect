@@ -95,7 +95,14 @@ const ControlledSubstances = () => {
       if (logsResult.error) throw logsResult.error;
       if (productsResult.error) throw productsResult.error;
 
-      setLogs(logsResult.data || []);
+      setLogs((logsResult.data || []).map((log: any) => ({
+        ...log,
+        medications: log.medications
+          ? { ...log.medications, controlled_substance_schedule: log.medications.controlled_substance_schedule ?? '' }
+          : undefined,
+        products: log.products ?? undefined,
+        profiles: log.profiles ?? undefined,
+      })));
       setControlledProducts(productsResult.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -128,12 +135,26 @@ const ControlledSubstances = () => {
         : -Math.abs(newEntry.quantity_change);
       const newQty = currentQty + quantityChange;
 
+      // Get current user
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        toast({ title: "Error", description: "You must be logged in", variant: "destructive" });
+        setSaving(false);
+        return;
+      }
+
+      if (!currentLocation) {
+        toast({ title: "Error", description: "No location selected. Please select a location first.", variant: "destructive" });
+        setSaving(false);
+        return;
+      }
+
       // Create log entry
       const { error: logError } = await supabase
         .from('controlled_substance_log')
         .insert({
           organization_id: currentOrganization!.id,
-          location_id: currentLocation?.id || currentOrganization!.id,
+          location_id: currentLocation.id,
           product_id: newEntry.product_id,
           action: newEntry.action,
           quantity_change: quantityChange,
@@ -141,9 +162,9 @@ const ControlledSubstances = () => {
           quantity_after: newQty,
           lot_number: newEntry.lot_number || null,
           expiry_date: newEntry.expiry_date || null,
-          performed_by: (await supabase.auth.getUser()).data.user?.id,
+          performed_by: authUser.id,
           notes: newEntry.notes || null
-        });
+        } as any);
 
       if (logError) throw logError;
 

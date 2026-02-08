@@ -121,6 +121,54 @@ export default function Applications() {
     }).format(amount);
   };
 
+  const handleApprove = async (app: TenantApplication) => {
+    try {
+      const { error } = await (supabase as any)
+        .from('tenant_applications')
+        .update({ status: 'approved' })
+        .eq('id', app.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Application approved',
+        description: `${app.applicant_name}'s application has been approved.`,
+      });
+
+      fetchApplications();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error approving application',
+        description: error.message,
+      });
+    }
+  };
+
+  const handleReject = async (app: TenantApplication) => {
+    try {
+      const { error } = await (supabase as any)
+        .from('tenant_applications')
+        .update({ status: 'rejected' })
+        .eq('id', app.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Application rejected',
+        description: `${app.applicant_name}'s application has been rejected.`,
+      });
+
+      fetchApplications();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error rejecting application',
+        description: error.message,
+      });
+    }
+  };
+
   return (
     <FeatureGate feature="tenant_screening" requiredTier="Professional">
       <div className="space-y-6 animate-fade-in">
@@ -272,8 +320,25 @@ export default function Applications() {
                         </span>
                         {(app.status === 'submitted' || app.status === 'screening') && (
                           <div className="flex gap-2 mt-2">
-                            <Button size="sm" variant="outline">Review</Button>
-                            <Button size="sm">Approve</Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReject(app);
+                              }}
+                            >
+                              Reject
+                            </Button>
+                            <Button 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleApprove(app);
+                              }}
+                            >
+                              Approve
+                            </Button>
                           </div>
                         )}
                       </div>

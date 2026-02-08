@@ -38,9 +38,9 @@ const UserManualContent = () => {
       icon: <BookOpen className="w-4 h-4" />,
       content: (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Welcome to HospitalityOS</h3>
+          <h3 className="text-lg font-semibold">Welcome to OmniBiz Connect</h3>
           <p className="text-muted-foreground">
-            HospitalityOS is an enterprise-grade, multi-tenant SaaS platform designed specifically for 
+            OmniBiz Connect is an enterprise-grade, multi-tenant SaaS platform designed specifically for 
             restaurant, hotel, pharmacy, and retail businesses. Our platform provides comprehensive 
             solutions for point-of-sale, inventory management, customer relations, and business analytics.
           </p>
@@ -409,7 +409,7 @@ export default function Documentation() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold font-display">Documentation</h1>
           <p className="text-muted-foreground mt-1">
-            Comprehensive guides and reference documentation for HospitalityOS
+            Comprehensive guides and reference documentation for OmniBiz Connect
           </p>
         </div>
 
@@ -433,7 +433,7 @@ export default function Documentation() {
                   User Manual
                 </CardTitle>
                 <CardDescription>
-                  Complete guide to using HospitalityOS features and modules
+                  Complete guide to using OmniBiz Connect features and modules
                 </CardDescription>
               </CardHeader>
               <CardContent>

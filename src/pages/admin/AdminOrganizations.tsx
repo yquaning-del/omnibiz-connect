@@ -70,13 +70,14 @@ export default function AdminOrganizations() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [verticalFilter, setVerticalFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 10;
 
   useEffect(() => {
     fetchOrganizations();
-  }, [page, verticalFilter, statusFilter]);
+  }, [page, verticalFilter, statusFilter, searchQuery]);
 
   const fetchOrganizations = async () => {
     setLoading(true);
@@ -88,8 +89,12 @@ export default function AdminOrganizations() {
           count: "exact",
         });
 
-      if (verticalFilter !== "all" && ["restaurant", "hotel", "pharmacy", "retail"].includes(verticalFilter)) {
-        query = query.eq("primary_vertical", verticalFilter as "restaurant" | "hotel" | "pharmacy" | "retail");
+      if (verticalFilter !== "all" && ["restaurant", "hotel", "pharmacy", "retail", "property"].includes(verticalFilter)) {
+        query = query.eq("primary_vertical", verticalFilter);
+      }
+
+      if (searchQuery.trim()) {
+        query = query.ilike("name", `%${searchQuery.trim()}%`);
       }
 
       const { data: orgs, count, error } = await query
@@ -171,7 +176,14 @@ export default function AdminOrganizations() {
       .select("*")
       .eq("organization_id", org.id);
 
-    setSelectedOrgLocations(locations || []);
+    setSelectedOrgLocations((locations || []).map(loc => ({
+      ...loc,
+      address: loc.address ?? undefined,
+      city: loc.city ?? undefined,
+      country: loc.country ?? undefined,
+      email: loc.email ?? undefined,
+      phone: loc.phone ?? undefined,
+    })));
     setSelectedOrgSubscription(org.subscription || null);
     setSelectedOrgUserCount(org.user_count);
   };
@@ -300,8 +312,8 @@ export default function AdminOrganizations() {
           loading={loading}
           searchPlaceholder="Search organizations..."
           onSearch={(query) => {
-            // In a real app, this would trigger a search API call
-            console.log("Search:", query);
+            setSearchQuery(query);
+            setPage(1);
           }}
           pagination={{
             page,

@@ -49,6 +49,7 @@ interface Unit {
   amenities: string[] | null;
   status: string;
   address: string | null;
+  image_url?: string | null;
 }
 
 interface Location {
