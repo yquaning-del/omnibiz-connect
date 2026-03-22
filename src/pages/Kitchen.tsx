@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Loader2, ChefHat, Clock, CheckCircle, AlertCircle, Play } from 'lucide-react';
+import { Loader2, ChefHat, Clock, CheckCircle, AlertCircle, Play, UtensilsCrossed } from 'lucide-react';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { OrderAgingBadge } from '@/components/kitchen/OrderAgingBadge';
 
@@ -276,8 +276,12 @@ export default function Kitchen() {
                 ))}
 
                 {ordersByStatus[status as keyof typeof ordersByStatus].length === 0 && (
-                  <div className="flex items-center justify-center h-32 border-2 border-dashed border-border/50 rounded-xl text-muted-foreground">
-                    No orders
+                  <div className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-border/50 rounded-xl text-center px-4">
+                    <UtensilsCrossed className="w-8 h-8 mb-2 text-muted-foreground/40" />
+                    <p className="text-sm font-medium text-muted-foreground">No orders</p>
+                    <p className="text-xs text-muted-foreground/60 mt-0.5">
+                      New orders from POS and online will appear here
+                    </p>
                   </div>
                 )}
               </div>

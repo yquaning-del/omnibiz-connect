@@ -18,6 +18,7 @@ import {
   TrendingUp,
   AlertCircle,
   ArrowRight,
+  FlaskConical,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -398,6 +399,17 @@ export default function AdminDashboard() {
                 <span className="flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
                   Support Tools
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-between border-amber-300 text-amber-700 hover:bg-amber-50"
+                onClick={() => navigate("/admin/uat-setup")}
+              >
+                <span className="flex items-center gap-2">
+                  <FlaskConical className="h-4 w-4" />
+                  UAT Setup & Demo Data
                 </span>
                 <ArrowRight className="h-4 w-4" />
               </Button>

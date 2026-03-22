@@ -1,4 +1,3 @@
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -59,6 +58,7 @@ const AdminSubscriptions = React.lazy(() => import("./pages/admin/AdminSubscript
 const AdminSupport = React.lazy(() => import("./pages/admin/AdminSupport"));
 const AdminAnalytics = React.lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminAuditLogs = React.lazy(() => import("./pages/admin/AdminAuditLogs"));
+const AdminUATSetup = React.lazy(() => import("./pages/admin/AdminUATSetup"));
 // Property Management
 const PropertyUnits = React.lazy(() => import("./pages/property/Units"));
 const PropertyTenants = React.lazy(() => import("./pages/property/Tenants"));
@@ -107,7 +107,6 @@ const App = () => (
     <LanguageProvider>
       <TooltipProvider>
         <ErrorBoundary>
-          <Toaster />
           <Sonner />
           <ServiceWorkerRegistration />
           <InstallPrompt />
@@ -174,6 +173,7 @@ const App = () => (
                     <Route path="/admin/support" element={<AdminSupport />} />
                     <Route path="/admin/analytics" element={<AdminAnalytics />} />
                     <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+                    <Route path="/admin/uat-setup" element={<AdminUATSetup />} />
                   </Route>
 
                   {/* Staff Invitation Route */}

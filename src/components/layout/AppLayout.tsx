@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { SkipNavigation } from '@/components/SkipNavigation';
 import { OfflineBanner } from '@/components/layout/OfflineBanner';
+import { UATBanner } from '@/components/layout/UATBanner';
+import { UATChecklist } from '@/components/uat/UATChecklist';
 
 // Inner component that can access subscription context
 function AppLayoutContent() {
@@ -69,6 +71,7 @@ function AppLayoutContent() {
       )}
       <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
       <FeedbackWidget />
+      <UATChecklist />
       <AIChatAssistant />
       
       <SidebarProvider>
@@ -103,6 +106,8 @@ function AppLayoutContent() {
 
             {/* Global offline / sync status banner */}
             <OfflineBanner />
+            {/* UAT environment indicator */}
+            <UATBanner />
 
             {/* Main content */}
             <main id="main-content" className="flex-1 overflow-auto">

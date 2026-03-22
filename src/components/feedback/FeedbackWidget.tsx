@@ -10,12 +10,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { 
-  MessageSquare, 
-  Bug, 
-  Lightbulb, 
+import {
+  MessageSquare,
+  Bug,
+  Lightbulb,
   ThumbsUp,
   Star
 } from "lucide-react";
@@ -24,6 +25,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 type FeedbackType = "bug" | "feature" | "feedback";
+
+const isUAT =
+  import.meta.env.VITE_UAT_MODE === 'true' ||
+  import.meta.env.MODE === 'development';
 
 interface FeedbackWidgetProps {
   variant?: "floating" | "inline";
@@ -35,7 +40,10 @@ export function FeedbackWidget({ variant = "floating" }: FeedbackWidgetProps) {
   const [content, setContent] = useState("");
   const [rating, setRating] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [testScenario, setTestScenario] = useState("");
   const { user, currentOrganization } = useAuth();
+
+  const browserInfo = `${navigator.userAgent.split(' ').slice(-2).join(' ')} | ${window.innerWidth}x${window.innerHeight}`;
 
   const feedbackTypes = [
     { value: "bug", label: "Report a Bug", icon: Bug, color: "text-red-500" },
@@ -51,11 +59,15 @@ export function FeedbackWidget({ variant = "floating" }: FeedbackWidgetProps) {
 
     setIsSubmitting(true);
 
+    const finalContent = isUAT && testScenario.trim()
+      ? `${content.trim()}\n\n[Scenario: ${testScenario.trim()}]\n[Browser: ${browserInfo}]`
+      : content.trim();
+
     const { error } = await supabase.from("feedback_submissions").insert({
       user_id: user?.id,
       organization_id: currentOrganization?.id,
       type,
-      content: content.trim(),
+      content: finalContent,
       rating,
       page_url: window.location.pathname,
     });
@@ -71,6 +83,7 @@ export function FeedbackWidget({ variant = "floating" }: FeedbackWidgetProps) {
       setContent("");
       setRating(null);
       setType("feedback");
+      setTestScenario("");
     }
   };
 
@@ -95,9 +108,11 @@ export function FeedbackWidget({ variant = "floating" }: FeedbackWidgetProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Send Feedback</DialogTitle>
+          <DialogTitle>{isUAT ? "UAT Feedback" : "Send Feedback"}</DialogTitle>
           <DialogDescription>
-            Help us improve by sharing your thoughts, reporting issues, or requesting features.
+            {isUAT
+              ? "Report bugs, test scenarios, or issues found during UAT testing."
+              : "Help us improve by sharing your thoughts, reporting issues, or requesting features."}
           </DialogDescription>
         </DialogHeader>
 
@@ -149,6 +164,19 @@ export function FeedbackWidget({ variant = "floating" }: FeedbackWidgetProps) {
               rows={4}
             />
           </div>
+
+          {isUAT && (
+            <div className="space-y-2">
+              <Label htmlFor="scenario">Test Scenario <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                id="scenario"
+                placeholder="e.g. POS checkout flow, Staff invitation"
+                value={testScenario}
+                onChange={(e) => setTestScenario(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Browser: {browserInfo}</p>
+            </div>
+          )}
 
           {type === "feedback" && (
             <div className="space-y-2">

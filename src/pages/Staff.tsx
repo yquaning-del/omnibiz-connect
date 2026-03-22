@@ -249,8 +249,20 @@ export default function Staff() {
             </CardHeader>
             <CardContent>
               {staff.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No staff members found
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <UserCog className="w-12 h-12 mb-4 text-muted-foreground/50" />
+                  <p className="font-medium text-foreground">No staff members yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Invite your first team member to get started
+                  </p>
+                  {isOrgAdmin && (
+                    <div className="mt-4">
+                      <InviteStaffDialog onInviteSent={() => {
+                        fetchStaff();
+                        setInviteRefresh(prev => prev + 1);
+                      }} />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3">

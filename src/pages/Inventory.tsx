@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -36,6 +37,7 @@ import { StockTransferDialog } from '@/components/inventory/StockTransferDialog'
 export default function Inventory() {
   const { currentOrganization } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -251,9 +253,16 @@ export default function Inventory() {
       {/* Inventory Table */}
       {totalItems === 0 ? (
           <Card className="border-border/50 bg-card/50">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <Warehouse className="w-12 h-12 mb-4" />
-              <p>No products found</p>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <Warehouse className="w-12 h-12 mb-4 text-muted-foreground/50" />
+              <p className="font-medium text-foreground">No inventory items yet</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Add products from the Products page to start tracking stock levels
+              </p>
+              <Button variant="outline" className="mt-4" onClick={() => navigate('/products')}>
+                <Package className="w-4 h-4 mr-2" />
+                Go to Products
+              </Button>
             </CardContent>
           </Card>
         ) : (

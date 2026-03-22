@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -130,10 +130,31 @@ export function AIChatAssistant() {
     }
   };
 
-  const formatContent = (content: string) => {
-    return content
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n/g, '<br/>');
+  const renderContent = (content: string): React.ReactNode => {
+    const lines = content.split('\n');
+    return lines.map((line, lineIdx) => {
+      const parts: React.ReactNode[] = [];
+      let lastIndex = 0;
+      let partIdx = 0;
+      const boldPattern = /\*\*(.*?)\*\*/g;
+      let match;
+      while ((match = boldPattern.exec(line)) !== null) {
+        if (match.index > lastIndex) {
+          parts.push(<React.Fragment key={partIdx++}>{line.slice(lastIndex, match.index)}</React.Fragment>);
+        }
+        parts.push(<strong key={partIdx++}>{match[1]}</strong>);
+        lastIndex = match.index + match[0].length;
+      }
+      if (lastIndex < line.length) {
+        parts.push(<React.Fragment key={partIdx++}>{line.slice(lastIndex)}</React.Fragment>);
+      }
+      return (
+        <React.Fragment key={lineIdx}>
+          {parts.length > 0 ? parts : line}
+          {lineIdx < lines.length - 1 && <br />}
+        </React.Fragment>
+      );
+    });
   };
 
   const suggestedQueries = getSuggestedQueries();
@@ -209,13 +230,14 @@ export function AIChatAssistant() {
                         : "bg-muted"
                     )}
                   >
-                    <div 
+                    <div
                       className={cn(
                         "text-sm whitespace-pre-wrap",
                         message.role === 'assistant' && "prose prose-sm dark:prose-invert max-w-none"
                       )}
-                      dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
-                    />
+                    >
+                      {renderContent(message.content)}
+                    </div>
                     {message.toolsUsed && message.toolsUsed.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {message.toolsUsed.map((tool, i) => (
