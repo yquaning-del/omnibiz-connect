@@ -119,9 +119,9 @@ const Housekeeping = () => {
         .select("id, room_number, room_type, floor, housekeeping_status")
         .eq("location_id", currentLocation.id),
       supabase
-        .from("user_roles")
-        .select("user_id, profiles:user_id(id, full_name)")
-        .eq("organization_id", currentLocation.organization_id || currentLocation.id),
+        .from("profiles")
+        .select("id, full_name")
+        .limit(100),
     ]);
 
     if (tasksRes.data) {
