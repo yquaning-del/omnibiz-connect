@@ -165,7 +165,7 @@ export default function Rooms() {
 
   // Availability calendar state
   const [calendarWeekStart, setCalendarWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
-  const [reservations, setReservations] = useState<Array<{ id: string; room_id: string; guest_name: string; check_in: string; check_out: string | null; status: string }>>([]);
+  const [reservations, setReservations] = useState<Array<{ id: string; room_id: string | null; guest_name: string; check_in: string; check_out: string | null; status: string }>>([]);
   const [activeTab, setActiveTab] = useState('rooms');
 
   const calendarDays = eachDayOfInterval({ start: calendarWeekStart, end: addDays(calendarWeekStart, 13) });

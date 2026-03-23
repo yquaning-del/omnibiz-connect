@@ -169,8 +169,8 @@ export default function AdminSupport() {
     setCurrentOrganization({
       id: lookupResult.organization.id,
       name: lookupResult.organization.name,
-      slug: lookupResult.organization.slug || '',
-      primary_vertical: lookupResult.organization.primary_vertical as any,
+      slug: (lookupResult.organization as any).slug || '',
+      primary_vertical: (lookupResult.organization as any).primary_vertical || lookupResult.organization.vertical as any,
       settings: {},
       created_at: '',
       updated_at: '',

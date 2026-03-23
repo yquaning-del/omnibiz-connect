@@ -128,7 +128,7 @@ const Housekeeping = () => {
       // Enrich tasks with room and assignee info
       const enrichedTasks = tasksRes.data.map((task: any) => {
         const room = roomsRes.data?.find((r: any) => r.id === task.room_id);
-        const assignee = staffRes.data?.find((s: any) => s.id === task.assigned_to);
+        const assignee = staffRes.data?.find((s: any) => s.id === task.assigned_to) as any;
         return {
           ...task,
           task_type: task.task_type ?? 'cleaning',

@@ -85,7 +85,7 @@ export default function Settings() {
 
       const { error } = await supabase
         .from('profiles')
-        .update({ notification_preferences: allPrefs })
+        .update({ user_settings: allPrefs as any })
         .eq('id', user.id);
 
       if (error) throw error;

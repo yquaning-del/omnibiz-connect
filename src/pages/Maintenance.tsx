@@ -105,7 +105,7 @@ export default function Maintenance() {
     if (currentLocation) {
       fetchData();
       const cleanup = subscribeToRequests();
-      return cleanup;
+      return () => { cleanup?.(); };
     }
   }, [currentLocation]);
 

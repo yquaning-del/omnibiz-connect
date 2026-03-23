@@ -90,7 +90,7 @@ export default function AdminOrganizations() {
         });
 
       if (verticalFilter !== "all" && ["restaurant", "hotel", "pharmacy", "retail", "property"].includes(verticalFilter)) {
-        query = query.eq("primary_vertical", verticalFilter);
+        query = query.eq("primary_vertical", verticalFilter as any);
       }
 
       if (searchQuery.trim()) {
