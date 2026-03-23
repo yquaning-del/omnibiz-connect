@@ -246,7 +246,7 @@ export default function AdminSupport() {
       if (type === 'roles') {
         const { data: roles, error: rolesErr } = await supabase
           .from('user_roles')
-          .select('id, role, user_id, profiles:user_id(full_name)')
+          .select('id, role, user_id')
           .eq('organization_id', diagOrgId.trim());
 
         if (rolesErr) {
@@ -254,8 +254,17 @@ export default function AdminSupport() {
           return;
         }
 
+        // Fetch profile names separately
+        const userIds = [...new Set((roles || []).map((r: any) => r.user_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', userIds);
+
+        const profileMap = new Map((profiles || []).map((p: any) => [p.id, p.full_name]));
+
         setDiagResults(prev => prev + `User roles (${roles?.length ?? 0}):\n`
-          + (roles || []).map((r: any) => `  - ${r.profiles?.full_name || r.user_id}: ${r.role}`).join('\n')
+          + (roles || []).map((r: any) => `  - ${profileMap.get(r.user_id) || r.user_id}: ${r.role}`).join('\n')
           + '\n');
       }
 

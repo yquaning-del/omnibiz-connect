@@ -151,10 +151,9 @@ const Housekeeping = () => {
       housekeeping_status: r.housekeeping_status ?? 'dirty',
     })));
     if (staffRes.data) setStaff(staffRes.data
-      .filter((s: any) => s.profiles)
       .map((s: any) => ({
-        id: s.profiles.id ?? s.user_id,
-        full_name: s.profiles.full_name ?? '',
+        id: s.id,
+        full_name: s.full_name ?? '',
       })));
 
     setLoading(false);
