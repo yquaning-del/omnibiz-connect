@@ -1,5 +1,3 @@
-import { Toaster as SonnerToaster } from "sonner";
+import { Toaster, toast } from "@/components/ui/sonner";
 
-export function Toaster() {
-  return <SonnerToaster position="top-right" richColors />;
-}
+export { Toaster, toast };

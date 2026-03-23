@@ -124,17 +124,16 @@ export default function Maintenance() {
         .select('id, room_number')
         .eq('location_id', currentLocation.id),
       supabase
-        .from('user_roles')
-        .select('user_id, profiles:user_id(id, full_name)')
-        .eq('organization_id', currentLocation.organization_id),
+        .from('profiles')
+        .select('id, full_name')
+        .limit(100),
     ]);
 
-    // Build staff lookup from org-scoped user_roles
+    // Build staff lookup
     const staffList = (staffRes.data || [])
-      .filter((s: any) => s.profiles)
       .map((s: any) => ({
-        id: s.profiles.id ?? s.user_id,
-        full_name: s.profiles.full_name ?? '',
+        id: s.id,
+        full_name: s.full_name ?? '',
       }));
 
     if (requestsRes.data) {
