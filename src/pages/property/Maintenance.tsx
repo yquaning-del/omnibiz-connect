@@ -111,9 +111,9 @@ export default function PropertyMaintenance() {
           .select('id, unit_number')
           .eq('organization_id', currentOrganization.id),
         supabase
-          .from('user_roles')
-          .select('user_id, profiles:user_id(id, full_name)')
-          .eq('organization_id', currentOrganization.id),
+          .from('profiles')
+          .select('id, full_name')
+          .limit(100),
       ]);
 
       if (unitsRes.data) setUnits((unitsRes.data as unknown as any[]).map((u: any) => ({
@@ -121,10 +121,9 @@ export default function PropertyMaintenance() {
         unit_number: u.unit_number ?? '',
       })));
       if (staffRes.data) setStaff(staffRes.data
-        .filter((s: any) => s.profiles)
         .map((s: any) => ({
-          id: s.profiles.id ?? s.user_id,
-          full_name: s.profiles.full_name ?? '',
+          id: s.id,
+          full_name: s.full_name ?? '',
         })));
 
       // Fetch maintenance requests from database
