@@ -141,7 +141,7 @@ export default function Settings() {
       setUserPhone(profile.phone || '');
 
       // Load saved notification preferences from profile
-      const prefs = (profile as any)?.notification_preferences as Record<string, boolean> | undefined;
+      const prefs = (profile as any)?.user_settings as Record<string, boolean> | undefined;
       if (prefs) {
         setEmailNotifications(prefs.email_notifications ?? true);
         setLowStockAlerts(prefs.low_stock_alerts ?? true);
