@@ -119,16 +119,16 @@ const Housekeeping = () => {
         .select("id, room_number, room_type, floor, housekeeping_status")
         .eq("location_id", currentLocation.id),
       supabase
-        .from("user_roles")
-        .select("user_id, profiles:user_id(id, full_name)")
-        .eq("organization_id", currentLocation.organization_id || currentLocation.id),
+        .from("profiles")
+        .select("id, full_name")
+        .limit(100),
     ]);
 
     if (tasksRes.data) {
       // Enrich tasks with room and assignee info
       const enrichedTasks = tasksRes.data.map((task: any) => {
         const room = roomsRes.data?.find((r: any) => r.id === task.room_id);
-        const assignee = staffRes.data?.find((s: any) => s.id === task.assigned_to);
+        const assignee = staffRes.data?.find((s: any) => s.id === task.assigned_to) as any;
         return {
           ...task,
           task_type: task.task_type ?? 'cleaning',

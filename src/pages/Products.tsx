@@ -158,7 +158,7 @@ export default function Products() {
         location_id: currentLocation.id,
         vertical: currentLocation.vertical,
         is_available_online: formAvailableOnline,
-        metadata: Object.keys(metadata).length > 0 ? metadata : (editingProduct ? existingMetadata : null),
+        metadata: Object.keys(metadata).length > 0 ? (metadata as any) : (editingProduct ? existingMetadata : null),
       };
 
       if (editingProduct) {

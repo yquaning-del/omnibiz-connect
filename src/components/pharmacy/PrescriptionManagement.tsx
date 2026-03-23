@@ -426,9 +426,9 @@ const PrescriptionManagement = ({ onRefresh }: PrescriptionManagementProps) => {
       dosage: items?.dosage || "",
       quantity: items?.quantity || 30,
       directions: items?.directions || "",
-      refills_authorized: prescription.refills_authorized || 0,
+      refills_authorized: (prescription as any).refills_authorized || 0,
       is_controlled_substance: prescription.is_controlled_substance,
-      notes: prescription.notes || ""
+      notes: (prescription as any).notes || ""
     });
     setEditDialogOpen(true);
   };

@@ -232,7 +232,8 @@ export default function GuestServices() {
               folio_id: folio.id,
               charge_type: 'room_service',
               description: `Room Service Order #${orderNumber}`,
-              amount: totalAmount,
+              unit_price: totalAmount,
+              total_amount: totalAmount,
             });
 
             // Update folio totals

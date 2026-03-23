@@ -285,7 +285,7 @@ export default function StoreCheckout() {
           onSubmit={handleSubmitOrder}
           onCancel={() => navigate(`/store/${orgSlug}`)}
           paystackPublicKey={
-            (store.settings as Record<string, unknown>)?.paystack_public_key as string | undefined ||
+            (store?.settings as Record<string, unknown>)?.paystack_public_key as string | undefined ||
             import.meta.env.VITE_PAYSTACK_PUBLIC_KEY ||
             'pk_test_xxxxxxxxxxxxx'
           }
