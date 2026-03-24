@@ -49,6 +49,12 @@ serve(async (req) => {
   }
 
   try {
+    // Rate limit: 20 requests per minute per IP
+    const clientIP = getClientIP(req);
+    if (isRateLimited(clientIP, 20)) {
+      return rateLimitResponse(corsHeaders);
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
