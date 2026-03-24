@@ -81,7 +81,7 @@ export function RefillRequestForm({ onSuccess }: RefillRequestFormProps) {
       }, 2000);
       
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setLoading(false);
     }
@@ -249,7 +249,7 @@ export function RefillRequestsManager() {
       .eq('id', id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       toast.success(`Request ${newStatus}`);
       fetchRequests();

@@ -107,10 +107,7 @@ export function BarcodeScanner({ onScan, isOpen, onClose }: BarcodeScannerProps)
           onScan(barcode);
           stopCamera();
           onClose();
-          toast({
-            title: 'Barcode scanned',
-            description: `Found: ${barcode}`,
-          });
+          toast.success("Barcode scanned", { description: `Found: ${barcode}` });
         }
       } catch (err) {
         console.error('Detection error:', err);

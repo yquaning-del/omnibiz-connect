@@ -113,11 +113,7 @@ export default function HotelBooking() {
       if (orgError) throw orgError;
       
       if (orgData.primary_vertical !== 'hotel') {
-        toast({
-          title: 'Not a Hotel',
-          description: 'This business does not offer room bookings.',
-          variant: 'destructive',
-        });
+        toast.error("Not a Hotel", { description: "This business does not offer room bookings." });
         navigate('/');
         return;
       }
@@ -134,11 +130,7 @@ export default function HotelBooking() {
       setLocations(locData || []);
     } catch (error) {
       console.error('Error loading hotel:', error);
-      toast({
-        title: 'Hotel not found',
-        description: 'The hotel you are looking for does not exist.',
-        variant: 'destructive',
-      });
+      toast.error("Hotel not found", { description: "The hotel you are looking for does not exist." });
     } finally {
       setLoading(false);
     }
@@ -183,11 +175,7 @@ export default function HotelBooking() {
       setRooms(availableRooms);
     } catch (error) {
       console.error('Error searching rooms:', error);
-      toast({
-        title: 'Search failed',
-        description: 'Unable to search for available rooms.',
-        variant: 'destructive',
-      });
+      toast.error("Search failed", { description: "Unable to search for available rooms." });
     } finally {
       setSearchLoading(false);
     }
@@ -236,11 +224,7 @@ export default function HotelBooking() {
       setRooms(rooms.filter(r => r.id !== selectedRoom.id));
     } catch (error) {
       console.error('Error creating reservation:', error);
-      toast({
-        title: 'Booking Failed',
-        description: 'Unable to complete your booking. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error("Booking Failed", { description: "Unable to complete your booking. Please try again." });
       throw error;
     }
   };

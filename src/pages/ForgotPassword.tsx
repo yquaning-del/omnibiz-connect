@@ -29,11 +29,7 @@ export default function ForgotPassword() {
       });
 
       if (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: error.message,
-        });
+        toast.error("Error", { description: error.message });
       } else {
         setIsSubmitted(true);
       }

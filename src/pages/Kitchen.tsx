@@ -112,7 +112,7 @@ export default function Kitchen() {
       .eq('id', orderId);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       // Realtime will handle the update
       toast.success(`Order ${newStatus === 'completed' ? 'completed' : 'updated'}`);

@@ -65,7 +65,7 @@ export function OrganizationSettings() {
       if (error) throw error;
       toast.success("Settings saved successfully");
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setSaving(false);
     }

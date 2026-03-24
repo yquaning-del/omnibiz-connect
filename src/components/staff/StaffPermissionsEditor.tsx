@@ -105,10 +105,7 @@ export function StaffPermissionsEditor({
     setLocalPermissions(newPerms);
     setSelectedTemplate(templateName);
 
-    toast({
-      title: `Template Applied: ${templateName}`,
-      description: template.description,
-    });
+    toast.success(`Template Applied: ${templateName}`, { description: template.description });
   };
 
   const handleSave = async () => {
@@ -136,11 +133,7 @@ export function StaffPermissionsEditor({
       onSaved?.();
       onOpenChange(false);
     } else {
-      toast({
-        variant: 'destructive',
-        title: 'Error saving permissions',
-        description: result.error,
-      });
+      toast.error("Error saving permissions", { description: result.error });
     }
 
     setSaving(false);

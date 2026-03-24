@@ -100,11 +100,7 @@ export function WebsiteSettingsPanel() {
       toast.success("Website settings saved", { description: "Your public website has been updated." });
     } catch (error) {
       console.error('Error saving website settings:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save website settings.',
-        variant: 'destructive',
-      });
+      toast.error("Error", { description: "Failed to save website settings." });
     } finally {
       setSaving(false);
     }

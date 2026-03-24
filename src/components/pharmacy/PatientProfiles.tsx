@@ -99,7 +99,7 @@ const PatientProfiles = () => {
       })));
     } catch (error) {
       console.error('Error fetching patients:', error);
-      toast({ title: "Error", description: "Failed to load patients", variant: "destructive" });
+      toast.error("Error", { description: "Failed to load patients" });
     } finally {
       setLoading(false);
     }
@@ -125,7 +125,7 @@ const PatientProfiles = () => {
 
   const handleCreatePatient = async () => {
     if (!newPatient.full_name) {
-      toast({ title: "Error", description: "Patient name is required", variant: "destructive" });
+      toast.error("Error", { description: "Patient name is required" });
       return;
     }
 
@@ -178,7 +178,7 @@ const PatientProfiles = () => {
       fetchPatients();
     } catch (error) {
       console.error('Error creating patient:', error);
-      toast({ title: "Error", description: "Failed to create patient", variant: "destructive" });
+      toast.error("Error", { description: "Failed to create patient" });
     } finally {
       setSaving(false);
     }
@@ -208,7 +208,7 @@ const PatientProfiles = () => {
 
   const handleEditSubmit = async () => {
     if (!editingItem || !newPatient.full_name) {
-      toast({ title: "Error", description: "Patient name is required", variant: "destructive" });
+      toast.error("Error", { description: "Patient name is required" });
       return;
     }
 
@@ -261,7 +261,7 @@ const PatientProfiles = () => {
       fetchPatients();
     } catch (error) {
       console.error('Error updating patient:', error);
-      toast({ title: "Error", description: "Failed to update patient", variant: "destructive" });
+      toast.error("Error", { description: "Failed to update patient" });
     } finally {
       setSaving(false);
     }
@@ -285,7 +285,7 @@ const PatientProfiles = () => {
       fetchPatients();
     } catch (error) {
       console.error('Error deleting patient:', error);
-      toast({ title: "Error", description: "Failed to delete patient", variant: "destructive" });
+      toast.error("Error", { description: "Failed to delete patient" });
     } finally {
       setSaving(false);
     }

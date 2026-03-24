@@ -77,13 +77,7 @@ export default function Auth() {
       const { error } = await signIn(loginEmail, loginPassword);
       
       if (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Login failed',
-          description: error.message === 'Invalid login credentials' 
-            ? 'Invalid email or password. Please try again.'
-            : error.message,
-        });
+        toast.error("Login failed");
       } else {
         toast.success("Welcome back!", { description: "You have successfully logged in." });
         navigate('/dashboard');
@@ -129,11 +123,7 @@ export default function Auth() {
           setActiveTab('login');
           setLoginEmail(signupEmail);
         } else {
-          toast({
-            variant: 'destructive',
-            title: 'Signup failed',
-            description: error.message,
-          });
+          toast.error("Signup failed", { description: error.message });
         }
       } else {
         toast.success("Account created!", { description: "Welcome to OmniBiz Connect. Setting up your account..." });
@@ -159,11 +149,7 @@ export default function Auth() {
       });
 
       if (error) {
-        toast({
-          variant: 'destructive',
-          title: 'OAuth sign-in failed',
-          description: error.message || 'Failed to sign in with Google. Please try again.',
-        });
+        toast.error("OAuth sign-in failed");
         setIsOAuthLoading(false);
       }
       // Note: If successful, the user will be redirected, so we don't need to handle success here

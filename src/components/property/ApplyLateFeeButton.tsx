@@ -33,11 +33,7 @@ export function ApplyLateFeeButton({ onSuccess }: ApplyLateFeeButtonProps) {
       onSuccess?.();
     } catch (error: any) {
       console.error('Error applying late fees:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to apply late fees',
-        description: error.message,
-      });
+      toast.error("Failed to apply late fees", { description: error.message });
     } finally {
       setLoading(false);
     }

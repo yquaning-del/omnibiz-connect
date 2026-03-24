@@ -53,19 +53,12 @@ export function InviteStaffDialog({ onInviteSent }: InviteStaffDialogProps) {
         toast.success("Invitation created", { description: "Share the link below with the new staff member." });
         onInviteSent?.();
       } else {
-        toast({
-          title: 'Invitation sent',
-          description: `An invitation has been sent to ${email}`,
-        });
+        toast.success("Invitation sent", { description: `An invitation has been sent to ${email}` });
         resetAndClose();
         onInviteSent?.();
       }
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to send invitation',
-      });
+      toast.error("Error");
     } finally {
       setLoading(false);
     }

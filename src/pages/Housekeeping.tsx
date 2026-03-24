@@ -198,7 +198,7 @@ const Housekeeping = () => {
     });
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error("Error", { description: error.message });
     } else {
       toast.success("Task created successfully");
       setDialogOpen(false);
@@ -218,7 +218,7 @@ const Housekeeping = () => {
       .eq("id", taskId);
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error("Error", { description: error.message });
     } else {
       toast.success("Task updated");
     }
@@ -231,7 +231,7 @@ const Housekeeping = () => {
       .eq("id", roomId);
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error("Error", { description: error.message });
     } else {
       toast.success("Room status updated");
       fetchData();

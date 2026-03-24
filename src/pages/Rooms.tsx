@@ -117,7 +117,7 @@ export default function Rooms() {
       }).eq('id', editingRoom.id);
 
       if (error) {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
+        toast.error("Error");
       } else {
         toast.success("Room updated");
         setDialogOpen(false);
@@ -139,7 +139,7 @@ export default function Rooms() {
       });
 
       if (error) {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
+        toast.error("Error");
       } else {
         toast.success("Room created");
         setDialogOpen(false);

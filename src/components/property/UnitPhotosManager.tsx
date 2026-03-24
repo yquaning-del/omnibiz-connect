@@ -47,11 +47,7 @@ export function UnitPhotosManager({
       toast.success("Photos saved");
       setIsOpen(false);
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Save failed',
-        description: error.message,
-      });
+      toast.error("Save failed", { description: error.message });
     } finally {
       setSaving(false);
     }

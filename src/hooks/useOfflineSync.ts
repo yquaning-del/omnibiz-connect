@@ -32,7 +32,7 @@ export function useOfflineSync() {
 
     const handleOffline = () => {
       setIsOnline(false);
-      toast({ variant: 'destructive', title: 'You\'re offline', description: 'Orders will be saved locally and synced when you\'re back online.' });
+      toast.error("");
     };
 
     const handleSWMessage = (event: MessageEvent) => {
@@ -105,7 +105,7 @@ export function useOfflineSync() {
       }
 
       if (failCount > 0) {
-        toast({ variant: 'destructive', title: 'Sync incomplete', description: `${failCount} order(s) failed to sync and need attention.` });
+        toast.error("Sync incomplete", { description: ``${failCount` });
       }
 
       setSyncStatus((prev) => ({

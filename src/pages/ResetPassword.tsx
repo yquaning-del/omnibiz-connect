@@ -38,11 +38,7 @@ export default function ResetPassword() {
     }
 
     if (password !== confirmPassword) {
-      toast({
-        variant: 'destructive',
-        title: 'Passwords don\'t match',
-        description: 'Please make sure both passwords are the same.',
-      });
+      toast.error("", { description: "Please make sure both passwords are the same." });
       return;
     }
 
@@ -52,11 +48,7 @@ export default function ResetPassword() {
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: error.message,
-        });
+        toast.error("Error", { description: error.message });
       } else {
         setIsSuccess(true);
         toast.success("Password Updated", { description: "Your password has been successfully reset." });

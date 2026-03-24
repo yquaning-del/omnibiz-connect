@@ -89,11 +89,7 @@ export default function RentCollection() {
       if (error) throw error;
       setPayments(data || []);
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error loading payments',
-        description: error.message,
-      });
+      toast.error("Error loading payments", { description: error.message });
     } finally {
       setLoading(false);
     }

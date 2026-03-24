@@ -180,7 +180,7 @@ export default function Billing() {
       fetchFolios();
       fetchCharges(selectedFolio.id);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setSaving(false);
     }
@@ -212,7 +212,7 @@ export default function Billing() {
       setPaymentForm({ amount: '', method: 'credit_card' });
       fetchFolios();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setSaving(false);
     }
@@ -251,7 +251,7 @@ export default function Billing() {
       fetchFolios();
       fetchCharges(selectedFolio.id);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     }
   };
 

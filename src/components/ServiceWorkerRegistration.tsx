@@ -22,13 +22,7 @@ export function ServiceWorkerRegistration() {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // New version available
-              toast({
-                title: 'Update available',
-                description: 'A new version is available. Refresh to update.',
-                action: (
-                  <button
-                    onClick={() => {
-                      newWorker.postMessage({ type: 'SKIP_WAITING' });
+              toast.success("Update available", { description: "A new version is available. Refresh to update." });
                       window.location.reload();
                     }}
                     className="text-primary font-medium"

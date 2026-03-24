@@ -51,11 +51,7 @@ export default function StoreCatalog() {
       });
     } catch (error) {
       console.error('Error loading store:', error);
-      toast({
-        title: 'Store not found',
-        description: 'The store you are looking for does not exist.',
-        variant: 'destructive',
-      });
+      toast.error("Store not found", { description: "The store you are looking for does not exist." });
     } finally {
       setLoading(false);
     }
@@ -66,11 +62,7 @@ export default function StoreCatalog() {
       await cart.addItem(productId, price, 1);
       toast.success("Added to cart", { description: "Product has been added to your cart." });
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to add product to cart.',
-        variant: 'destructive',
-      });
+      toast.error("Error", { description: "Failed to add product to cart." });
     }
   };
 

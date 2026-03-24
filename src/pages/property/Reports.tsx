@@ -199,7 +199,7 @@ export default function PropertyReports() {
         }))
       );
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setLoading(false);
     }

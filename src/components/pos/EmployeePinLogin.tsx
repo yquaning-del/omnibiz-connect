@@ -81,7 +81,7 @@ export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinL
     if (isLockedOut) {
       const remainingMs = (lockedUntil || 0) - Date.now();
       const remainingMin = Math.ceil(remainingMs / 60000);
-      toast({ variant: 'destructive', title: 'Too many failed attempts', description: `Try again in ${remainingMin} minute(s)` });
+      toast.error("Too many failed attempts");
       setPin('');
       return;
     }
@@ -114,12 +114,12 @@ export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinL
           setLockedUntil(Date.now() + LOCKOUT_DURATION_MS);
           toast.error("Account locked", { description: "Too many failed attempts. Try again in 5 minutes." });
         } else {
-          toast({ variant: 'destructive', title: 'Invalid PIN', description: `${MAX_PIN_ATTEMPTS - newAttempts} attempt(s) remaining` });
+          toast.error("Invalid PIN");
         }
         setPin('');
       }
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
       setPin('');
     } finally {
       setLoading(false);
@@ -284,7 +284,7 @@ export function SetupPinForm() {
       setPin('');
       setConfirmPin('');
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setLoading(false);
     }
@@ -309,7 +309,7 @@ export function SetupPinForm() {
       toast.success("PIN login disabled");
       setEnabled(false);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setLoading(false);
     }

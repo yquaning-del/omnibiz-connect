@@ -76,7 +76,7 @@ const InsuranceBilling = () => {
       })));
     } catch (error) {
       console.error('Error fetching claims:', error);
-      toast({ title: "Error", description: "Failed to load insurance claims", variant: "destructive" });
+      toast.error("Error", { description: "Failed to load insurance claims" });
     } finally {
       setLoading(false);
     }
@@ -100,11 +100,11 @@ const InsuranceBilling = () => {
 
       if (error) throw error;
 
-      toast({ title: "Success", description: `Claim ${status}` });
+      toast.success("Success");
       fetchClaims();
     } catch (error) {
       console.error('Error updating claim:', error);
-      toast({ title: "Error", description: "Failed to update claim", variant: "destructive" });
+      toast.error("Error", { description: "Failed to update claim" });
     }
   };
 

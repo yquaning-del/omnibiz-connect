@@ -143,17 +143,10 @@ export default function StoreCheckout() {
       setOrderNumber(orderData.order_number);
       setOrderComplete(true);
 
-      toast({
-        title: 'Order placed successfully!',
-        description: `Your order number is ${orderData.order_number}`,
-      });
+      toast.success("Order placed successfully!", { description: `Your order number is ${orderData.order_number}` });
     } catch (error) {
       console.error('Error creating order:', error);
-      toast({
-        title: 'Order failed',
-        description: 'There was an error processing your order. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error("Order failed", { description: "There was an error processing your order. Please try again." });
     }
   };
 

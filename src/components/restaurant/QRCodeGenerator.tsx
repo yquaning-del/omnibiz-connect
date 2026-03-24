@@ -73,21 +73,13 @@ export function QRCodeGenerator({ tableId, tableNumber, locationId, organization
       
       qrImage.onerror = () => {
         // Fallback: if image fails to load, show error toast
-        toast({ 
-          title: 'Failed to generate QR code',
-          description: 'Please try again later',
-          variant: 'destructive'
-        });
+        toast.error("Failed to generate QR code", { description: "Please try again later" });
       };
       
       qrImage.src = qrServiceUrl;
     } catch (error) {
       console.error('Error generating QR code:', error);
-      toast({ 
-        title: 'Failed to generate QR code',
-        description: 'Please try again later',
-        variant: 'destructive'
-      });
+      toast.error("Failed to generate QR code", { description: "Please try again later" });
     }
   };
 

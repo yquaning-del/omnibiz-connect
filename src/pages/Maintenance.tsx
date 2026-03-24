@@ -204,7 +204,7 @@ export default function Maintenance() {
       setDialogOpen(false);
       resetForm();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setSaving(false);
     }
@@ -222,7 +222,7 @@ export default function Maintenance() {
       .eq('id', id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       toast.success("Status updated");
     }

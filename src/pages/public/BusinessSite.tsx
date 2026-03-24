@@ -208,11 +208,7 @@ export default function BusinessSite() {
       setLocations(locData || []);
     } catch (error) {
       console.error('Error loading organization:', error);
-      toast({
-        title: 'Business not found',
-        description: 'The business you are looking for does not exist.',
-        variant: 'destructive',
-      });
+      toast.error("Business not found", { description: "The business you are looking for does not exist." });
     } finally {
       setLoading(false);
     }

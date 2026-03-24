@@ -131,11 +131,7 @@ export default function AcceptStaffInvite() {
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Registration error:', err);
-      toast({
-        variant: 'destructive',
-        title: 'Registration failed',
-        description: err.message || 'An error occurred',
-      });
+      toast.error("Registration failed");
     } finally {
       setSubmitting(false);
     }

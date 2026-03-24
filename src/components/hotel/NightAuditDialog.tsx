@@ -159,7 +159,7 @@ export function NightAuditDialog() {
       setStep('review');
       
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
       setStep('start');
     } finally {
       setAuditing(false);
@@ -213,7 +213,7 @@ export function NightAuditDialog() {
       }, 2000);
       
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error saving audit', description: error.message });
+      toast.error("Error saving audit");
     } finally {
       setLoading(false);
     }

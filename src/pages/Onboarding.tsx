@@ -298,12 +298,7 @@ export default function Onboarding() {
 
       if (subError) throw subError;
 
-      toast({
-        title: 'Setup complete!',
-        description: startTrial 
-          ? 'Your 14-day free trial has started. Redirecting to dashboard...'
-          : 'Your business has been created. Redirecting to dashboard...',
-      });
+      toast.success("Setup complete!");
 
       // Force refresh auth state to populate organizations/roles before navigating
       await refreshUserData();
@@ -312,11 +307,7 @@ export default function Onboarding() {
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Onboarding error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Setup failed',
-        description: error.message || 'An error occurred during setup.',
-      });
+      toast.error("Setup failed");
     } finally {
       setIsLoading(false);
     }
@@ -359,11 +350,7 @@ export default function Onboarding() {
       toast.success("Fresh start!", { description: "All partial data has been cleared. You can start over." });
     } catch (error: any) {
       console.error('Clear data error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to clear data',
-        description: error.message || 'An error occurred while clearing data.',
-      });
+      toast.error("Failed to clear data");
     } finally {
       setIsClearing(false);
     }

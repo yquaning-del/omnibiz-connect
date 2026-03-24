@@ -105,11 +105,7 @@ export function StockTransferDialog({ open, onClose, onSuccess }: StockTransferD
 
     const qty = parseInt(quantity);
     if (qty <= 0 || qty > maxQuantity) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid quantity',
-        description: `Quantity must be between 1 and ${maxQuantity}.`,
-      });
+      toast.error("Invalid quantity", { description: `Quantity must be between 1 and ${maxQuantity}.` });
       return;
     }
 
@@ -138,21 +134,14 @@ export function StockTransferDialog({ open, onClose, onSuccess }: StockTransferD
 
       if (updateError) throw updateError;
 
-      toast({
-        title: 'Stock transferred',
-        description: `Successfully transferred ${qty} units of ${selectedProduct?.name}.`,
-      });
+      toast.success("Stock transferred", { description: `Successfully transferred ${qty} units of ${selectedProduct?.name}.` });
 
       resetForm();
       onClose();
       onSuccess?.();
     } catch (error: any) {
       console.error('Transfer error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Transfer failed',
-        description: error.message,
-      });
+      toast.error("Transfer failed", { description: error.message });
     } finally {
       setSaving(false);
     }

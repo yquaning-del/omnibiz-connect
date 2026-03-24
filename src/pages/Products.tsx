@@ -183,11 +183,7 @@ export default function Products() {
       resetForm();
       fetchProducts();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message,
-      });
+      toast.error("Error", { description: error.message });
     } finally {
       setSaving(false);
     }
@@ -203,7 +199,7 @@ export default function Products() {
       .eq('id', product.id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       toast.success("Product deleted");
       fetchProducts();
@@ -218,12 +214,9 @@ export default function Products() {
       .eq('id', product.id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
-      toast({ 
-        title: newStatus ? 'Available online' : 'Removed from online store',
-        description: `${product.name} is now ${newStatus ? 'visible' : 'hidden'} in the online store.`
-      });
+      toast.success("", { description: ``${product.name` });
       fetchProducts();
     }
   };

@@ -170,7 +170,7 @@ export default function GuestProfiles() {
       resetForm();
       fetchData();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setSaving(false);
     }

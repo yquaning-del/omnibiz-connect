@@ -167,7 +167,7 @@ export default function Settings() {
       .eq('id', currentOrganization.id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       toast.success("Organization updated");
     }
@@ -190,7 +190,7 @@ export default function Settings() {
       .eq('id', currentLocation.id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       toast.success("Location updated");
     }
@@ -210,7 +210,7 @@ export default function Settings() {
       .eq('id', user.id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       toast.success("Profile updated");
     }

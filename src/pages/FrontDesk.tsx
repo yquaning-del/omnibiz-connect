@@ -153,7 +153,7 @@ export default function FrontDesk() {
       setFolioCharges(charges || []);
       setFolioDialogOpen(true);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     }
   };
 
@@ -231,7 +231,7 @@ export default function FrontDesk() {
       setSelectedReservation(null);
       fetchData();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setProcessing(false);
     }
@@ -271,12 +271,12 @@ export default function FrontDesk() {
           .eq('id', reservation.folio_id);
       }
 
-      toast({ title: expressCheckout ? 'Express checkout completed' : 'Guest checked out successfully' });
+      toast.success("");
       setCheckOutDialogOpen(false);
       setSelectedReservation(null);
       fetchData();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setProcessing(false);
     }

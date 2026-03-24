@@ -41,11 +41,7 @@ export function PhotoGallery({
       onPhotosChange(photos.filter(p => p !== photoUrl));
       toast.success("Photo deleted");
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Delete failed',
-        description: error.message,
-      });
+      toast.error("Delete failed", { description: error.message });
     } finally {
       setDeleting(null);
     }

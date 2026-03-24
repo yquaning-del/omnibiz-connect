@@ -218,10 +218,7 @@ export default function CustomerMenu() {
       setCart([]);
       setCartOpen(false);
       
-      toast({
-        title: 'Order submitted!',
-        description: `Order ${orderNumber} sent to kitchen. Your food will arrive shortly.`,
-      });
+      toast.success("Order submitted!", { description: `Order ${orderNumber} sent to kitchen. Your food will arrive shortly.` });
     } catch (error) {
       console.error('Order error:', error);
       toast.error("Failed to submit order", { description: "Please try again or call a server." });

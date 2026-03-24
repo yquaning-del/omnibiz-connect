@@ -83,7 +83,7 @@ const MedicationDatabase = () => {
       })));
     } catch (error) {
       console.error('Error fetching medications:', error);
-      toast({ title: "Error", description: "Failed to load medications", variant: "destructive" });
+      toast.error("Error", { description: "Failed to load medications" });
     } finally {
       setLoading(false);
     }
@@ -111,7 +111,7 @@ const MedicationDatabase = () => {
 
   const handleEditSubmit = async () => {
     if (!editingItem || !newMedication.name) {
-      toast({ title: "Error", description: "Medication name is required", variant: "destructive" });
+      toast.error("Error", { description: "Medication name is required" });
       return;
     }
 
@@ -150,7 +150,7 @@ const MedicationDatabase = () => {
       fetchMedications();
     } catch (error) {
       console.error('Error updating medication:', error);
-      toast({ title: "Error", description: "Failed to update medication", variant: "destructive" });
+      toast.error("Error", { description: "Failed to update medication" });
     } finally {
       setSaving(false);
     }
@@ -174,7 +174,7 @@ const MedicationDatabase = () => {
       fetchMedications();
     } catch (error) {
       console.error('Error deleting medication:', error);
-      toast({ title: "Error", description: "Failed to delete medication", variant: "destructive" });
+      toast.error("Error", { description: "Failed to delete medication" });
     } finally {
       setSaving(false);
     }
@@ -182,7 +182,7 @@ const MedicationDatabase = () => {
 
   const handleCreateMedication = async () => {
     if (!newMedication.name) {
-      toast({ title: "Error", description: "Medication name is required", variant: "destructive" });
+      toast.error("Error", { description: "Medication name is required" });
       return;
     }
 
@@ -220,7 +220,7 @@ const MedicationDatabase = () => {
       fetchMedications();
     } catch (error) {
       console.error('Error creating medication:', error);
-      toast({ title: "Error", description: "Failed to add medication", variant: "destructive" });
+      toast.error("Error", { description: "Failed to add medication" });
     } finally {
       setSaving(false);
     }

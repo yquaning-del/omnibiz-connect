@@ -99,11 +99,7 @@ export function TenantDocuments({ tenantId, tenantName }: TenantDocumentsProps) 
       setIsUploadOpen(false);
       fetchDocuments();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Upload failed',
-        description: error.message,
-      });
+      toast.error("Upload failed", { description: error.message });
     }
   };
 
@@ -128,11 +124,7 @@ export function TenantDocuments({ tenantId, tenantName }: TenantDocumentsProps) 
       toast.success("Document deleted");
       fetchDocuments();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Delete failed',
-        description: error.message,
-      });
+      toast.error("Delete failed", { description: error.message });
     } finally {
       setDeleting(null);
     }

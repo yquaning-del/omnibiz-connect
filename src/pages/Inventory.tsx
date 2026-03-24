@@ -100,19 +100,12 @@ export default function Inventory() {
       .select('id');
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else if (!data || data.length === 0) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Stock changed', 
-        description: 'Someone else updated this product\'s stock. Please refresh and try again.' 
-      });
+      toast.error("Stock changed");
       fetchProducts();
     } else {
-      toast({ 
-        title: 'Stock updated', 
-        description: `${selectedProduct.name}: ${expectedStock} → ${newStock}` 
-      });
+      toast.success("Stock updated", { description: ``${selectedProduct.name` });
       fetchProducts();
       setAdjustDialogOpen(false);
     }

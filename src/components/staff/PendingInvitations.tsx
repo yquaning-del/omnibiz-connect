@@ -65,7 +65,7 @@ export function PendingInvitations({ refreshTrigger }: PendingInvitationsProps) 
       .eq('id', id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       toast.success("Invitation cancelled");
       fetchInvitations();
@@ -96,7 +96,7 @@ export function PendingInvitations({ refreshTrigger }: PendingInvitationsProps) 
       toast.success("Invitation resent", { description: "A new invitation link has been generated." });
       fetchInvitations();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     }
     setActionLoading(null);
   };

@@ -94,19 +94,11 @@ export function CheckoutForm({
                 await onSubmit(data, response.reference);
               } catch (error) {
                 console.error('Error processing order after payment:', error);
-                toast({
-                  title: 'Payment successful, but order failed',
-                  description: 'Please contact support with your transaction reference: ' + response.reference,
-                  variant: 'destructive',
-                });
+                toast.error("Payment successful, but order failed");
                 setSubmitting(false);
               }
             } else {
-              toast({
-                title: 'Payment failed',
-                description: response.message || 'Payment was not successful. Please try again.',
-                variant: 'destructive',
-              });
+              toast.error("Payment failed");
               setSubmitting(false);
             }
           },
@@ -123,11 +115,7 @@ export function CheckoutForm({
         });
       } catch (error) {
         console.error('Error opening Paystack popup:', error);
-        toast({
-          title: 'Payment error',
-          description: error instanceof Error ? error.message : 'Failed to initialize payment. Please try again.',
-          variant: 'destructive',
-        });
+        toast.error("Payment error");
         setSubmitting(false);
       }
       return;

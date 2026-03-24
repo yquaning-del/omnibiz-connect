@@ -141,11 +141,7 @@ export default function POS() {
     } else {
       // Set search query to barcode for manual lookup
       setSearchQuery(barcode);
-      toast({
-        title: 'Product not found',
-        description: `No product found with barcode: ${barcode}`,
-        variant: 'destructive',
-      });
+      toast.error("Product not found", { description: `No product found with barcode: ${barcode}` });
     }
   };
 
@@ -249,20 +245,13 @@ export default function POS() {
       setShowReceipt(true);
 
       if (!result.offline) {
-        toast({
-          title: 'Payment successful!',
-          description: `Order ${result.orderNumber} completed. Total: $${total.toFixed(2)}`,
-        });
+        toast.success("Payment successful!", { description: `Order ${result.orderNumber} completed. Total: $${total.toFixed(2)}` });
       }
 
       clearCart();
     } catch (error: any) {
       console.error('Payment error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Payment failed',
-        description: error.message || 'An error occurred processing the payment.',
-      });
+      toast.error("Payment failed");
     } finally {
       setProcessing(false);
     }

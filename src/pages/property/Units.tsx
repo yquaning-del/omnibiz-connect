@@ -123,11 +123,7 @@ export default function Units() {
       if (error) throw error;
       setUnits(data || []);
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error loading units',
-        description: error.message,
-      });
+      toast.error("Error loading units", { description: error.message });
     } finally {
       setLoading(false);
     }
@@ -163,10 +159,7 @@ export default function Units() {
 
         if (error) throw error;
 
-        toast({
-          title: 'Unit updated',
-          description: `Unit ${formData.unit_number} has been updated successfully.`,
-        });
+        toast.success("Unit updated", { description: `Unit ${formData.unit_number} has been updated successfully.` });
 
         setEditDialogOpen(false);
         setEditingUnit(null);
@@ -196,10 +189,7 @@ export default function Units() {
 
         if (error) throw error;
 
-        toast({
-          title: 'Unit added',
-          description: `Unit ${formData.unit_number} has been added successfully.`,
-        });
+        toast.success("Unit added", { description: `Unit ${formData.unit_number} has been added successfully.` });
 
         setIsDialogOpen(false);
       }
@@ -221,11 +211,7 @@ export default function Units() {
       });
       fetchUnits();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: editingUnit ? 'Error updating unit' : 'Error adding unit',
-        description: error.message,
-      });
+      toast.error("", { description: error.message });
     } finally {
       setSaving(false);
     }
@@ -265,18 +251,11 @@ export default function Units() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Unit deleted',
-        description: `Unit ${unit.unit_number} has been deleted successfully.`,
-      });
+      toast.success("Unit deleted", { description: `Unit ${unit.unit_number} has been deleted successfully.` });
 
       fetchUnits();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error deleting unit',
-        description: error.message,
-      });
+      toast.error("Error deleting unit", { description: error.message });
     }
   };
 

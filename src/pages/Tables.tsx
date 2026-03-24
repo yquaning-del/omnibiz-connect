@@ -130,7 +130,7 @@ export default function Tables() {
       resetForm();
       fetchTables();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setSaving(false);
     }
@@ -143,7 +143,7 @@ export default function Tables() {
       .eq('id', tableId);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       fetchTables();
     }
@@ -158,7 +158,7 @@ export default function Tables() {
       .eq('id', table.id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       toast.success("Table deleted");
       fetchTables();
@@ -191,7 +191,7 @@ export default function Tables() {
       toast.success("Floor plan saved");
       fetchTables();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     }
   };
 

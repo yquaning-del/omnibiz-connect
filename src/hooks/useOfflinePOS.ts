@@ -73,11 +73,7 @@ export function useOfflinePOS({ organizationId, locationId, vertical, userId, ta
         setOfflineMode(true);
         console.log(`[OfflinePOS] Loaded ${cached.length} cached products`);
       } else {
-        toast({
-          title: 'No cached products',
-          description: 'Please connect to the internet to load products.',
-          variant: 'destructive',
-        });
+        toast.error("No cached products", { description: "Please connect to the internet to load products." });
       }
     } catch (error) {
       console.error('[OfflinePOS] Error loading cached products:', error);
@@ -223,10 +219,7 @@ export function useOfflinePOS({ organizationId, locationId, vertical, userId, ta
 
     await updatePendingCount();
 
-    toast({
-      title: 'Order saved offline',
-      description: `Order ${orderNumber} will sync when you're back online.`,
-    });
+    toast.success("Order saved offline", { description: `Order ${orderNumber} will sync when you're back online.` });
 
     return { success: true, orderNumber, offline: true };
   }, [organizationId, locationId, userId, vertical, offlineMode, updateLocalStock, updatePendingCount, toast]);

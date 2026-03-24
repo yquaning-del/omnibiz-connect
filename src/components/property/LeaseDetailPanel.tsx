@@ -170,11 +170,7 @@ export function LeaseDetailPanel({
       setLease(leaseData);
     } catch (error: any) {
       console.error('Error fetching lease:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error loading lease',
-        description: error.message,
-      });
+      toast.error("Error loading lease", { description: error.message });
     } finally {
       setLoading(false);
     }

@@ -132,11 +132,7 @@ export default function Customers() {
       resetForm();
       fetchCustomers();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message,
-      });
+      toast.error("Error", { description: error.message });
     } finally {
       setSaving(false);
     }
@@ -151,7 +147,7 @@ export default function Customers() {
       .eq('id', customer.id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       toast.success("Customer deleted");
       fetchCustomers();

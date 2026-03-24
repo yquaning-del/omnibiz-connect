@@ -43,20 +43,12 @@ export function ReviewsSection({ entityId, entityType, organizationId }: Reviews
     e.preventDefault();
     
     if (!formData.reviewerName.trim()) {
-      toast({
-        title: 'Name required',
-        description: 'Please enter your name.',
-        variant: 'destructive',
-      });
+      toast.error("Name required", { description: "Please enter your name." });
       return;
     }
 
     if (formData.rating === 0) {
-      toast({
-        title: 'Rating required',
-        description: 'Please select a rating.',
-        variant: 'destructive',
-      });
+      toast.error("Rating required", { description: "Please select a rating." });
       return;
     }
 

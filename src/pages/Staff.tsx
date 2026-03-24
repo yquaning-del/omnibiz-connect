@@ -136,7 +136,7 @@ export default function Staff() {
       .eq('id', staffId);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       toast.success("Role updated successfully");
       fetchStaff();
@@ -153,7 +153,7 @@ export default function Staff() {
       .eq('id', staffId);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       toast.success("Staff member removed");
       fetchStaff();
@@ -192,7 +192,7 @@ export default function Staff() {
       });
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       toast.success("Schedule created");
       setScheduleDialogOpen(false);

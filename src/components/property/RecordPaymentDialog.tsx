@@ -116,11 +116,7 @@ export function RecordPaymentDialog({
       if (error) throw error;
       setLeases(data || []);
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error loading leases',
-        description: error.message,
-      });
+      toast.error("Error loading leases", { description: error.message });
     } finally {
       setLoading(false);
     }
@@ -151,10 +147,7 @@ export function RecordPaymentDialog({
 
       if (error) throw error;
 
-      toast({
-        title: 'Payment recorded',
-        description: `${formatCurrency(parseFloat(amount))} payment recorded successfully.`,
-      });
+      toast.success("Payment recorded", { description: `${formatCurrency(parseFloat(amount))} payment recorded successfully.` });
 
       // Reset form
       setSelectedLeaseId(preselectedLeaseId || '');
@@ -166,11 +159,7 @@ export function RecordPaymentDialog({
       onSuccess();
       onClose();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error recording payment',
-        description: error.message,
-      });
+      toast.error("Error recording payment", { description: error.message });
     } finally {
       setSubmitting(false);
     }

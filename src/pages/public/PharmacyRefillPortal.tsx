@@ -108,11 +108,7 @@ export default function PharmacyRefillPortal() {
       if (orgError) throw orgError;
       
       if (orgData.primary_vertical !== 'pharmacy') {
-        toast({
-          title: 'Not a Pharmacy',
-          description: 'This business does not offer prescription refills.',
-          variant: 'destructive',
-        });
+        toast.error("Not a Pharmacy", { description: "This business does not offer prescription refills." });
         navigate('/');
         return;
       }
@@ -129,11 +125,7 @@ export default function PharmacyRefillPortal() {
       setLocations(locData || []);
     } catch (error) {
       console.error('Error loading pharmacy:', error);
-      toast({
-        title: 'Pharmacy not found',
-        description: 'The pharmacy you are looking for does not exist.',
-        variant: 'destructive',
-      });
+      toast.error("Pharmacy not found", { description: "The pharmacy you are looking for does not exist." });
     } finally {
       setLoading(false);
     }
@@ -159,11 +151,7 @@ export default function PharmacyRefillPortal() {
         .single();
 
       if (customerError || !customer) {
-        toast({
-          title: 'Patient Not Found',
-          description: 'No patient record found with that information. Please register or contact the pharmacy.',
-          variant: 'destructive',
-        });
+        toast.error("Patient Not Found", { description: "No patient record found with that information. Please register or contact the pharmacy." });
         return;
       }
 
@@ -176,11 +164,7 @@ export default function PharmacyRefillPortal() {
         .single();
 
       if (patientError || !patient) {
-        toast({
-          title: 'Patient Not Found',
-          description: 'No patient profile found. Please register or contact the pharmacy.',
-          variant: 'destructive',
-        });
+        toast.error("Patient Not Found", { description: "No patient profile found. Please register or contact the pharmacy." });
         return;
       }
 
@@ -189,11 +173,7 @@ export default function PharmacyRefillPortal() {
       await loadPrescriptions(patient.id);
     } catch (error) {
       console.error('Error looking up patient:', error);
-      toast({
-        title: 'Lookup Failed',
-        description: 'Unable to find your patient record.',
-        variant: 'destructive',
-      });
+      toast.error("Lookup Failed", { description: "Unable to find your patient record." });
     } finally {
       setPrescriptionsLoading(false);
     }
@@ -225,11 +205,7 @@ export default function PharmacyRefillPortal() {
           .single();
 
         if (existingProfile) {
-          toast({
-            title: 'Already Registered',
-            description: 'A patient with this email or phone already exists. Please use patient lookup.',
-            variant: 'destructive',
-          });
+          toast.error("Already Registered", { description: "A patient with this email or phone already exists. Please use patient lookup." });
           return;
         }
       }
@@ -272,11 +248,7 @@ export default function PharmacyRefillPortal() {
       setPrescriptions([]);
     } catch (error) {
       console.error('Error registering patient:', error);
-      toast({
-        title: 'Registration Failed',
-        description: 'Unable to complete registration. Please contact the pharmacy.',
-        variant: 'destructive',
-      });
+      toast.error("Registration Failed", { description: "Unable to complete registration. Please contact the pharmacy." });
     }
   };
 
@@ -317,11 +289,7 @@ export default function PharmacyRefillPortal() {
       toast.success("Refill Requested!", { description: "Your refill request has been submitted. The pharmacy will contact you when ready." });
     } catch (error) {
       console.error('Error requesting refill:', error);
-      toast({
-        title: 'Request Failed',
-        description: 'Unable to submit refill request. Please try again or contact the pharmacy.',
-        variant: 'destructive',
-      });
+      toast.error("Request Failed", { description: "Unable to submit refill request. Please try again or contact the pharmacy." });
     } finally {
       setRefillLoading(null);
     }

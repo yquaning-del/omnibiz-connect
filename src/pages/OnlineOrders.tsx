@@ -118,11 +118,7 @@ export default function OnlineOrders() {
       })));
     } catch (error) {
       console.error('Error loading orders:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load orders.',
-        variant: 'destructive',
-      });
+      toast.error("Error", { description: "Failed to load orders." });
     } finally {
       setLoading(false);
     }
@@ -142,10 +138,7 @@ export default function OnlineOrders() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: `Order ${actionDialog.action}ed successfully.`,
-      });
+      toast.success("Success", { description: `Order ${actionDialog.action}ed successfully.` });
 
       setActionDialog({ open: false, action: '', orderId: '' });
       setTrackingNumber('');
@@ -153,11 +146,7 @@ export default function OnlineOrders() {
       await loadOrders();
     } catch (error: any) {
       console.error('Error processing order:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to process order.',
-        variant: 'destructive',
-      });
+      toast.error("Error");
     } finally {
       setProcessing(false);
     }

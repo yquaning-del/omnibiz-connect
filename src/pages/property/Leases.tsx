@@ -70,11 +70,7 @@ export default function Leases() {
       if (error) throw error;
       setLeases(data || []);
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error loading leases',
-        description: error.message,
-      });
+      toast.error("Error loading leases", { description: error.message });
     } finally {
       setLoading(false);
     }
