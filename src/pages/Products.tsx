@@ -216,7 +216,7 @@ export default function Products() {
     if (error) {
       toast.error("Error");
     } else {
-      toast.success("", { description: ``${product.name` });
+      toast.success("Product deleted", { description: `${product.name} has been removed` });
       fetchProducts();
     }
   };

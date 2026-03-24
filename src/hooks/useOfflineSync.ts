@@ -105,7 +105,7 @@ export function useOfflineSync() {
       }
 
       if (failCount > 0) {
-        toast.error("Sync incomplete", { description: ``${failCount` });
+        toast.error("Sync incomplete", { description: `${failCount} orders failed to sync` });
       }
 
       setSyncStatus((prev) => ({

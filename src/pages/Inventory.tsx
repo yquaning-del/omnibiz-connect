@@ -105,7 +105,7 @@ export default function Inventory() {
       toast.error("Stock changed");
       fetchProducts();
     } else {
-      toast.success("Stock updated", { description: ``${selectedProduct.name` });
+      toast.success("Stock updated", { description: `${selectedProduct.name} stock adjusted successfully` });
       fetchProducts();
       setAdjustDialogOpen(false);
     }
