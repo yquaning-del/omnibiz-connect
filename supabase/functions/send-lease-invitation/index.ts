@@ -12,6 +12,12 @@ serve(async (req) => {
   const cors = getCorsHeaders(req);
 
   try {
+    // Rate limit: 10 requests per minute per IP
+    const clientIP = getClientIP(req);
+    if (isRateLimited(clientIP, 10)) {
+      return rateLimitResponse(getCorsHeaders(req));
+    }
+
     // Verify JWT authentication
     const { userId, supabaseClient: supabase } = await verifyAuth(req);
 
