@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { FileUploader } from '@/components/storage/FileUploader';
 import { formatDistanceToNow } from 'date-fns';
 import {
-import { toast } from 'sonner';
   FileText,
   Download,
   Trash2,
@@ -19,6 +18,7 @@ import { toast } from 'sonner';
   FileImage,
   FileCheck,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TenantDocument {
   id: string;

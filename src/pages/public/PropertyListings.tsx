@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { 
-import { toast } from 'sonner';
   Building2, 
   Search, 
   AlertCircle, 
@@ -27,6 +26,7 @@ import { toast } from 'sonner';
   Clock,
   Wrench,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PropertyInfo {
   id: string;

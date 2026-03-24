@@ -9,11 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { 
-import { toast } from 'sonner';
   Loader2, ShoppingCart, Plus, Minus, Search, 
   UtensilsCrossed, Leaf, Flame, Clock, ChefHat,
   Send, Trash2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;

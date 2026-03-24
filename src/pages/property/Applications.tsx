@@ -8,7 +8,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { 
-import { toast } from 'sonner';
   ClipboardList, 
   Search,
   Calendar,
@@ -20,6 +19,7 @@ import { toast } from 'sonner';
   DollarSign,
   Building2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TenantApplication {
   id: string;

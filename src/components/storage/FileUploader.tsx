@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import {
-import { toast } from 'sonner';
   Upload,
   X,
   FileText,
@@ -13,6 +12,7 @@ import { toast } from 'sonner';
   Loader2,
   CheckCircle2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface FileUploaderProps {
   bucket: 'documents' | 'unit-photos';

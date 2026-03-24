@@ -32,13 +32,13 @@ import {
 } from 'lucide-react';
 import { exportToCSV, ExportColumn } from '@/lib/export';
 import {
-import { toast } from 'sonner';
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 export default function Products() {
   const { currentOrganization, currentLocation } = useAuth();

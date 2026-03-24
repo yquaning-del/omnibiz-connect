@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import {
-import { toast } from 'sonner';
   Moon,
   Loader2,
   BedDouble,
@@ -26,6 +25,7 @@ import { toast } from 'sonner';
   AlertTriangle,
   CheckCircle2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AuditStats {
   totalRooms: number;

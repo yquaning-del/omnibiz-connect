@@ -11,7 +11,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { 
-import { toast } from 'sonner';
   Pill, 
   AlertCircle, 
   RefreshCw, 
@@ -30,6 +29,7 @@ import { toast } from 'sonner';
   Star,
   MapPin,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PharmacyInfo {
   id: string;
