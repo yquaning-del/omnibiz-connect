@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
 import {
@@ -27,6 +26,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { PermissionGate } from '@/components/auth/PermissionGate';
+import { toast } from 'sonner';
 
 interface Reservation {
   id: string;
@@ -72,8 +72,6 @@ const statusColors: Record<string, string> = {
 
 export default function FrontDesk() {
   const { currentOrganization, currentLocation, user } = useAuth();
-  const { toast } = useToast();
-  
   const [loading, setLoading] = useState(true);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [rooms, setRooms] = useState<HotelRoom[]>([]);
@@ -133,7 +131,7 @@ export default function FrontDesk() {
 
   const viewFolio = async (reservation: Reservation) => {
     if (!reservation.folio_id) {
-      toast({ variant: 'destructive', title: 'No folio found', description: 'This guest does not have an associated folio.' });
+      toast.error("No folio found", { description: "This guest does not have an associated folio." });
       return;
     }
     try {
@@ -155,7 +153,7 @@ export default function FrontDesk() {
       setFolioCharges(charges || []);
       setFolioDialogOpen(true);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     }
   };
 
@@ -228,12 +226,12 @@ export default function FrontDesk() {
           .eq('id', selectedReservation.room_id);
       }
 
-      toast({ title: 'Guest checked in successfully' });
+      toast.success("Guest checked in successfully");
       setCheckInDialogOpen(false);
       setSelectedReservation(null);
       fetchData();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setProcessing(false);
     }
@@ -273,12 +271,12 @@ export default function FrontDesk() {
           .eq('id', reservation.folio_id);
       }
 
-      toast({ title: expressCheckout ? 'Express checkout completed' : 'Guest checked out successfully' });
+      toast.success("");
       setCheckOutDialogOpen(false);
       setSelectedReservation(null);
       fetchData();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setProcessing(false);
     }

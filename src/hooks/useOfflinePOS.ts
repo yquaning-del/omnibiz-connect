@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { offlineDB, OfflineOrder, OfflineOrderItem, CachedProduct } from '@/lib/offlineDB';
-import { useToast } from '@/hooks/use-toast';
 import { useOfflineSync } from './useOfflineSync';
 import { Product } from '@/types';
+import { toast } from 'sonner';
 
 interface UseOfflinePOSOptions {
   organizationId: string | undefined;
@@ -22,7 +22,6 @@ interface CartItem {
 }
 
 export function useOfflinePOS({ organizationId, locationId, vertical, userId, tableId, orderType }: UseOfflinePOSOptions) {
-  const { toast } = useToast();
   const { isOnline, syncStatus, requestSync, updatePendingCount } = useOfflineSync();
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -74,11 +73,7 @@ export function useOfflinePOS({ organizationId, locationId, vertical, userId, ta
         setOfflineMode(true);
         console.log(`[OfflinePOS] Loaded ${cached.length} cached products`);
       } else {
-        toast({
-          title: 'No cached products',
-          description: 'Please connect to the internet to load products.',
-          variant: 'destructive',
-        });
+        toast.error("No cached products", { description: "Please connect to the internet to load products." });
       }
     } catch (error) {
       console.error('[OfflinePOS] Error loading cached products:', error);
@@ -224,10 +219,7 @@ export function useOfflinePOS({ organizationId, locationId, vertical, userId, ta
 
     await updatePendingCount();
 
-    toast({
-      title: 'Order saved offline',
-      description: `Order ${orderNumber} will sync when you're back online.`,
-    });
+    toast.success("Order saved offline", { description: `Order ${orderNumber} will sync when you're back online.` });
 
     return { success: true, orderNumber, offline: true };
   }, [organizationId, locationId, userId, vertical, offlineMode, updateLocalStock, updatePendingCount, toast]);

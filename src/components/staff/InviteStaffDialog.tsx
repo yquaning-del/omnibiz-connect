@@ -6,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, UserPlus, Copy, ExternalLink, Check } from 'lucide-react';
 import { ROLE_PERMISSIONS, getAssignableRoles } from '@/lib/rolePermissions';
 import { AppRole } from '@/types';
+import { toast } from 'sonner';
 
 interface InviteStaffDialogProps {
   onInviteSent?: () => void;
@@ -17,8 +17,6 @@ interface InviteStaffDialogProps {
 
 export function InviteStaffDialog({ onInviteSent }: InviteStaffDialogProps) {
   const { currentOrganization, currentLocation, roles, user } = useAuth();
-  const { toast } = useToast();
-  
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [selectedRole, setSelectedRole] = useState<AppRole>('staff');
@@ -52,25 +50,15 @@ export function InviteStaffDialog({ onInviteSent }: InviteStaffDialogProps) {
 
       if (data?.inviteUrl) {
         setInviteUrl(data.inviteUrl);
-        toast({
-          title: 'Invitation created',
-          description: 'Share the link below with the new staff member.',
-        });
+        toast.success("Invitation created", { description: "Share the link below with the new staff member." });
         onInviteSent?.();
       } else {
-        toast({
-          title: 'Invitation sent',
-          description: `An invitation has been sent to ${email}`,
-        });
+        toast.success("Invitation sent", { description: `An invitation has been sent to ${email}` });
         resetAndClose();
         onInviteSent?.();
       }
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to send invitation',
-      });
+      toast.error("Error");
     } finally {
       setLoading(false);
     }
@@ -80,7 +68,7 @@ export function InviteStaffDialog({ onInviteSent }: InviteStaffDialogProps) {
     if (!inviteUrl) return;
     await navigator.clipboard.writeText(inviteUrl);
     setCopied(true);
-    toast({ title: 'Link copied to clipboard' });
+    toast.success("Link copied to clipboard");
     setTimeout(() => setCopied(false), 2000);
   };
 

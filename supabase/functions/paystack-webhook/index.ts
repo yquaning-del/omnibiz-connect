@@ -25,7 +25,7 @@ serve(async (req) => {
     const body = JSON.parse(rawBody);
     const { event, data } = body;
 
-    console.log("Received webhook event:", event, "| Live mode:", isLiveMode);
+    console.log("Received webhook event:", event);
 
     // Verify webhook signature in live mode
     if (isLiveMode) {
@@ -102,12 +102,11 @@ serve(async (req) => {
 
           if (subError) {
             console.error("Error updating subscription:", subError);
-          } else {
-            console.log("Subscription activated for org:", organizationId);
+            console.log("Subscription activated for org");
           }
         }
 
-        console.log("Payment successful:", reference);
+        console.log("Payment processed successfully");
         break;
       }
 
@@ -126,7 +125,7 @@ serve(async (req) => {
           console.error("Error updating failed transaction:", error);
         }
 
-        console.log("Payment failed:", reference, gateway_response);
+        console.log("Payment failed for transaction");
         break;
       }
 

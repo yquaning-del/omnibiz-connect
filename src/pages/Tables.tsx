@@ -9,12 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { Loader2, Plus, UtensilsCrossed, Users, Clock, Edit, Trash2, LayoutGrid, Map, QrCode } from 'lucide-react';
 import { FloorPlanEditor } from '@/components/restaurant/FloorPlanEditor';
 import { QRCodeGenerator } from '@/components/restaurant/QRCodeGenerator';
+import { toast } from 'sonner';
 
 interface RestaurantTable {
   id: string;
@@ -44,7 +44,6 @@ const statusLabels: Record<string, string> = {
 
 export default function Tables() {
   const { currentLocation, currentOrganization } = useAuth();
-  const { toast } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
   
   const [tables, setTables] = useState<RestaurantTable[]>([]);
@@ -117,21 +116,21 @@ export default function Tables() {
           .eq('id', editingTable.id);
 
         if (error) throw error;
-        toast({ title: 'Table updated' });
+        toast.success("Table updated");
       } else {
         const { error } = await supabase
           .from('restaurant_tables')
           .insert(tableData);
 
         if (error) throw error;
-        toast({ title: 'Table created' });
+        toast.success("Table created");
       }
 
       setDialogOpen(false);
       resetForm();
       fetchTables();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setSaving(false);
     }
@@ -144,7 +143,7 @@ export default function Tables() {
       .eq('id', tableId);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       fetchTables();
     }
@@ -159,9 +158,9 @@ export default function Tables() {
       .eq('id', table.id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
-      toast({ title: 'Table deleted' });
+      toast.success("Table deleted");
       fetchTables();
     }
   };
@@ -189,10 +188,10 @@ export default function Tables() {
           .update({ position_x: update.position_x, position_y: update.position_y })
           .eq('id', update.id);
       }
-      toast({ title: 'Floor plan saved' });
+      toast.success("Floor plan saved");
       fetchTables();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     }
   };
 

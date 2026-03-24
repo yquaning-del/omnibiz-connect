@@ -10,7 +10,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
 import { 
   Building2, 
   Search, 
@@ -27,6 +26,7 @@ import {
   Clock,
   Wrench,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PropertyInfo {
   id: string;
@@ -77,8 +77,6 @@ const PROPERTY_FEATURES = [
 export default function PropertyListings() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
   const [property, setProperty] = useState<PropertyInfo | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -120,11 +118,7 @@ export default function PropertyListings() {
       
       // Check if it's a property management company
       if (orgData.primary_vertical !== 'property') {
-        toast({
-          title: 'Not a Property',
-          description: 'This business does not offer rental listings.',
-          variant: 'destructive',
-        });
+        toast.error("Not a Property", { description: "This business does not offer rental listings." });
         navigate('/');
         return;
       }
@@ -152,11 +146,7 @@ export default function PropertyListings() {
       setUnits(unitsData || []);
     } catch (error) {
       console.error('Error loading property:', error);
-      toast({
-        title: 'Property not found',
-        description: 'The property you are looking for does not exist.',
-        variant: 'destructive',
-      });
+      toast.error("Property not found", { description: "The property you are looking for does not exist." });
     } finally {
       setLoading(false);
     }
@@ -238,17 +228,10 @@ export default function PropertyListings() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Application Submitted!',
-        description: 'We will review your application and get back to you soon.',
-      });
+      toast.success("Application Submitted!", { description: "We will review your application and get back to you soon." });
     } catch (error) {
       console.error('Error submitting application:', error);
-      toast({
-        title: 'Application Failed',
-        description: 'Unable to submit your application. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error("Application Failed", { description: "Unable to submit your application. Please try again." });
       throw error;
     }
   };

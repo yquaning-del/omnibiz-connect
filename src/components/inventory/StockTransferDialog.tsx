@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, Loader2, Package } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Location {
   id: string;
@@ -36,8 +36,6 @@ interface StockTransferDialogProps {
 
 export function StockTransferDialog({ open, onClose, onSuccess }: StockTransferDialogProps) {
   const { currentOrganization, user } = useAuth();
-  const { toast } = useToast();
-
   const [locations, setLocations] = useState<Location[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -96,30 +94,18 @@ export function StockTransferDialog({ open, onClose, onSuccess }: StockTransferD
 
   const handleSubmit = async () => {
     if (!fromLocationId || !toLocationId || !productId || !quantity) {
-      toast({
-        variant: 'destructive',
-        title: 'Missing fields',
-        description: 'Please fill in all required fields.',
-      });
+      toast.error("Missing fields", { description: "Please fill in all required fields." });
       return;
     }
 
     if (fromLocationId === toLocationId) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid transfer',
-        description: 'Source and destination locations must be different.',
-      });
+      toast.error("Invalid transfer", { description: "Source and destination locations must be different." });
       return;
     }
 
     const qty = parseInt(quantity);
     if (qty <= 0 || qty > maxQuantity) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid quantity',
-        description: `Quantity must be between 1 and ${maxQuantity}.`,
-      });
+      toast.error("Invalid quantity", { description: `Quantity must be between 1 and ${maxQuantity}.` });
       return;
     }
 
@@ -148,21 +134,14 @@ export function StockTransferDialog({ open, onClose, onSuccess }: StockTransferD
 
       if (updateError) throw updateError;
 
-      toast({
-        title: 'Stock transferred',
-        description: `Successfully transferred ${qty} units of ${selectedProduct?.name}.`,
-      });
+      toast.success("Stock transferred", { description: `Successfully transferred ${qty} units of ${selectedProduct?.name}.` });
 
       resetForm();
       onClose();
       onSuccess?.();
     } catch (error: any) {
       console.error('Transfer error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Transfer failed',
-        description: error.message,
-      });
+      toast.error("Transfer failed", { description: error.message });
     } finally {
       setSaving(false);
     }

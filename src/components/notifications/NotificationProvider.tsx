@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { Bell, Package, CalendarCheck, ShoppingCart, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { currentOrganization, currentLocation } = useAuth();
-  const { toast } = useToast();
   const channelsRef = useRef<ReturnType<typeof supabase.channel>[]>([]);
 
   useEffect(() => {
@@ -31,10 +30,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         },
         (payload) => {
           const order = payload.new as any;
-          toast({
-            title: 'New Order Received',
-            description: `Order #${order.order_number} - $${Number(order.total_amount).toFixed(2)}`,
-          });
+          toast.success("New Order Received", { description: `Order #${order.order_number} - $${Number(order.total_amount).toFixed(2)}` });
         }
       )
       .subscribe();
@@ -52,10 +48,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         },
         (payload) => {
           const reservation = payload.new as any;
-          toast({
-            title: 'New Reservation',
-            description: `${reservation.guest_name} - ${reservation.reservation_type === 'room' ? 'Room' : 'Table'} booking`,
-          });
+          toast.success("New Reservation", { description: `${reservation.guest_name} - ${reservation.reservation_type === 'room' ? 'Room' : 'Table'} booking` });
         }
       )
       .subscribe();
@@ -74,11 +67,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         (payload) => {
           const product = payload.new as any;
           if (product.stock_quantity <= product.low_stock_threshold && product.stock_quantity > 0) {
-            toast({
-              title: 'Low Stock Alert',
-              description: `${product.name} is running low (${product.stock_quantity} remaining)`,
-              variant: 'destructive',
-            });
+            toast.error("Low Stock Alert", { description: `${product.name} is running low (${product.stock_quantity} remaining)` });
           }
         }
       )
@@ -98,11 +87,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         (payload) => {
           const task = payload.new as any;
           if (task.priority === 'urgent') {
-            toast({
-              title: 'Urgent Housekeeping Task',
-              description: `New ${task.task_type} task created`,
-              variant: 'destructive',
-            });
+            toast.error("Urgent Housekeeping Task", { description: `New ${task.task_type} task created` });
           }
         }
       )

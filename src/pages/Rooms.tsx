@@ -10,12 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Loader2, Plus, BedDouble, Users, DollarSign, Sparkles, Wrench, Edit, MoreVertical, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns';
+import { toast } from 'sonner';
 
 interface HotelRoom {
   id: string;
@@ -46,7 +46,6 @@ const housekeepingColors: Record<string, string> = {
 
 export default function Rooms() {
   const { currentLocation } = useAuth();
-  const { toast } = useToast();
   const [rooms, setRooms] = useState<HotelRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -118,9 +117,9 @@ export default function Rooms() {
       }).eq('id', editingRoom.id);
 
       if (error) {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
+        toast.error("Error");
       } else {
-        toast({ title: 'Room updated' });
+        toast.success("Room updated");
         setDialogOpen(false);
         resetForm();
         fetchRooms();
@@ -140,9 +139,9 @@ export default function Rooms() {
       });
 
       if (error) {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
+        toast.error("Error");
       } else {
-        toast({ title: 'Room created' });
+        toast.success("Room created");
         setDialogOpen(false);
         resetForm();
         fetchRooms();

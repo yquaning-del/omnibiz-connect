@@ -122,16 +122,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.removeItem('currentOrganizationId');
         }
         
-        // Set first location/org as current if none saved
-        if (!currentLocation) {
-          setCurrentLocation(typedLocations[0]);
+        // Set first location/org as current if none saved - use functional updates to avoid stale closures
+        setCurrentLocation(prev => prev ?? typedLocations[0]);
+        if (orgsData && orgsData.length > 0) {
+          setCurrentOrganization(prev => prev ?? (orgsData[0] as Organization));
         }
-        if (!currentOrganization && orgsData && orgsData.length > 0) {
-          setCurrentOrganization(orgsData[0] as Organization);
-        }
-      } else if (orgsData && orgsData.length > 0 && !currentOrganization) {
+      } else if (orgsData && orgsData.length > 0) {
         // Set first org as current if no locations
-        setCurrentOrganization(orgsData[0] as Organization);
+        setCurrentOrganization(prev => prev ?? (orgsData[0] as Organization));
       }
     } catch (error) {
       console.error('Error fetching user data:', error);

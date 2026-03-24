@@ -17,7 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -36,6 +35,7 @@ import {
   Split,
   Trash2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface GuestFolio {
   id: string;
@@ -79,7 +79,6 @@ const statusColors: Record<string, string> = {
 
 export default function Billing() {
   const { currentOrganization, currentLocation, user } = useAuth();
-  const { toast } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const [loading, setLoading] = useState(true);
@@ -175,13 +174,13 @@ export default function Billing() {
         })
         .eq('id', selectedFolio.id);
 
-      toast({ title: 'Charge added successfully' });
+      toast.success("Charge added successfully");
       setChargeDialogOpen(false);
       setChargeForm({ charge_type: 'other', description: '', quantity: '1', unit_price: '' });
       fetchFolios();
       fetchCharges(selectedFolio.id);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setSaving(false);
     }
@@ -208,12 +207,12 @@ export default function Billing() {
         })
         .eq('id', selectedFolio.id);
 
-      toast({ title: 'Payment recorded successfully' });
+      toast.success("Payment recorded successfully");
       setPaymentDialogOpen(false);
       setPaymentForm({ amount: '', method: 'credit_card' });
       fetchFolios();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setSaving(false);
     }
@@ -248,11 +247,11 @@ export default function Billing() {
         })
         .eq('id', selectedFolio.id);
 
-      toast({ title: 'Charge voided' });
+      toast.success("Charge voided");
       fetchFolios();
       fetchCharges(selectedFolio.id);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     }
   };
 

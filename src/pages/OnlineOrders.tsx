@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, type SupportedCurrency } from '@/lib/currency';
 import { format } from 'date-fns';
 import { 
@@ -25,6 +24,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 interface OnlineOrder {
   id: string;
@@ -67,7 +67,6 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
 
 export default function OnlineOrders() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [orders, setOrders] = useState<OnlineOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -119,11 +118,7 @@ export default function OnlineOrders() {
       })));
     } catch (error) {
       console.error('Error loading orders:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load orders.',
-        variant: 'destructive',
-      });
+      toast.error("Error", { description: "Failed to load orders." });
     } finally {
       setLoading(false);
     }
@@ -143,10 +138,7 @@ export default function OnlineOrders() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: `Order ${actionDialog.action}ed successfully.`,
-      });
+      toast.success("Success", { description: `Order ${actionDialog.action}ed successfully.` });
 
       setActionDialog({ open: false, action: '', orderId: '' });
       setTrackingNumber('');
@@ -154,11 +146,7 @@ export default function OnlineOrders() {
       await loadOrders();
     } catch (error: any) {
       console.error('Error processing order:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to process order.',
-        variant: 'destructive',
-      });
+      toast.error("Error");
     } finally {
       setProcessing(false);
     }

@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { 
   FileText, 
   Plus, 
@@ -18,6 +17,7 @@ import { formatCurrency } from '@/lib/currency';
 import { LeaseWizard } from '@/components/property/LeaseWizard';
 import { LeaseDetailPanel } from '@/components/property/LeaseDetailPanel';
 import { PermissionGate } from '@/components/auth/PermissionGate';
+import { toast } from 'sonner';
 
 interface Lease {
   id: string;
@@ -42,7 +42,6 @@ const statusColors: Record<string, string> = {
 
 export default function Leases() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [leases, setLeases] = useState<Lease[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -71,11 +70,7 @@ export default function Leases() {
       if (error) throw error;
       setLeases(data || []);
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error loading leases',
-        description: error.message,
-      });
+      toast.error("Error loading leases", { description: error.message });
     } finally {
       setLoading(false);
     }

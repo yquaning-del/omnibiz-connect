@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import {
@@ -28,6 +27,7 @@ import {
   Package,
 } from 'lucide-react';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
+import { toast } from 'sonner';
 
 interface RoomServiceOrder {
   id: string;
@@ -87,8 +87,6 @@ const amenityIcons: Record<string, typeof Coffee> = {
 
 export default function GuestServices() {
   const { currentOrganization, currentLocation } = useAuth();
-  const { toast } = useToast();
-
   const [loading, setLoading] = useState(true);
   const [roomServiceOrders, setRoomServiceOrders] = useState<RoomServiceOrder[]>([]);
   const [amenityRequests, setAmenityRequests] = useState<AmenityRequest[]>([]);
@@ -247,22 +245,22 @@ export default function GuestServices() {
               balance_due: newBalance,
             }).eq('id', folio.id);
 
-            toast({ title: 'Room service order created and posted to folio' });
+            toast.success("Room service order created and posted to folio");
           } else {
-            toast({ title: 'Room service order created (no open folio found)' });
+            toast.success("Room service order created (no open folio found)");
           }
         } catch (folioErr) {
           console.error('Error posting to folio:', folioErr);
-          toast({ title: 'Room service order created (folio posting failed)' });
+          toast.success("Room service order created (folio posting failed)");
         }
       } else {
-        toast({ title: 'Room service order created' });
+        toast.success("Room service order created");
       }
 
       setOrderDialogOpen(false);
       setOrderForm({ guest_name: '', room_number: '', items: '', special_instructions: '', total_amount: '' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setSaving(false);
     }
@@ -286,11 +284,11 @@ export default function GuestServices() {
 
       if (error) throw error;
 
-      toast({ title: 'Amenity request created' });
+      toast.success("Amenity request created");
       setAmenityDialogOpen(false);
       setAmenityForm({ guest_name: '', room_number: '', request_type: 'towels', description: '', quantity: '1', priority: 'normal' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } finally {
       setSaving(false);
     }
@@ -303,8 +301,8 @@ export default function GuestServices() {
     }
 
     const { error } = await supabase.from('room_service_orders').update(updates).eq('id', id);
-    if (error) toast({ variant: 'destructive', title: 'Error', description: error.message });
-    else toast({ title: 'Order status updated' });
+    if (error) toast.error("Error");
+    else toast.success("Order status updated");
   };
 
   const updateAmenityStatus = async (id: string, status: string) => {
@@ -314,8 +312,8 @@ export default function GuestServices() {
     }
 
     const { error } = await supabase.from('amenity_requests').update(updates).eq('id', id);
-    if (error) toast({ variant: 'destructive', title: 'Error', description: error.message });
-    else toast({ title: 'Request status updated' });
+    if (error) toast.error("Error");
+    else toast.success("Request status updated");
   };
 
   const pendingOrders = roomServiceOrders.filter((o) => o.status !== 'delivered' && o.status !== 'cancelled');

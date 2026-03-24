@@ -10,8 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Search, AlertTriangle, Shield, Plus, Loader2 } from "lucide-react";
+import { toast } from 'sonner';
 
 interface ControlledSubstanceLog {
   id: string;
@@ -38,7 +38,6 @@ interface ControlledSubstanceLog {
 
 const ControlledSubstances = () => {
   const { currentOrganization, currentLocation } = useAuth();
-  const { toast } = useToast();
   const [logs, setLogs] = useState<ControlledSubstanceLog[]>([]);
   const [controlledProducts, setControlledProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +105,7 @@ const ControlledSubstances = () => {
       setControlledProducts(productsResult.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast({ title: "Error", description: "Failed to load controlled substance data", variant: "destructive" });
+      toast.error("Error", { description: "Failed to load controlled substance data" });
     } finally {
       setLoading(false);
     }
@@ -114,7 +113,7 @@ const ControlledSubstances = () => {
 
   const handleLogEntry = async () => {
     if (!newEntry.product_id || newEntry.quantity_change === 0) {
-      toast({ title: "Error", description: "Please select a product and enter quantity", variant: "destructive" });
+      toast.error("Error", { description: "Please select a product and enter quantity" });
       return;
     }
 
@@ -138,13 +137,13 @@ const ControlledSubstances = () => {
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
-        toast({ title: "Error", description: "You must be logged in", variant: "destructive" });
+        toast.error("Error", { description: "You must be logged in" });
         setSaving(false);
         return;
       }
 
       if (!currentLocation) {
-        toast({ title: "Error", description: "No location selected. Please select a location first.", variant: "destructive" });
+        toast.error("Error", { description: "No location selected. Please select a location first." });
         setSaving(false);
         return;
       }
@@ -176,7 +175,7 @@ const ControlledSubstances = () => {
 
       if (updateError) throw updateError;
 
-      toast({ title: "Success", description: "Controlled substance log entry created" });
+      toast.success("Success", { description: "Controlled substance log entry created" });
       setDialogOpen(false);
       setNewEntry({
         product_id: "",
@@ -189,7 +188,7 @@ const ControlledSubstances = () => {
       fetchData();
     } catch (error) {
       console.error('Error creating log entry:', error);
-      toast({ title: "Error", description: "Failed to create log entry", variant: "destructive" });
+      toast.error("Error", { description: "Failed to create log entry" });
     } finally {
       setSaving(false);
     }

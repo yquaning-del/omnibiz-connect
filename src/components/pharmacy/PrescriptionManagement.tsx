@@ -11,9 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, AlertTriangle, CheckCircle, Clock, Loader2, Pencil, Trash2 } from "lucide-react";
 import DrugInteractionAlert from "./DrugInteractionAlert";
+import { toast } from 'sonner';
 
 interface Prescription {
   id: string;
@@ -40,7 +40,6 @@ interface PrescriptionManagementProps {
 
 const PrescriptionManagement = ({ onRefresh }: PrescriptionManagementProps) => {
   const { currentOrganization, currentLocation } = useAuth();
-  const { toast } = useToast();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -299,7 +298,7 @@ const PrescriptionManagement = ({ onRefresh }: PrescriptionManagementProps) => {
       })));
     } catch (error) {
       console.error('Error fetching prescriptions:', error);
-      toast({ title: "Error", description: "Failed to load prescriptions", variant: "destructive" });
+      toast.error("Error", { description: "Failed to load prescriptions" });
     } finally {
       setLoading(false);
     }
@@ -314,12 +313,12 @@ const PrescriptionManagement = ({ onRefresh }: PrescriptionManagementProps) => {
 
   const handleCreatePrescription = async () => {
     if (!newPrescription.prescriber_name || !newPrescription.medication_name) {
-      toast({ title: "Error", description: "Please fill in required fields", variant: "destructive" });
+      toast.error("Error", { description: "Please fill in required fields" });
       return;
     }
 
     if (!currentLocation) {
-      toast({ title: "Error", description: "No location selected. Please select a location first.", variant: "destructive" });
+      toast.error("Error", { description: "No location selected. Please select a location first." });
       return;
     }
 
@@ -360,7 +359,7 @@ const PrescriptionManagement = ({ onRefresh }: PrescriptionManagementProps) => {
 
       if (itemError) throw itemError;
 
-      toast({ title: "Success", description: "Prescription created successfully" });
+      toast.success("Success", { description: "Prescription created successfully" });
       setDialogOpen(false);
       setNewPrescription({
         patient_id: "",
@@ -379,7 +378,7 @@ const PrescriptionManagement = ({ onRefresh }: PrescriptionManagementProps) => {
       onRefresh();
     } catch (error) {
       console.error('Error creating prescription:', error);
-      toast({ title: "Error", description: "Failed to create prescription", variant: "destructive" });
+      toast.error("Error", { description: "Failed to create prescription" });
     } finally {
       setSaving(false);
     }
@@ -435,7 +434,7 @@ const PrescriptionManagement = ({ onRefresh }: PrescriptionManagementProps) => {
 
   const handleEditSubmit = async () => {
     if (!editingItem || !newPrescription.prescriber_name || !newPrescription.medication_name) {
-      toast({ title: "Error", description: "Please fill in required fields", variant: "destructive" });
+      toast.error("Error", { description: "Please fill in required fields" });
       return;
     }
 
@@ -492,7 +491,7 @@ const PrescriptionManagement = ({ onRefresh }: PrescriptionManagementProps) => {
         if (itemError) throw itemError;
       }
 
-      toast({ title: "Success", description: "Prescription updated successfully" });
+      toast.success("Success", { description: "Prescription updated successfully" });
       setEditDialogOpen(false);
       setEditingItem(null);
       setNewPrescription({
@@ -512,7 +511,7 @@ const PrescriptionManagement = ({ onRefresh }: PrescriptionManagementProps) => {
       onRefresh();
     } catch (error) {
       console.error('Error updating prescription:', error);
-      toast({ title: "Error", description: "Failed to update prescription", variant: "destructive" });
+      toast.error("Error", { description: "Failed to update prescription" });
     } finally {
       setSaving(false);
     }
@@ -530,14 +529,14 @@ const PrescriptionManagement = ({ onRefresh }: PrescriptionManagementProps) => {
 
       if (error) throw error;
 
-      toast({ title: "Success", description: "Prescription deleted successfully" });
+      toast.success("Success", { description: "Prescription deleted successfully" });
       setDeleteDialogOpen(false);
       setPrescriptionToDelete(null);
       fetchPrescriptions();
       onRefresh();
     } catch (error) {
       console.error('Error deleting prescription:', error);
-      toast({ title: "Error", description: "Failed to delete prescription", variant: "destructive" });
+      toast.error("Error", { description: "Failed to delete prescription" });
     } finally {
       setSaving(false);
     }
@@ -557,12 +556,12 @@ const PrescriptionManagement = ({ onRefresh }: PrescriptionManagementProps) => {
 
       if (error) throw error;
 
-      toast({ title: "Success", description: `Prescription marked as ${status}` });
+      toast.success("Success");
       fetchPrescriptions();
       onRefresh();
     } catch (error) {
       console.error('Error updating prescription:', error);
-      toast({ title: "Error", description: "Failed to update prescription", variant: "destructive" });
+      toast.error("Error", { description: "Failed to update prescription" });
     }
   };
 

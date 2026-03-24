@@ -4,11 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Loader2, ChefHat, Clock, CheckCircle, AlertCircle, Play, UtensilsCrossed } from 'lucide-react';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { OrderAgingBadge } from '@/components/kitchen/OrderAgingBadge';
+import { toast } from 'sonner';
 
 interface OrderItem {
   id: string;
@@ -43,8 +43,6 @@ const columnLabels: Record<string, { title: string; icon: any }> = {
 
 export default function Kitchen() {
   const { currentOrganization, currentLocation } = useAuth();
-  const { toast } = useToast();
-  
   const [orders, setOrders] = useState<KitchenOrder[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -114,10 +112,10 @@ export default function Kitchen() {
       .eq('id', orderId);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
       // Realtime will handle the update
-      toast({ title: `Order ${newStatus === 'completed' ? 'completed' : 'updated'}` });
+      toast.success(`Order ${newStatus === 'completed' ? 'completed' : 'updated'}`);
     }
   };
 

@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { offlineDB, OfflineOrder } from '@/lib/offlineDB';
-import { useToast } from '@/hooks/use-toast';
-
+import { toast } from 'sonner';
 interface SyncStatus {
   isSyncing: boolean;
   lastSyncAt: Date | null;
@@ -11,7 +10,6 @@ interface SyncStatus {
 }
 
 export function useOfflineSync() {
-  const { toast } = useToast();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
     isSyncing: false,
@@ -28,13 +26,13 @@ export function useOfflineSync() {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      toast({ title: 'Back online! Syncing pending orders...' });
+      toast.success("Back online! Syncing pending orders...");
       syncOrdersRef.current();
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      toast({ variant: 'destructive', title: 'You\'re offline', description: 'Orders will be saved locally and synced when you\'re back online.' });
+      toast.error("");
     };
 
     const handleSWMessage = (event: MessageEvent) => {
@@ -103,11 +101,11 @@ export function useOfflineSync() {
       }
 
       if (successCount > 0) {
-        toast({ title: `Orders synced! ${successCount} order(s) synced successfully.` });
+        toast.success(`Orders synced! ${successCount} order(s) synced successfully.`);
       }
 
       if (failCount > 0) {
-        toast({ variant: 'destructive', title: 'Sync incomplete', description: `${failCount} order(s) failed to sync and need attention.` });
+        toast.error("Sync incomplete", { description: `${failCount} orders failed to sync` });
       }
 
       setSyncStatus((prev) => ({
@@ -119,7 +117,7 @@ export function useOfflineSync() {
       await updatePendingCount();
     } catch (error) {
       console.error('[Sync] Error syncing orders:', error);
-      toast({ variant: 'destructive', title: 'Sync failed', description: 'Failed to sync orders. Please try again.' });
+      toast.error("Sync failed", { description: "Failed to sync orders. Please try again." });
     } finally {
       syncInProgress.current = false;
       setSyncStatus((prev) => ({ ...prev, isSyncing: false }));

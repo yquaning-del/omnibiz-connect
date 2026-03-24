@@ -20,9 +20,9 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, DollarSign } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
+import { toast } from 'sonner';
 
 interface Tenant {
   id: string;
@@ -63,8 +63,6 @@ export function RecordPaymentDialog({
   preselectedLeaseId,
 }: RecordPaymentDialogProps) {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
-
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [leases, setLeases] = useState<Lease[]>([]);
@@ -118,11 +116,7 @@ export function RecordPaymentDialog({
       if (error) throw error;
       setLeases(data || []);
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error loading leases',
-        description: error.message,
-      });
+      toast.error("Error loading leases", { description: error.message });
     } finally {
       setLoading(false);
     }
@@ -153,10 +147,7 @@ export function RecordPaymentDialog({
 
       if (error) throw error;
 
-      toast({
-        title: 'Payment recorded',
-        description: `${formatCurrency(parseFloat(amount))} payment recorded successfully.`,
-      });
+      toast.success("Payment recorded", { description: `${formatCurrency(parseFloat(amount))} payment recorded successfully.` });
 
       // Reset form
       setSelectedLeaseId(preselectedLeaseId || '');
@@ -168,11 +159,7 @@ export function RecordPaymentDialog({
       onSuccess();
       onClose();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error recording payment',
-        description: error.message,
-      });
+      toast.error("Error recording payment", { description: error.message });
     } finally {
       setSubmitting(false);
     }

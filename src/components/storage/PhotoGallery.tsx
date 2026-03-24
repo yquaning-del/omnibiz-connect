@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { X, ZoomIn, Trash2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PhotoGalleryProps {
   photos: string[];
@@ -21,7 +21,6 @@ export function PhotoGallery({
   bucket = 'unit-photos',
   className,
 }: PhotoGalleryProps) {
-  const { toast } = useToast();
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -40,13 +39,9 @@ export function PhotoGallery({
       }
       
       onPhotosChange(photos.filter(p => p !== photoUrl));
-      toast({ title: 'Photo deleted' });
+      toast.success("Photo deleted");
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Delete failed',
-        description: error.message,
-      });
+      toast.error("Delete failed", { description: error.message });
     } finally {
       setDeleting(null);
     }

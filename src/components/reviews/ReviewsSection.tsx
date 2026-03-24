@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export interface Review {
   id: string;
@@ -25,7 +25,6 @@ interface ReviewsSectionProps {
 }
 
 export function ReviewsSection({ entityId, entityType, organizationId }: ReviewsSectionProps) {
-  const { toast } = useToast();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -44,20 +43,12 @@ export function ReviewsSection({ entityId, entityType, organizationId }: Reviews
     e.preventDefault();
     
     if (!formData.reviewerName.trim()) {
-      toast({
-        title: 'Name required',
-        description: 'Please enter your name.',
-        variant: 'destructive',
-      });
+      toast.error("Name required", { description: "Please enter your name." });
       return;
     }
 
     if (formData.rating === 0) {
-      toast({
-        title: 'Rating required',
-        description: 'Please select a rating.',
-        variant: 'destructive',
-      });
+      toast.error("Rating required", { description: "Please select a rating." });
       return;
     }
 
@@ -77,10 +68,7 @@ export function ReviewsSection({ entityId, entityType, organizationId }: Reviews
     setShowForm(false);
     setHoveredRating(0);
     
-    toast({
-      title: 'Review submitted',
-      description: 'Thank you for your review!',
-    });
+    toast.success("Review submitted", { description: "Thank you for your review!" });
   };
 
   const formatDate = (dateString: string) => {

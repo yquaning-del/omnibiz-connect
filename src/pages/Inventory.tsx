@@ -14,7 +14,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { Product } from '@/types';
 import { cn } from '@/lib/utils';
 import {
@@ -33,10 +32,10 @@ import {
 import { exportToCSV, ExportColumn } from '@/lib/export';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { StockTransferDialog } from '@/components/inventory/StockTransferDialog';
+import { toast } from 'sonner';
 
 export default function Inventory() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -101,19 +100,12 @@ export default function Inventory() {
       .select('id');
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else if (!data || data.length === 0) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Stock changed', 
-        description: 'Someone else updated this product\'s stock. Please refresh and try again.' 
-      });
+      toast.error("Stock changed");
       fetchProducts();
     } else {
-      toast({ 
-        title: 'Stock updated', 
-        description: `${selectedProduct.name}: ${expectedStock} → ${newStock}` 
-      });
+      toast.success("Stock updated", { description: `${selectedProduct.name} stock adjusted successfully` });
       fetchProducts();
       setAdjustDialogOpen(false);
     }

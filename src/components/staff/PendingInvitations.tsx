@@ -4,12 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail, Clock, X, RefreshCw, Copy, Check } from 'lucide-react';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { ROLE_PERMISSIONS } from '@/lib/rolePermissions';
 import { AppRole } from '@/types';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface Invitation {
   id: string;
@@ -27,8 +27,6 @@ interface PendingInvitationsProps {
 
 export function PendingInvitations({ refreshTrigger }: PendingInvitationsProps) {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
-  
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -67,9 +65,9 @@ export function PendingInvitations({ refreshTrigger }: PendingInvitationsProps) 
       .eq('id', id);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
-      toast({ title: 'Invitation cancelled' });
+      toast.success("Invitation cancelled");
       fetchInvitations();
     }
     setActionLoading(null);
@@ -95,10 +93,10 @@ export function PendingInvitations({ refreshTrigger }: PendingInvitationsProps) 
 
       if (error) throw error;
 
-      toast({ title: 'Invitation resent', description: 'A new invitation link has been generated.' });
+      toast.success("Invitation resent", { description: "A new invitation link has been generated." });
       fetchInvitations();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     }
     setActionLoading(null);
   };
@@ -107,7 +105,7 @@ export function PendingInvitations({ refreshTrigger }: PendingInvitationsProps) 
     const url = `${window.location.origin}/staff/accept-invite/${token}`;
     await navigator.clipboard.writeText(url);
     setCopiedId(id);
-    toast({ title: 'Link copied to clipboard' });
+    toast.success("Link copied to clipboard");
     setTimeout(() => setCopiedId(null), 2000);
   };
 

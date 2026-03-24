@@ -12,8 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, Pill, AlertTriangle, Loader2, Pencil, Trash2 } from "lucide-react";
+import { toast } from 'sonner';
 
 interface Medication {
   id: string;
@@ -31,7 +31,6 @@ interface Medication {
 
 const MedicationDatabase = () => {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -84,7 +83,7 @@ const MedicationDatabase = () => {
       })));
     } catch (error) {
       console.error('Error fetching medications:', error);
-      toast({ title: "Error", description: "Failed to load medications", variant: "destructive" });
+      toast.error("Error", { description: "Failed to load medications" });
     } finally {
       setLoading(false);
     }
@@ -112,7 +111,7 @@ const MedicationDatabase = () => {
 
   const handleEditSubmit = async () => {
     if (!editingItem || !newMedication.name) {
-      toast({ title: "Error", description: "Medication name is required", variant: "destructive" });
+      toast.error("Error", { description: "Medication name is required" });
       return;
     }
 
@@ -139,7 +138,7 @@ const MedicationDatabase = () => {
 
       if (error) throw error;
 
-      toast({ title: "Success", description: "Medication updated successfully" });
+      toast.success("Success", { description: "Medication updated successfully" });
       setEditDialogOpen(false);
       setEditingItem(null);
       setNewMedication({
@@ -151,7 +150,7 @@ const MedicationDatabase = () => {
       fetchMedications();
     } catch (error) {
       console.error('Error updating medication:', error);
-      toast({ title: "Error", description: "Failed to update medication", variant: "destructive" });
+      toast.error("Error", { description: "Failed to update medication" });
     } finally {
       setSaving(false);
     }
@@ -169,13 +168,13 @@ const MedicationDatabase = () => {
 
       if (error) throw error;
 
-      toast({ title: "Success", description: "Medication deleted successfully" });
+      toast.success("Success", { description: "Medication deleted successfully" });
       setDeleteDialogOpen(false);
       setMedicationToDelete(null);
       fetchMedications();
     } catch (error) {
       console.error('Error deleting medication:', error);
-      toast({ title: "Error", description: "Failed to delete medication", variant: "destructive" });
+      toast.error("Error", { description: "Failed to delete medication" });
     } finally {
       setSaving(false);
     }
@@ -183,7 +182,7 @@ const MedicationDatabase = () => {
 
   const handleCreateMedication = async () => {
     if (!newMedication.name) {
-      toast({ title: "Error", description: "Medication name is required", variant: "destructive" });
+      toast.error("Error", { description: "Medication name is required" });
       return;
     }
 
@@ -210,7 +209,7 @@ const MedicationDatabase = () => {
 
       if (error) throw error;
 
-      toast({ title: "Success", description: "Medication added to database" });
+      toast.success("Success", { description: "Medication added to database" });
       setDialogOpen(false);
       setNewMedication({
         name: "", generic_name: "", brand_names: "", drug_class: "", dosage_forms: "",
@@ -221,7 +220,7 @@ const MedicationDatabase = () => {
       fetchMedications();
     } catch (error) {
       console.error('Error creating medication:', error);
-      toast({ title: "Error", description: "Failed to add medication", variant: "destructive" });
+      toast.error("Error", { description: "Failed to add medication" });
     } finally {
       setSaving(false);
     }

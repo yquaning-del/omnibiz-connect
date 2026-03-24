@@ -13,7 +13,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { 
   Users, 
@@ -28,6 +27,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { PermissionGate } from '@/components/auth/PermissionGate';
+import { toast } from 'sonner';
 
 interface Tenant {
   id: string;
@@ -54,7 +54,6 @@ const statusColors: Record<string, string> = {
 
 export default function Tenants() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,11 +96,7 @@ export default function Tenants() {
       if (error) throw error;
       setTenants(data || []);
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error loading tenants',
-        description: error.message,
-      });
+      toast.error("Error loading tenants", { description: error.message });
     } finally {
       setLoading(false);
     }
@@ -132,10 +127,7 @@ export default function Tenants() {
 
         if (error) throw error;
 
-        toast({
-          title: 'Tenant updated',
-          description: `${formData.first_name} ${formData.last_name} has been updated successfully.`,
-        });
+        toast.success("Tenant updated", { description: `${formData.first_name} ${formData.last_name} has been updated successfully.` });
 
         setEditDialogOpen(false);
         setEditingTenant(null);
@@ -159,10 +151,7 @@ export default function Tenants() {
 
         if (error) throw error;
 
-        toast({
-          title: 'Tenant added',
-          description: `${formData.first_name} ${formData.last_name} has been added successfully.`,
-        });
+        toast.success("Tenant added", { description: `${formData.first_name} ${formData.last_name} has been added successfully.` });
 
         setIsDialogOpen(false);
       }
@@ -180,11 +169,7 @@ export default function Tenants() {
       });
       fetchTenants();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: editingTenant ? 'Error updating tenant' : 'Error adding tenant',
-        description: error.message,
-      });
+      toast.error("", { description: error.message });
     } finally {
       setSaving(false);
     }
@@ -220,18 +205,11 @@ export default function Tenants() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Tenant deleted',
-        description: `${tenant.first_name} ${tenant.last_name} has been deleted successfully.`,
-      });
+      toast.success("Tenant deleted", { description: `${tenant.first_name} ${tenant.last_name} has been deleted successfully.` });
 
       fetchTenants();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error deleting tenant',
-        description: error.message,
-      });
+      toast.error("Error deleting tenant", { description: error.message });
     }
   };
 

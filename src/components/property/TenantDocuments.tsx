@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -19,6 +18,7 @@ import {
   FileImage,
   FileCheck,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TenantDocument {
   id: string;
@@ -44,7 +44,6 @@ const DOCUMENT_TYPES = [
 
 export function TenantDocuments({ tenantId, tenantName }: TenantDocumentsProps) {
   const { currentOrganization, user } = useAuth();
-  const { toast } = useToast();
   const [documents, setDocuments] = useState<TenantDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -96,15 +95,11 @@ export function TenantDocuments({ tenantId, tenantName }: TenantDocumentsProps) 
 
       if (error) throw error;
 
-      toast({ title: 'Documents uploaded successfully' });
+      toast.success("Documents uploaded successfully");
       setIsUploadOpen(false);
       fetchDocuments();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Upload failed',
-        description: error.message,
-      });
+      toast.error("Upload failed", { description: error.message });
     }
   };
 
@@ -126,14 +121,10 @@ export function TenantDocuments({ tenantId, tenantName }: TenantDocumentsProps) 
 
       if (error) throw error;
 
-      toast({ title: 'Document deleted' });
+      toast.success("Document deleted");
       fetchDocuments();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Delete failed',
-        description: error.message,
-      });
+      toast.error("Delete failed", { description: error.message });
     } finally {
       setDeleting(null);
     }

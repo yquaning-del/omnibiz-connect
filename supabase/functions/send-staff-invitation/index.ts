@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
+import { isRateLimited, getClientIP, rateLimitResponse } from "../_shared/rateLimit.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -12,6 +12,12 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Rate limit: 10 requests per minute per IP
+    const clientIP = getClientIP(req);
+    if (isRateLimited(clientIP, 10)) {
+      return rateLimitResponse(corsHeaders);
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -24,7 +30,7 @@ Deno.serve(async (req) => {
 
     // Handle token validation (public action)
     if (action === "validate" && token) {
-      console.log("Validating token:", token);
+      console.log("Validating invitation token");
       
       const { data: invitation, error } = await adminSupabase
         .from("staff_invitations")
@@ -57,7 +63,7 @@ Deno.serve(async (req) => {
 
     // Handle invitation completion (after user signs up)
     if (action === "complete" && token && body.userId) {
-      console.log("Completing invitation for user:", body.userId);
+      console.log("Completing invitation for user");
       
       const { data: invitation, error: fetchError } = await adminSupabase
         .from("staff_invitations")
@@ -142,7 +148,7 @@ Deno.serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
-    console.log(`Creating invitation for ${email} with role ${role}`);
+    console.log("Creating staff invitation");
 
     // Check if there's already a pending invitation for this email in this org
     const { data: existingInvite } = await adminSupabase

@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -13,6 +12,7 @@ import {
   Loader2,
   CheckCircle2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface FileUploaderProps {
   bucket: 'documents' | 'unit-photos';
@@ -42,7 +42,6 @@ export function FileUploader({
   className,
 }: FileUploaderProps) {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [files, setFiles] = useState<UploadingFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -73,11 +72,7 @@ export function FileUploader({
   const handleFiles = (selectedFiles: File[]) => {
     const validFiles = selectedFiles.filter(file => {
       if (file.size > maxSizeMB * 1024 * 1024) {
-        toast({
-          variant: 'destructive',
-          title: 'File too large',
-          description: `${file.name} exceeds ${maxSizeMB}MB limit`,
-        });
+        toast.error("File too large", { description: `${file.name} exceeds ${maxSizeMB}MB limit` });
         return false;
       }
       return true;
@@ -123,11 +118,7 @@ export function FileUploader({
         setFiles(prev => prev.map(f => 
           f.file === uploadFile.file ? { ...f, status: 'error' as const, error: error.message } : f
         ));
-        toast({
-          variant: 'destructive',
-          title: 'Upload failed',
-          description: `Failed to upload ${uploadFile.file.name}`,
-        });
+        toast.error("Upload failed", { description: `Failed to upload ${uploadFile.file.name}` });
       } else {
         const { data: urlData } = supabase.storage
           .from(bucket)

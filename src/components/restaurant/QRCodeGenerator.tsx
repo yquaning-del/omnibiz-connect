@@ -5,8 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
 import { QrCode, Download, Copy, ExternalLink, Printer } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface QRCodeGeneratorProps {
   tableId: string;
@@ -16,7 +16,6 @@ interface QRCodeGeneratorProps {
 }
 
 export function QRCodeGenerator({ tableId, tableNumber, locationId, organizationSlug }: QRCodeGeneratorProps) {
-  const { toast } = useToast();
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
   
@@ -74,21 +73,13 @@ export function QRCodeGenerator({ tableId, tableNumber, locationId, organization
       
       qrImage.onerror = () => {
         // Fallback: if image fails to load, show error toast
-        toast({ 
-          title: 'Failed to generate QR code',
-          description: 'Please try again later',
-          variant: 'destructive'
-        });
+        toast.error("Failed to generate QR code", { description: "Please try again later" });
       };
       
       qrImage.src = qrServiceUrl;
     } catch (error) {
       console.error('Error generating QR code:', error);
-      toast({ 
-        title: 'Failed to generate QR code',
-        description: 'Please try again later',
-        variant: 'destructive'
-      });
+      toast.error("Failed to generate QR code", { description: "Please try again later" });
     }
   };
 
@@ -100,12 +91,12 @@ export function QRCodeGenerator({ tableId, tableNumber, locationId, organization
     link.href = qrDataUrl;
     link.click();
     
-    toast({ title: 'QR code downloaded' });
+    toast.success("QR code downloaded");
   };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(menuUrl);
-    toast({ title: 'Menu link copied to clipboard' });
+    toast.success("Menu link copied to clipboard");
   };
 
   const handlePrint = () => {

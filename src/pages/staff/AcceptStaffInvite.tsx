@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, XCircle, Building2 } from 'lucide-react';
 import { AppRole } from '@/types';
+import { toast } from 'sonner';
 
 interface InvitationData {
   id: string;
@@ -22,8 +22,6 @@ interface InvitationData {
 export default function AcceptStaffInvite() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
-
   const [invitation, setInvitation] = useState<InvitationData | null>(null);
   const [orgName, setOrgName] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -90,12 +88,12 @@ export default function AcceptStaffInvite() {
     if (!invitation || !token) return;
 
     if (password !== confirmPassword) {
-      toast({ variant: 'destructive', title: 'Passwords do not match' });
+      toast.error("Passwords do not match");
       return;
     }
 
     if (password.length < 6) {
-      toast({ variant: 'destructive', title: 'Password must be at least 6 characters' });
+      toast.error("Password must be at least 6 characters");
       return;
     }
 
@@ -128,19 +126,12 @@ export default function AcceptStaffInvite() {
 
       if (completeError) throw completeError;
 
-      toast({
-        title: 'Account created successfully!',
-        description: 'You can now access the platform.',
-      });
+      toast.success("Account created successfully!", { description: "You can now access the platform." });
 
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Registration error:', err);
-      toast({
-        variant: 'destructive',
-        title: 'Registration failed',
-        description: err.message || 'An error occurred',
-      });
+      toast.error("Registration failed");
     } finally {
       setSubmitting(false);
     }

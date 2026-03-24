@@ -7,8 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Search, DollarSign, FileText, Loader2, Send, CheckCircle, XCircle } from "lucide-react";
+import { toast } from 'sonner';
 
 interface InsuranceClaim {
   id: string;
@@ -35,7 +35,6 @@ interface InsuranceClaim {
 
 const InsuranceBilling = () => {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [claims, setClaims] = useState<InsuranceClaim[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -77,7 +76,7 @@ const InsuranceBilling = () => {
       })));
     } catch (error) {
       console.error('Error fetching claims:', error);
-      toast({ title: "Error", description: "Failed to load insurance claims", variant: "destructive" });
+      toast.error("Error", { description: "Failed to load insurance claims" });
     } finally {
       setLoading(false);
     }
@@ -101,11 +100,11 @@ const InsuranceBilling = () => {
 
       if (error) throw error;
 
-      toast({ title: "Success", description: `Claim ${status}` });
+      toast.success("Success");
       fetchClaims();
     } catch (error) {
       console.error('Error updating claim:', error);
-      toast({ title: "Error", description: "Failed to update claim", variant: "destructive" });
+      toast.error("Error", { description: "Failed to update claim" });
     }
   };
 

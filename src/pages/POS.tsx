@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { Product } from '@/types';
 import { cn } from '@/lib/utils';
 import { BarcodeScanner } from '@/components/pos/BarcodeScanner';
@@ -17,6 +16,7 @@ import { TipInput } from '@/components/pos/TipInput';
 import { EmployeePinLogin } from '@/components/pos/EmployeePinLogin';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useOfflinePOS } from '@/hooks/useOfflinePOS';
+import { toast } from 'sonner';
 import {
   Search,
   Plus,
@@ -57,8 +57,6 @@ interface ReceiptData {
 
 export default function POS() {
   const { currentOrganization, currentLocation, user } = useAuth();
-  const { toast } = useToast();
-
   const isRestaurant = currentLocation?.vertical === 'restaurant';
 
   // Table assignment state (restaurant vertical) — must be declared before useOfflinePOS
@@ -128,7 +126,7 @@ export default function POS() {
   const handleEmployeeLogin = (userId: string, email: string) => {
     setActiveEmployeeId(userId);
     setActiveEmployeeEmail(email);
-    toast({ title: `Switched to ${email}` });
+    toast.success(`Switched to ${email}`);
   };
 
   const handleBarcodeScan = (barcode: string) => {
@@ -143,11 +141,7 @@ export default function POS() {
     } else {
       // Set search query to barcode for manual lookup
       setSearchQuery(barcode);
-      toast({
-        title: 'Product not found',
-        description: `No product found with barcode: ${barcode}`,
-        variant: 'destructive',
-      });
+      toast.error("Product not found", { description: `No product found with barcode: ${barcode}` });
     }
   };
 
@@ -217,7 +211,7 @@ export default function POS() {
   const applyDiscount = () => {
     if (!discountValue) return;
     setShowDiscountInput(false);
-    toast({ title: `Discount applied: ${discountType === 'percent' ? discountValue + '%' : '$' + discountValue}` });
+    toast.success(`Discount applied: ${discountType === 'percent' ? discountValue + '%' : '$' + discountValue}`);
   };
 
   const handlePayment = async (paymentMethod: string) => {
@@ -251,20 +245,13 @@ export default function POS() {
       setShowReceipt(true);
 
       if (!result.offline) {
-        toast({
-          title: 'Payment successful!',
-          description: `Order ${result.orderNumber} completed. Total: $${total.toFixed(2)}`,
-        });
+        toast.success("Payment successful!", { description: `Order ${result.orderNumber} completed. Total: $${total.toFixed(2)}` });
       }
 
       clearCart();
     } catch (error: any) {
       console.error('Payment error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Payment failed',
-        description: error.message || 'An error occurred processing the payment.',
-      });
+      toast.error("Payment failed");
     } finally {
       setProcessing(false);
     }

@@ -5,11 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building2, ArrowLeft, Mail, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ForgotPassword() {
-  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -18,11 +17,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     
     if (!email) {
-      toast({
-        variant: 'destructive',
-        title: 'Email required',
-        description: 'Please enter your email address.',
-      });
+      toast.error("Email required", { description: "Please enter your email address." });
       return;
     }
 
@@ -34,20 +29,12 @@ export default function ForgotPassword() {
       });
 
       if (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: error.message,
-        });
+        toast.error("Error", { description: error.message });
       } else {
         setIsSubmitted(true);
       }
     } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
-      });
+      toast.error("Error", { description: "An unexpected error occurred. Please try again." });
     } finally {
       setIsLoading(false);
     }

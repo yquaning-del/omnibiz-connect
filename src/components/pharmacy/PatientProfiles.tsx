@@ -12,8 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, User, AlertTriangle, Loader2, History, FileText, Pencil, Trash2 } from "lucide-react";
+import { toast } from 'sonner';
 
 interface PatientProfile {
   id: string;
@@ -38,7 +38,6 @@ interface PatientProfile {
 
 const PatientProfiles = () => {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [patients, setPatients] = useState<PatientProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -100,7 +99,7 @@ const PatientProfiles = () => {
       })));
     } catch (error) {
       console.error('Error fetching patients:', error);
-      toast({ title: "Error", description: "Failed to load patients", variant: "destructive" });
+      toast.error("Error", { description: "Failed to load patients" });
     } finally {
       setLoading(false);
     }
@@ -126,7 +125,7 @@ const PatientProfiles = () => {
 
   const handleCreatePatient = async () => {
     if (!newPatient.full_name) {
-      toast({ title: "Error", description: "Patient name is required", variant: "destructive" });
+      toast.error("Error", { description: "Patient name is required" });
       return;
     }
 
@@ -168,7 +167,7 @@ const PatientProfiles = () => {
 
       if (profileError) throw profileError;
 
-      toast({ title: "Success", description: "Patient profile created" });
+      toast.success("Success", { description: "Patient profile created" });
       setDialogOpen(false);
       setNewPatient({
         full_name: "", email: "", phone: "", date_of_birth: "", gender: "",
@@ -179,7 +178,7 @@ const PatientProfiles = () => {
       fetchPatients();
     } catch (error) {
       console.error('Error creating patient:', error);
-      toast({ title: "Error", description: "Failed to create patient", variant: "destructive" });
+      toast.error("Error", { description: "Failed to create patient" });
     } finally {
       setSaving(false);
     }
@@ -209,7 +208,7 @@ const PatientProfiles = () => {
 
   const handleEditSubmit = async () => {
     if (!editingItem || !newPatient.full_name) {
-      toast({ title: "Error", description: "Patient name is required", variant: "destructive" });
+      toast.error("Error", { description: "Patient name is required" });
       return;
     }
 
@@ -250,7 +249,7 @@ const PatientProfiles = () => {
 
       if (profileError) throw profileError;
 
-      toast({ title: "Success", description: "Patient profile updated successfully" });
+      toast.success("Success", { description: "Patient profile updated successfully" });
       setEditDialogOpen(false);
       setEditingItem(null);
       setNewPatient({
@@ -262,7 +261,7 @@ const PatientProfiles = () => {
       fetchPatients();
     } catch (error) {
       console.error('Error updating patient:', error);
-      toast({ title: "Error", description: "Failed to update patient", variant: "destructive" });
+      toast.error("Error", { description: "Failed to update patient" });
     } finally {
       setSaving(false);
     }
@@ -280,13 +279,13 @@ const PatientProfiles = () => {
 
       if (error) throw error;
 
-      toast({ title: "Success", description: "Patient profile deleted successfully" });
+      toast.success("Success", { description: "Patient profile deleted successfully" });
       setDeleteDialogOpen(false);
       setPatientToDelete(null);
       fetchPatients();
     } catch (error) {
       console.error('Error deleting patient:', error);
-      toast({ title: "Error", description: "Failed to delete patient", variant: "destructive" });
+      toast.error("Error", { description: "Failed to delete patient" });
     } finally {
       setSaving(false);
     }

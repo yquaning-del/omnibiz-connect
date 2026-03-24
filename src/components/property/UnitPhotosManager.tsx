@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileUploader } from '@/components/storage/FileUploader';
 import { PhotoGallery } from '@/components/storage/PhotoGallery';
 import { ImagePlus, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface UnitPhotosManagerProps {
   unitId: string;
@@ -21,7 +21,6 @@ export function UnitPhotosManager({
   photos,
   onPhotosChange,
 }: UnitPhotosManagerProps) {
-  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [localPhotos, setLocalPhotos] = useState<string[]>(photos);
@@ -45,14 +44,10 @@ export function UnitPhotosManager({
       if (error) throw error;
 
       onPhotosChange(localPhotos);
-      toast({ title: 'Photos saved' });
+      toast.success("Photos saved");
       setIsOpen(false);
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Save failed',
-        description: error.message,
-      });
+      toast.error("Save failed", { description: error.message });
     } finally {
       setSaving(false);
     }

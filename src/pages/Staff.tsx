@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { Loader2, UserCog, Calendar, Trash2, MoreVertical, Shield, KeyRound } from 'lucide-react';
@@ -23,6 +22,7 @@ import { PermissionAuditLog } from '@/components/staff/PermissionAuditLog';
 import { ROLE_PERMISSIONS } from '@/lib/rolePermissions';
 import { AppRole, BusinessVertical } from '@/types';
 import { PermissionGate } from '@/components/auth/PermissionGate';
+import { toast } from 'sonner';
 
 interface StaffMember {
   id: string;
@@ -66,7 +66,6 @@ const roleLabels: Record<string, string> = {
 
 export default function Staff() {
   const { currentOrganization, currentLocation, isOrgAdmin } = useAuth();
-  const { toast } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
   const limits = useLimitChecker();
   
@@ -137,9 +136,9 @@ export default function Staff() {
       .eq('id', staffId);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
-      toast({ title: 'Role updated successfully' });
+      toast.success("Role updated successfully");
       fetchStaff();
     }
   };
@@ -154,9 +153,9 @@ export default function Staff() {
       .eq('id', staffId);
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
-      toast({ title: 'Staff member removed' });
+      toast.success("Staff member removed");
       fetchStaff();
     }
   };
@@ -193,9 +192,9 @@ export default function Staff() {
       });
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast.error("Error");
     } else {
-      toast({ title: 'Schedule created' });
+      toast.success("Schedule created");
       setScheduleDialogOpen(false);
       fetchSchedules();
     }

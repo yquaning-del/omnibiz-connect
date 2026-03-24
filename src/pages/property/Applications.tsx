@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { 
   ClipboardList, 
@@ -20,6 +19,7 @@ import {
   DollarSign,
   Building2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TenantApplication {
   id: string;
@@ -56,7 +56,6 @@ const statusIcons: Record<string, any> = {
 
 export default function Applications() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [applications, setApplications] = useState<TenantApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,11 +81,7 @@ export default function Applications() {
       if (error) throw error;
       setApplications(data || []);
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error loading applications',
-        description: error.message,
-      });
+      toast.error("Error loading applications", { description: error.message });
     } finally {
       setLoading(false);
     }
@@ -130,18 +125,11 @@ export default function Applications() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Application approved',
-        description: `${app.applicant_name}'s application has been approved.`,
-      });
+      toast.success("Application approved", { description: `${app.applicant_name}'s application has been approved.` });
 
       fetchApplications();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error approving application',
-        description: error.message,
-      });
+      toast.error("Error approving application", { description: error.message });
     }
   };
 
@@ -154,18 +142,11 @@ export default function Applications() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Application rejected',
-        description: `${app.applicant_name}'s application has been rejected.`,
-      });
+      toast.success("Application rejected", { description: `${app.applicant_name}'s application has been rejected.` });
 
       fetchApplications();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error rejecting application',
-        description: error.message,
-      });
+      toast.error("Error rejecting application", { description: error.message });
     }
   };
 

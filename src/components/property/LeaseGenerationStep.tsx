@@ -27,8 +27,8 @@ import {
   Users,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { LEASE_COUNTRIES } from '@/lib/leaseLocations';
+import { toast } from 'sonner';
 
 export interface LeaseClausesData {
   legalNotices: string[];
@@ -81,7 +81,6 @@ export function LeaseGenerationStep({
   onClausesGenerated,
   onClausesUpdate,
 }: LeaseGenerationStepProps) {
-  const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [templateSource, setTemplateSource] = useState<string>('');
@@ -125,10 +124,7 @@ export function LeaseGenerationStep({
         const source = data.data.templateSource || `${formData.country}-${formData.state || formData.city || 'GENERIC'}`;
         setTemplateSource(source);
         onClausesGenerated(clauses, source);
-        toast({
-          title: 'Lease Generated',
-          description: 'AI has generated comprehensive location-specific lease clauses. Review and edit as needed.',
-        });
+        toast.success("Lease Generated", { description: "AI has generated comprehensive location-specific lease clauses. Review and edit as needed." });
       } else {
         throw new Error('Invalid response from AI');
       }
@@ -164,11 +160,7 @@ export function LeaseGenerationStep({
       };
       
       onClausesGenerated(fallbackClauses, 'FALLBACK');
-      toast({
-        variant: 'destructive',
-        title: 'AI Generation Failed',
-        description: 'Using comprehensive standard template instead. You can edit all clauses manually.',
-      });
+      toast.error("AI Generation Failed", { description: "Using comprehensive standard template instead. You can edit all clauses manually." });
     } finally {
       setIsGenerating(false);
     }

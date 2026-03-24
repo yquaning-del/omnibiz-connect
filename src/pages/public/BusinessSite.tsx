@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
 import { 
   UtensilsCrossed, 
   BedDouble, 
@@ -33,6 +32,7 @@ import {
   Twitter,
 } from 'lucide-react';
 import { BusinessVertical } from '@/types';
+import { toast } from 'sonner';
 
 interface OrganizationInfo {
   id: string;
@@ -172,8 +172,6 @@ const VERTICAL_CONFIG: Record<BusinessVertical, {
 export default function BusinessSite() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
   const [organization, setOrganization] = useState<OrganizationInfo | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
@@ -210,11 +208,7 @@ export default function BusinessSite() {
       setLocations(locData || []);
     } catch (error) {
       console.error('Error loading organization:', error);
-      toast({
-        title: 'Business not found',
-        description: 'The business you are looking for does not exist.',
-        variant: 'destructive',
-      });
+      toast.error("Business not found", { description: "The business you are looking for does not exist." });
     } finally {
       setLoading(false);
     }

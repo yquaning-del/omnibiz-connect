@@ -7,13 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { 
   Loader2, ShoppingCart, Plus, Minus, Search, 
   UtensilsCrossed, Leaf, Flame, Clock, ChefHat,
   Send, Trash2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;
@@ -49,8 +49,6 @@ export default function CustomerMenu() {
   const { orgSlug, locationId } = useParams();
   const [searchParams] = useSearchParams();
   const tableId = searchParams.get('table');
-  const { toast } = useToast();
-
   const [loading, setLoading] = useState(true);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
@@ -122,11 +120,7 @@ export default function CustomerMenu() {
       })));
     } catch (error) {
       console.error('Error fetching menu:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error loading menu',
-        description: 'Please try again later',
-      });
+      toast.error("Error loading menu", { description: "Please try again later" });
     } finally {
       setLoading(false);
     }
@@ -153,7 +147,7 @@ export default function CustomerMenu() {
       }
       return [...prev, { product, quantity: 1 }];
     });
-    toast({ title: `Added ${product.name} to cart` });
+    toast.success(`Added ${product.name} to cart`);
   };
 
   const updateQuantity = (productId: string, delta: number) => {
@@ -224,17 +218,10 @@ export default function CustomerMenu() {
       setCart([]);
       setCartOpen(false);
       
-      toast({
-        title: 'Order submitted!',
-        description: `Order ${orderNumber} sent to kitchen. Your food will arrive shortly.`,
-      });
+      toast.success("Order submitted!", { description: `Order ${orderNumber} sent to kitchen. Your food will arrive shortly.` });
     } catch (error) {
       console.error('Order error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to submit order',
-        description: 'Please try again or call a server.',
-      });
+      toast.error("Failed to submit order", { description: "Please try again or call a server." });
     } finally {
       setSubmitting(false);
     }

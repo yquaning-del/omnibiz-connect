@@ -12,8 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { formatCurrency, type SupportedCurrency } from '@/lib/currency';
 import { Loader2, CreditCard, Smartphone, Truck } from 'lucide-react';
 import type { CartItem } from '@/hooks/useCart';
-import { useToast } from '@/hooks/use-toast';
 import { openPaystackPopup, convertToSmallestUnit, generateTransactionReference } from '@/lib/paystack';
+import { toast } from 'sonner';
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Name is required'),
@@ -55,8 +55,6 @@ export function CheckoutForm({
   paystackPublicKey = 'pk_test_xxxxxxxxxxxxx',
 }: CheckoutFormProps) {
   const [submitting, setSubmitting] = useState(false);
-  const { toast } = useToast();
-
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
@@ -96,28 +94,17 @@ export function CheckoutForm({
                 await onSubmit(data, response.reference);
               } catch (error) {
                 console.error('Error processing order after payment:', error);
-                toast({
-                  title: 'Payment successful, but order failed',
-                  description: 'Please contact support with your transaction reference: ' + response.reference,
-                  variant: 'destructive',
-                });
+                toast.error("Payment successful, but order failed");
                 setSubmitting(false);
               }
             } else {
-              toast({
-                title: 'Payment failed',
-                description: response.message || 'Payment was not successful. Please try again.',
-                variant: 'destructive',
-              });
+              toast.error("Payment failed");
               setSubmitting(false);
             }
           },
           onClose: () => {
             // User closed the popup
-            toast({
-              title: 'Payment cancelled',
-              description: 'You cancelled the payment. You can try again when ready.',
-            });
+            toast.success("Payment cancelled", { description: "You cancelled the payment. You can try again when ready." });
             setSubmitting(false);
           },
           metadata: {
@@ -128,11 +115,7 @@ export function CheckoutForm({
         });
       } catch (error) {
         console.error('Error opening Paystack popup:', error);
-        toast({
-          title: 'Payment error',
-          description: error instanceof Error ? error.message : 'Failed to initialize payment. Please try again.',
-          variant: 'destructive',
-        });
+        toast.error("Payment error");
         setSubmitting(false);
       }
       return;
