@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+
 export function ServiceWorkerRegistration() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -13,23 +14,18 @@ export function ServiceWorkerRegistration() {
         scope: '/',
       });
 
-      console.log('[SW] Service Worker registered with scope:', registration.scope);
-
       // Handle updates
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New version available
-              toast.success("Update available", { description: "A new version is available. Refresh to update." });
-                      window.location.reload();
-                    }}
-                    className="text-primary font-medium"
-                  >
-                    Refresh
-                  </button>
-                ),
+              toast.success("Update available", {
+                description: "A new version is available. Refresh to update.",
+                action: {
+                  label: "Refresh",
+                  onClick: () => window.location.reload(),
+                },
               });
             }
           });
