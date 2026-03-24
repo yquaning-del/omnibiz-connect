@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
-    console.log(`Creating invitation for ${email} with role ${role}`);
+    console.log("Creating staff invitation");
 
     // Check if there's already a pending invitation for this email in this org
     const { data: existingInvite } = await adminSupabase

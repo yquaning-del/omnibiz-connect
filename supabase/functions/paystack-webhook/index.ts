@@ -125,7 +125,7 @@ serve(async (req) => {
           console.error("Error updating failed transaction:", error);
         }
 
-        console.log("Payment failed:", reference, gateway_response);
+        console.log("Payment failed for transaction");
         break;
       }
 
