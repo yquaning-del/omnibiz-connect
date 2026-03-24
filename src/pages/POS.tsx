@@ -16,8 +16,8 @@ import { TipInput } from '@/components/pos/TipInput';
 import { EmployeePinLogin } from '@/components/pos/EmployeePinLogin';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useOfflinePOS } from '@/hooks/useOfflinePOS';
-import {
 import { toast } from 'sonner';
+import {
   Search,
   Plus,
   Minus,
