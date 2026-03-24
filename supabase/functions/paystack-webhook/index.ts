@@ -25,7 +25,7 @@ serve(async (req) => {
     const body = JSON.parse(rawBody);
     const { event, data } = body;
 
-    console.log("Received webhook event:", event, "| Live mode:", isLiveMode);
+    console.log("Received webhook event:", event);
 
     // Verify webhook signature in live mode
     if (isLiveMode) {
