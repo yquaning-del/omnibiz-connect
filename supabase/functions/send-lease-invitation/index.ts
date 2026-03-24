@@ -3,6 +3,7 @@ import { handleCorsPreFlight, getCorsHeaders } from "../_shared/cors.ts";
 import { verifyAuth, verifyOrgAccess } from "../_shared/auth.ts";
 import { validateRequired, validateUUID, validateEmail } from "../_shared/validation.ts";
 import { jsonResponse, errorResponse } from "../_shared/response.ts";
+import { isRateLimited, getClientIP, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 serve(async (req) => {
   const preflight = handleCorsPreFlight(req);
