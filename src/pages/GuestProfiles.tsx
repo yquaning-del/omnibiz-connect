@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
   Loader2,
@@ -29,6 +28,7 @@ import {
   Award,
 } from 'lucide-react';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
+import { toast } from 'sonner';
 
 interface Customer {
   id: string;
@@ -78,8 +78,6 @@ const tierIcons: Record<string, typeof Star> = {
 
 export default function GuestProfiles() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
-
   const [loading, setLoading] = useState(true);
   const [profiles, setProfiles] = useState<GuestProfile[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -161,11 +159,11 @@ export default function GuestProfiles() {
           .update(data)
           .eq('id', selectedProfile.id);
         if (error) throw error;
-        toast({ title: 'Profile updated' });
+        toast.success("Profile updated");
       } else {
         const { error } = await supabase.from('guest_profiles').insert(data);
         if (error) throw error;
-        toast({ title: 'Profile created' });
+        toast.success("Profile created");
       }
 
       setDialogOpen(false);

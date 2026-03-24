@@ -21,7 +21,6 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { 
   Building2, 
@@ -42,6 +41,7 @@ import { formatCurrency } from '@/lib/currency';
 import { LEASE_COUNTRIES, getStatesForCountry, getCitiesForCountry } from '@/lib/leaseLocations';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { UnitPhotosManager } from '@/components/property/UnitPhotosManager';
+import { toast } from 'sonner';
 
 interface PropertyUnit {
   id: string;
@@ -71,7 +71,6 @@ const statusColors: Record<string, string> = {
 
 export default function Units() {
   const { currentOrganization, currentLocation } = useAuth();
-  const { toast } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
   const [units, setUnits] = useState<PropertyUnit[]>([]);
   const [loading, setLoading] = useState(true);

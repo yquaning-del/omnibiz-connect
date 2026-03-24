@@ -10,8 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Search, AlertTriangle, Shield, Plus, Loader2 } from "lucide-react";
+import { toast } from 'sonner';
 
 interface ControlledSubstanceLog {
   id: string;
@@ -38,7 +38,6 @@ interface ControlledSubstanceLog {
 
 const ControlledSubstances = () => {
   const { currentOrganization, currentLocation } = useAuth();
-  const { toast } = useToast();
   const [logs, setLogs] = useState<ControlledSubstanceLog[]>([]);
   const [controlledProducts, setControlledProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -176,7 +175,7 @@ const ControlledSubstances = () => {
 
       if (updateError) throw updateError;
 
-      toast({ title: "Success", description: "Controlled substance log entry created" });
+      toast.success("Success", { description: "Controlled substance log entry created" });
       setDialogOpen(false);
       setNewEntry({
         product_id: "",

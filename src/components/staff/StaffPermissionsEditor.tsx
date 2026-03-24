@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, RotateCcw, Save, Sparkles } from 'lucide-react';
 import { useStaffPermissions } from '@/hooks/usePermissions';
 import {
@@ -18,6 +17,7 @@ import {
 import { getTemplatesForVertical, PermissionTemplate } from '@/lib/permissionTemplates';
 import { AppRole, BusinessVertical } from '@/types';
 import { ROLE_PERMISSIONS } from '@/lib/rolePermissions';
+import { toast } from 'sonner';
 
 interface StaffPermissionsEditorProps {
   open: boolean;
@@ -38,7 +38,6 @@ export function StaffPermissionsEditor({
   vertical,
   onSaved,
 }: StaffPermissionsEditorProps) {
-  const { toast } = useToast();
   const { permissions, loading, savePermissions } = useStaffPermissions(
     open ? userRoleId : null
   );
@@ -133,7 +132,7 @@ export function StaffPermissionsEditor({
     });
 
     if (result.success) {
-      toast({ title: 'Permissions saved successfully' });
+      toast.success("Permissions saved successfully");
       onSaved?.();
       onOpenChange(false);
     } else {

@@ -42,7 +42,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/currency';
 import { LeaseExportButton } from './LeaseExportButton';
 import { LeaseWordExport } from './LeaseWordExport';
@@ -50,6 +49,7 @@ import { InviteTenantButton } from './InviteTenantButton';
 import { LeaseStatusManager } from './LeaseStatusManager';
 import { DeleteLeaseDialog } from './DeleteLeaseDialog';
 import { LeaseClausesData } from './LeaseGenerationStep';
+import { toast } from 'sonner';
 
 interface LeaseWithDetails {
   id: string;
@@ -133,7 +133,6 @@ export function LeaseDetailPanel({
   onEditLease,
 }: LeaseDetailPanelProps) {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [lease, setLease] = useState<LeaseWithDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -163,11 +162,7 @@ export function LeaseDetailPanel({
 
       if (leaseError) throw leaseError;
       if (!leaseData) {
-        toast({
-          variant: 'destructive',
-          title: 'Lease not found',
-          description: 'The lease could not be loaded.',
-        });
+        toast.error("Lease not found", { description: "The lease could not be loaded." });
         onOpenChange(false);
         return;
       }

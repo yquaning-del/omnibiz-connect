@@ -14,7 +14,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { Product } from '@/types';
 import { cn } from '@/lib/utils';
 import {
@@ -33,10 +32,10 @@ import {
 import { exportToCSV, ExportColumn } from '@/lib/export';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { StockTransferDialog } from '@/components/inventory/StockTransferDialog';
+import { toast } from 'sonner';
 
 export default function Inventory() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
   
   const [products, setProducts] = useState<Product[]>([]);

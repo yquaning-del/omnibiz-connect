@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard, Upload, BookOpen, FileText, ChevronRight, ExternalLink } from 'lucide-react';
 import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
@@ -20,10 +19,10 @@ import { WebsiteSettingsPanel } from '@/components/settings/WebsiteSettings';
 import DataImport from '@/pages/settings/DataImport';
 import { useLimitChecker, formatLimitDisplay } from '@/hooks/useLimitChecker';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export default function Settings() {
   const { currentOrganization, currentLocation, profile, user } = useAuth();
-  const { toast } = useToast();
   const { t } = useLanguage();
   const limits = useLimitChecker();
   const navigate = useNavigate();
@@ -91,7 +90,7 @@ export default function Settings() {
       if (error) throw error;
     } catch (error: any) {
       console.error('Error saving notification prefs:', error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to save notification preferences' });
+      toast.error("Error", { description: "Failed to save notification preferences" });
     } finally {
       setSavingNotificationPrefs(false);
     }
@@ -170,7 +169,7 @@ export default function Settings() {
     if (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } else {
-      toast({ title: 'Organization updated' });
+      toast.success("Organization updated");
     }
     setSaving(false);
   };
@@ -193,7 +192,7 @@ export default function Settings() {
     if (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } else {
-      toast({ title: 'Location updated' });
+      toast.success("Location updated");
     }
     setSaving(false);
   };
@@ -213,7 +212,7 @@ export default function Settings() {
     if (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } else {
-      toast({ title: 'Profile updated' });
+      toast.success("Profile updated");
     }
     setSaving(false);
   };

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +16,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Loader2, RefreshCcw, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface RefillRequestFormProps {
   onSuccess?: () => void;
@@ -24,8 +24,6 @@ interface RefillRequestFormProps {
 
 export function RefillRequestForm({ onSuccess }: RefillRequestFormProps) {
   const { currentOrganization, currentLocation } = useAuth();
-  const { toast } = useToast();
-  
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -64,7 +62,7 @@ export function RefillRequestForm({ onSuccess }: RefillRequestFormProps) {
       if (error) throw error;
 
       setSubmitted(true);
-      toast({ title: 'Refill request submitted successfully' });
+      toast.success("Refill request submitted successfully");
       
       // Reset after delay
       setTimeout(() => {
@@ -220,7 +218,6 @@ export function RefillRequestForm({ onSuccess }: RefillRequestFormProps) {
 // Pharmacy staff view for managing refill requests
 export function RefillRequestsManager() {
   const { currentOrganization, currentLocation } = useAuth();
-  const { toast } = useToast();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -254,7 +251,7 @@ export function RefillRequestsManager() {
     if (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } else {
-      toast({ title: `Request ${newStatus}` });
+      toast.success(`Request ${newStatus}`);
       fetchRequests();
     }
   };

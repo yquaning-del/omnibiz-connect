@@ -5,12 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building2, Lock, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -25,11 +24,7 @@ export default function ResetPassword() {
     const type = hashParams.get('type');
     
     if (!accessToken || type !== 'recovery') {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Link',
-        description: 'This password reset link is invalid or has expired.',
-      });
+      toast.error("Invalid Link", { description: "This password reset link is invalid or has expired." });
       navigate('/forgot-password');
     }
   }, [navigate, toast]);
@@ -38,11 +33,7 @@ export default function ResetPassword() {
     e.preventDefault();
 
     if (password.length < 6) {
-      toast({
-        variant: 'destructive',
-        title: 'Password too short',
-        description: 'Password must be at least 6 characters.',
-      });
+      toast.error("Password too short", { description: "Password must be at least 6 characters." });
       return;
     }
 
@@ -68,10 +59,7 @@ export default function ResetPassword() {
         });
       } else {
         setIsSuccess(true);
-        toast({
-          title: 'Password Updated',
-          description: 'Your password has been successfully reset.',
-        });
+        toast.success("Password Updated", { description: "Your password has been successfully reset." });
         
         // Redirect to dashboard after 2 seconds
         setTimeout(() => {
@@ -79,11 +67,7 @@ export default function ResetPassword() {
         }, 2000);
       }
     } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
-      });
+      toast.error("Error", { description: "An unexpected error occurred. Please try again." });
     } finally {
       setIsLoading(false);
     }

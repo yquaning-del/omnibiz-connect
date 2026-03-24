@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, Globe, ExternalLink, Copy, Check, Image, Link2, Clock } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface WebsiteSettings {
   enabled: boolean;
@@ -49,8 +49,6 @@ const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
 
 export function WebsiteSettingsPanel() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
-  
   const [settings, setSettings] = useState<WebsiteSettings>(DEFAULT_SETTINGS);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -99,10 +97,7 @@ export function WebsiteSettingsPanel() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Website settings saved',
-        description: 'Your public website has been updated.',
-      });
+      toast.success("Website settings saved", { description: "Your public website has been updated." });
     } catch (error) {
       console.error('Error saving website settings:', error);
       toast({
@@ -119,7 +114,7 @@ export function WebsiteSettingsPanel() {
     navigator.clipboard.writeText(websiteUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast({ title: 'URL copied to clipboard' });
+    toast.success("URL copied to clipboard");
   };
 
   const updateBusinessHours = (day: string, field: 'open' | 'close', value: string) => {

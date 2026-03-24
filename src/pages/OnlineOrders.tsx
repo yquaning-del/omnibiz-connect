@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, type SupportedCurrency } from '@/lib/currency';
 import { format } from 'date-fns';
 import { 
@@ -25,6 +24,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 interface OnlineOrder {
   id: string;
@@ -67,7 +67,6 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
 
 export default function OnlineOrders() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [orders, setOrders] = useState<OnlineOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');

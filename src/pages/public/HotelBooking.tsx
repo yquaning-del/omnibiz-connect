@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
 import { 
   BedDouble, 
   CalendarX, 
@@ -29,6 +28,7 @@ import {
   Waves,
 } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
+import { toast } from 'sonner';
 
 interface HotelInfo {
   id: string;
@@ -78,8 +78,6 @@ const HOTEL_AMENITIES = [
 export default function HotelBooking() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
   const [hotel, setHotel] = useState<HotelInfo | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -233,10 +231,7 @@ export default function HotelBooking() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Booking Confirmed!',
-        description: 'Your room has been reserved. Check your email for details.',
-      });
+      toast.success("Booking Confirmed!", { description: "Your room has been reserved. Check your email for details." });
 
       setRooms(rooms.filter(r => r.id !== selectedRoom.id));
     } catch (error) {

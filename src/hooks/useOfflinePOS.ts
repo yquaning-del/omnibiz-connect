@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { offlineDB, OfflineOrder, OfflineOrderItem, CachedProduct } from '@/lib/offlineDB';
-import { useToast } from '@/hooks/use-toast';
 import { useOfflineSync } from './useOfflineSync';
 import { Product } from '@/types';
+import { toast } from 'sonner';
 
 interface UseOfflinePOSOptions {
   organizationId: string | undefined;
@@ -22,7 +22,6 @@ interface CartItem {
 }
 
 export function useOfflinePOS({ organizationId, locationId, vertical, userId, tableId, orderType }: UseOfflinePOSOptions) {
-  const { toast } = useToast();
   const { isOnline, syncStatus, requestSync, updatePendingCount } = useOfflineSync();
   
   const [products, setProducts] = useState<Product[]>([]);

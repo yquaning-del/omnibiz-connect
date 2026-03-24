@@ -4,9 +4,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { useOrganizationSettings } from '@/hooks/useOrganizationSettings';
 import { Loader2, Save, DollarSign, Percent, Clock, Globe } from 'lucide-react';
+import { toast } from 'sonner';
 
 const currencies = [
   { code: 'USD', name: 'US Dollar' },
@@ -42,8 +42,6 @@ const timezones = [
 
 export function OrganizationSettings() {
   const { settings, loading, updateSettings, currencySymbols } = useOrganizationSettings();
-  const { toast } = useToast();
-  
   const [taxRate, setTaxRate] = useState((settings.taxRate * 100).toString());
   const [currency, setCurrency] = useState(settings.currency);
   const [timezone, setTimezone] = useState(settings.timezone);
@@ -54,7 +52,7 @@ export function OrganizationSettings() {
     try {
       const taxRateValue = parseFloat(taxRate) / 100;
       if (isNaN(taxRateValue) || taxRateValue < 0 || taxRateValue > 1) {
-        toast({ variant: 'destructive', title: 'Invalid tax rate', description: 'Tax rate must be between 0 and 100' });
+        toast.error("Invalid tax rate", { description: "Tax rate must be between 0 and 100" });
         return;
       }
 
@@ -65,7 +63,7 @@ export function OrganizationSettings() {
       });
 
       if (error) throw error;
-      toast({ title: 'Settings saved successfully' });
+      toast.success("Settings saved successfully");
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {

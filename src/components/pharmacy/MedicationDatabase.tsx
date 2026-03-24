@@ -12,8 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, Pill, AlertTriangle, Loader2, Pencil, Trash2 } from "lucide-react";
+import { toast } from 'sonner';
 
 interface Medication {
   id: string;
@@ -31,7 +31,6 @@ interface Medication {
 
 const MedicationDatabase = () => {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -139,7 +138,7 @@ const MedicationDatabase = () => {
 
       if (error) throw error;
 
-      toast({ title: "Success", description: "Medication updated successfully" });
+      toast.success("Success", { description: "Medication updated successfully" });
       setEditDialogOpen(false);
       setEditingItem(null);
       setNewMedication({
@@ -169,7 +168,7 @@ const MedicationDatabase = () => {
 
       if (error) throw error;
 
-      toast({ title: "Success", description: "Medication deleted successfully" });
+      toast.success("Success", { description: "Medication deleted successfully" });
       setDeleteDialogOpen(false);
       setMedicationToDelete(null);
       fetchMedications();
@@ -210,7 +209,7 @@ const MedicationDatabase = () => {
 
       if (error) throw error;
 
-      toast({ title: "Success", description: "Medication added to database" });
+      toast.success("Success", { description: "Medication added to database" });
       setDialogOpen(false);
       setNewMedication({
         name: "", generic_name: "", brand_names: "", drug_class: "", dosage_forms: "",

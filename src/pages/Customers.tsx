@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { Customer } from '@/types';
 import { cn } from '@/lib/utils';
@@ -38,11 +37,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
+import { toast } from 'sonner';
 
 export default function Customers() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
-  
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -120,14 +118,14 @@ export default function Customers() {
           .eq('id', editingCustomer.id);
 
         if (error) throw error;
-        toast({ title: 'Customer updated successfully' });
+        toast.success("Customer updated successfully");
       } else {
         const { error } = await supabase
           .from('customers')
           .insert(customerData);
 
         if (error) throw error;
-        toast({ title: 'Customer created successfully' });
+        toast.success("Customer created successfully");
       }
 
       setDialogOpen(false);
@@ -155,7 +153,7 @@ export default function Customers() {
     if (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } else {
-      toast({ title: 'Customer deleted' });
+      toast.success("Customer deleted");
       fetchCustomers();
     }
   };

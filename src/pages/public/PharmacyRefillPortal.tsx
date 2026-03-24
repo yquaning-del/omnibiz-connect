@@ -10,8 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { 
+import { toast } from 'sonner';
   Pill, 
   AlertCircle, 
   RefreshCw, 
@@ -70,8 +70,6 @@ const PHARMACY_SERVICES = [
 export default function PharmacyRefillPortal() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
   const [pharmacy, setPharmacy] = useState<PharmacyInfo | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
@@ -267,10 +265,7 @@ export default function PharmacyRefillPortal() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Registration Successful!',
-        description: 'You can now view your prescriptions once they are added by the pharmacy.',
-      });
+      toast.success("Registration Successful!", { description: "You can now view your prescriptions once they are added by the pharmacy." });
 
       setPatientId(newPatient.id);
       setIsAuthenticated(true);
@@ -319,10 +314,7 @@ export default function PharmacyRefillPortal() {
         p.id === prescriptionId ? { ...p, status: 'refill_requested' } : p
       ));
 
-      toast({
-        title: 'Refill Requested!',
-        description: 'Your refill request has been submitted. The pharmacy will contact you when ready.',
-      });
+      toast.success("Refill Requested!", { description: "Your refill request has been submitted. The pharmacy will contact you when ready." });
     } catch (error) {
       console.error('Error requesting refill:', error);
       toast({

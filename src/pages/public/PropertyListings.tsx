@@ -10,8 +10,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
 import { 
+import { toast } from 'sonner';
   Building2, 
   Search, 
   AlertCircle, 
@@ -77,8 +77,6 @@ const PROPERTY_FEATURES = [
 export default function PropertyListings() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
   const [property, setProperty] = useState<PropertyInfo | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -238,10 +236,7 @@ export default function PropertyListings() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Application Submitted!',
-        description: 'We will review your application and get back to you soon.',
-      });
+      toast.success("Application Submitted!", { description: "We will review your application and get back to you soon." });
     } catch (error) {
       console.error('Error submitting application:', error);
       toast({

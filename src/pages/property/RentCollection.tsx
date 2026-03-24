@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { 
   DollarSign, 
   Plus, 
@@ -26,6 +25,7 @@ import {
 import { formatCurrency } from '@/lib/currency';
 import { RecordPaymentDialog } from '@/components/property/RecordPaymentDialog';
 import { ApplyLateFeeButton } from '@/components/property/ApplyLateFeeButton';
+import { toast } from 'sonner';
 
 interface RentPayment {
   id: string;
@@ -63,7 +63,6 @@ const statusIcons: Record<string, any> = {
 
 export default function RentCollection() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [payments, setPayments] = useState<RentPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

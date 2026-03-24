@@ -12,8 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { formatCurrency, type SupportedCurrency } from '@/lib/currency';
 import { Loader2, CreditCard, Smartphone, Truck } from 'lucide-react';
 import type { CartItem } from '@/hooks/useCart';
-import { useToast } from '@/hooks/use-toast';
 import { openPaystackPopup, convertToSmallestUnit, generateTransactionReference } from '@/lib/paystack';
+import { toast } from 'sonner';
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Name is required'),
@@ -55,8 +55,6 @@ export function CheckoutForm({
   paystackPublicKey = 'pk_test_xxxxxxxxxxxxx',
 }: CheckoutFormProps) {
   const [submitting, setSubmitting] = useState(false);
-  const { toast } = useToast();
-
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
@@ -114,10 +112,7 @@ export function CheckoutForm({
           },
           onClose: () => {
             // User closed the popup
-            toast({
-              title: 'Payment cancelled',
-              description: 'You cancelled the payment. You can try again when ready.',
-            });
+            toast.success("Payment cancelled", { description: "You cancelled the payment. You can try again when ready." });
             setSubmitting(false);
           },
           metadata: {

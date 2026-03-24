@@ -1,9 +1,6 @@
 import { useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-
+import { toast } from 'sonner';
 export function ServiceWorkerRegistration() {
-  const { toast } = useToast();
-
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       registerServiceWorker();

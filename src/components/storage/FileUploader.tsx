@@ -1,11 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import {
+import { toast } from 'sonner';
   Upload,
   X,
   FileText,
@@ -42,7 +42,6 @@ export function FileUploader({
   className,
 }: FileUploaderProps) {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [files, setFiles] = useState<UploadingFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);

@@ -17,11 +17,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import {
+import { toast } from 'sonner';
   Loader2,
   Search,
   FileText,
@@ -79,7 +79,6 @@ const statusColors: Record<string, string> = {
 
 export default function Billing() {
   const { currentOrganization, currentLocation, user } = useAuth();
-  const { toast } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const [loading, setLoading] = useState(true);
@@ -175,7 +174,7 @@ export default function Billing() {
         })
         .eq('id', selectedFolio.id);
 
-      toast({ title: 'Charge added successfully' });
+      toast.success("Charge added successfully");
       setChargeDialogOpen(false);
       setChargeForm({ charge_type: 'other', description: '', quantity: '1', unit_price: '' });
       fetchFolios();
@@ -208,7 +207,7 @@ export default function Billing() {
         })
         .eq('id', selectedFolio.id);
 
-      toast({ title: 'Payment recorded successfully' });
+      toast.success("Payment recorded successfully");
       setPaymentDialogOpen(false);
       setPaymentForm({ amount: '', method: 'credit_card' });
       fetchFolios();
@@ -248,7 +247,7 @@ export default function Billing() {
         })
         .eq('id', selectedFolio.id);
 
-      toast({ title: 'Charge voided' });
+      toast.success("Charge voided");
       fetchFolios();
       fetchCharges(selectedFolio.id);
     } catch (error: any) {

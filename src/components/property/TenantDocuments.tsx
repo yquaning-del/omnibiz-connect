@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -10,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { FileUploader } from '@/components/storage/FileUploader';
 import { formatDistanceToNow } from 'date-fns';
 import {
+import { toast } from 'sonner';
   FileText,
   Download,
   Trash2,
@@ -44,7 +44,6 @@ const DOCUMENT_TYPES = [
 
 export function TenantDocuments({ tenantId, tenantName }: TenantDocumentsProps) {
   const { currentOrganization, user } = useAuth();
-  const { toast } = useToast();
   const [documents, setDocuments] = useState<TenantDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -96,7 +95,7 @@ export function TenantDocuments({ tenantId, tenantName }: TenantDocumentsProps) 
 
       if (error) throw error;
 
-      toast({ title: 'Documents uploaded successfully' });
+      toast.success("Documents uploaded successfully");
       setIsUploadOpen(false);
       fetchDocuments();
     } catch (error: any) {
@@ -126,7 +125,7 @@ export function TenantDocuments({ tenantId, tenantName }: TenantDocumentsProps) 
 
       if (error) throw error;
 
-      toast({ title: 'Document deleted' });
+      toast.success("Document deleted");
       fetchDocuments();
     } catch (error: any) {
       toast({

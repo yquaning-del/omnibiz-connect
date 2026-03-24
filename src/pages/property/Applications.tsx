@@ -6,9 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { 
+import { toast } from 'sonner';
   ClipboardList, 
   Search,
   Calendar,
@@ -56,7 +56,6 @@ const statusIcons: Record<string, any> = {
 
 export default function Applications() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const [applications, setApplications] = useState<TenantApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

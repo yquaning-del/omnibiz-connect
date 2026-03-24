@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
@@ -38,6 +37,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
+import { toast } from 'sonner';
 
 interface HousekeepingTask {
   id: string;
@@ -200,7 +200,7 @@ const Housekeeping = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Task created successfully" });
+      toast.success("Task created successfully");
       setDialogOpen(false);
       resetForm();
     }
@@ -220,7 +220,7 @@ const Housekeeping = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Task updated" });
+      toast.success("Task updated");
     }
   };
 
@@ -233,7 +233,7 @@ const Housekeeping = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Room status updated" });
+      toast.success("Room status updated");
       fetchData();
     }
   };

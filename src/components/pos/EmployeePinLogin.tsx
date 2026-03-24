@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Loader2, User, Lock, UserCheck, Delete } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface EmployeePinLoginProps {
   onLoginSuccess: (userId: string, userEmail: string) => void;
@@ -33,8 +33,6 @@ async function hashPin(pin: string): Promise<string> {
 }
 
 export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinLoginProps) {
-  const { toast } = useToast();
-  
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [pin, setPin] = useState('');
@@ -56,7 +54,7 @@ export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinL
 
   const handleEmailSubmit = () => {
     if (!email.trim()) {
-      toast({ variant: 'destructive', title: 'Please enter your email' });
+      toast.error("Please enter your email");
       return;
     }
     setStep('pin');
@@ -104,7 +102,7 @@ export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinL
       if (data) {
         setFailedAttempts(0);
         setLockedUntil(null);
-        toast({ title: 'Logged in successfully' });
+        toast.success("Logged in successfully");
         onLoginSuccess(data, email);
         setOpen(false);
         resetForm();
@@ -114,7 +112,7 @@ export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinL
 
         if (newAttempts >= MAX_PIN_ATTEMPTS) {
           setLockedUntil(Date.now() + LOCKOUT_DURATION_MS);
-          toast({ variant: 'destructive', title: 'Account locked', description: 'Too many failed attempts. Try again in 5 minutes.' });
+          toast.error("Account locked", { description: "Too many failed attempts. Try again in 5 minutes." });
         } else {
           toast({ variant: 'destructive', title: 'Invalid PIN', description: `${MAX_PIN_ATTEMPTS - newAttempts} attempt(s) remaining` });
         }
@@ -248,7 +246,6 @@ export function EmployeePinLogin({ onLoginSuccess, currentUserId }: EmployeePinL
 
 // Component for setting up PIN in user settings
 export function SetupPinForm() {
-  const { toast } = useToast();
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [loading, setLoading] = useState(false);
@@ -256,11 +253,11 @@ export function SetupPinForm() {
 
   const handleSavePin = async () => {
     if (pin.length !== 4) {
-      toast({ variant: 'destructive', title: 'PIN must be 4 digits' });
+      toast.error("PIN must be 4 digits");
       return;
     }
     if (pin !== confirmPin) {
-      toast({ variant: 'destructive', title: 'PINs do not match' });
+      toast.error("PINs do not match");
       return;
     }
 
@@ -282,7 +279,7 @@ export function SetupPinForm() {
 
       if (error) throw error;
 
-      toast({ title: 'PIN saved successfully' });
+      toast.success("PIN saved successfully");
       setEnabled(true);
       setPin('');
       setConfirmPin('');
@@ -309,7 +306,7 @@ export function SetupPinForm() {
 
       if (error) throw error;
 
-      toast({ title: 'PIN login disabled' });
+      toast.success("PIN login disabled");
       setEnabled(false);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });

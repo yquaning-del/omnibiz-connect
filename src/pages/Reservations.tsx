@@ -11,12 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useToast } from '@/hooks/use-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { Loader2, Plus, CalendarIcon, UtensilsCrossed, BedDouble, Clock, Users, Phone, Mail, Trash2, Pencil } from 'lucide-react';
 import { format, addDays, isSameDay } from 'date-fns';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
+import { toast } from 'sonner';
 
 interface Reservation {
   id: string;
@@ -55,7 +55,6 @@ const statusColors: Record<string, string> = {
 
 export default function Reservations() {
   const { currentOrganization, currentLocation } = useAuth();
-  const { toast } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
   
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -206,7 +205,7 @@ export default function Reservations() {
         const { data: conflicts } = await query;
 
         if (conflicts && conflicts.length > 0) {
-          toast({ variant: 'destructive', title: 'Conflict detected', description: 'This room is already reserved for the selected dates. Please choose different dates or another room.' });
+          toast.error("Conflict detected", { description: "This room is already reserved for the selected dates. Please choose different dates or another room." });
           setSaving(false);
           return;
         }
@@ -236,7 +235,7 @@ export default function Reservations() {
         const { data: tableConflicts } = await query;
 
         if (tableConflicts && tableConflicts.length > 0) {
-          toast({ variant: 'destructive', title: 'Conflict detected', description: 'This table is already reserved near the selected time. Please choose a different time or table.' });
+          toast.error("Conflict detected", { description: "This table is already reserved near the selected time. Please choose a different time or table." });
           setSaving(false);
           return;
         }
@@ -267,7 +266,7 @@ export default function Reservations() {
 
         if (error) throw error;
 
-        toast({ title: 'Reservation updated' });
+        toast.success("Reservation updated");
         setEditDialogOpen(false);
       } else {
         // Create new reservation
@@ -277,7 +276,7 @@ export default function Reservations() {
 
         if (error) throw error;
 
-        toast({ title: 'Reservation created' });
+        toast.success("Reservation created");
         setDialogOpen(false);
       }
 
@@ -299,7 +298,7 @@ export default function Reservations() {
     if (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } else {
-      toast({ title: 'Status updated' });
+      toast.success("Status updated");
       fetchReservations();
     }
   };

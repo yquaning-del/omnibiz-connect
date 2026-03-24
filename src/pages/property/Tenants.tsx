@@ -13,7 +13,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { 
   Users, 
@@ -28,6 +27,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { PermissionGate } from '@/components/auth/PermissionGate';
+import { toast } from 'sonner';
 
 interface Tenant {
   id: string;
@@ -54,7 +54,6 @@ const statusColors: Record<string, string> = {
 
 export default function Tenants() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);

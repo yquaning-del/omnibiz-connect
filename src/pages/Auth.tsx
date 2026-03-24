@@ -7,10 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building2, UtensilsCrossed, Pill, ShoppingCart, Globe } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -34,7 +34,6 @@ export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, signIn, signUp, loading } = useAuth();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
 
@@ -86,18 +85,11 @@ export default function Auth() {
             : error.message,
         });
       } else {
-        toast({
-          title: 'Welcome back!',
-          description: 'You have successfully logged in.',
-        });
+        toast.success("Welcome back!", { description: "You have successfully logged in." });
         navigate('/dashboard');
       }
     } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
-      });
+      toast.error("Error", { description: "An unexpected error occurred. Please try again." });
     } finally {
       setIsLoading(false);
     }
@@ -133,11 +125,7 @@ export default function Auth() {
       
       if (error) {
         if (error.message.includes('already registered')) {
-          toast({
-            variant: 'destructive',
-            title: 'Account exists',
-            description: 'An account with this email already exists. Please log in instead.',
-          });
+          toast.error("Account exists", { description: "An account with this email already exists. Please log in instead." });
           setActiveTab('login');
           setLoginEmail(signupEmail);
         } else {
@@ -148,18 +136,11 @@ export default function Auth() {
           });
         }
       } else {
-        toast({
-          title: 'Account created!',
-          description: 'Welcome to OmniBiz Connect. Setting up your account...',
-        });
+        toast.success("Account created!", { description: "Welcome to OmniBiz Connect. Setting up your account..." });
         navigate('/onboarding');
       }
     } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
-      });
+      toast.error("Error", { description: "An unexpected error occurred. Please try again." });
     } finally {
       setIsLoading(false);
     }
@@ -187,11 +168,7 @@ export default function Auth() {
       }
       // Note: If successful, the user will be redirected, so we don't need to handle success here
     } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
-      });
+      toast.error("Error", { description: "An unexpected error occurred. Please try again." });
       setIsOAuthLoading(false);
     }
   };

@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { Bell, Package, CalendarCheck, ShoppingCart, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { currentOrganization, currentLocation } = useAuth();
-  const { toast } = useToast();
   const channelsRef = useRef<ReturnType<typeof supabase.channel>[]>([]);
 
   useEffect(() => {

@@ -20,9 +20,9 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, DollarSign } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
+import { toast } from 'sonner';
 
 interface Tenant {
   id: string;
@@ -63,8 +63,6 @@ export function RecordPaymentDialog({
   preselectedLeaseId,
 }: RecordPaymentDialogProps) {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
-
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [leases, setLeases] = useState<Lease[]>([]);

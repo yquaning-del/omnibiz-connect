@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
 import { Product } from '@/types';
 import { cn } from '@/lib/utils';
 import {
@@ -33,6 +32,7 @@ import {
 } from 'lucide-react';
 import { exportToCSV, ExportColumn } from '@/lib/export';
 import {
+import { toast } from 'sonner';
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -42,7 +42,6 @@ import {
 
 export default function Products() {
   const { currentOrganization, currentLocation } = useAuth();
-  const { toast } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -169,7 +168,7 @@ export default function Products() {
 
         if (error) throw error;
 
-        toast({ title: 'Product updated successfully' });
+        toast.success("Product updated successfully");
       } else {
         const { error } = await supabase
           .from('products')
@@ -177,7 +176,7 @@ export default function Products() {
 
         if (error) throw error;
 
-        toast({ title: 'Product created successfully' });
+        toast.success("Product created successfully");
       }
 
       setDialogOpen(false);
@@ -206,7 +205,7 @@ export default function Products() {
     if (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } else {
-      toast({ title: 'Product deleted' });
+      toast.success("Product deleted");
       fetchProducts();
     }
   };

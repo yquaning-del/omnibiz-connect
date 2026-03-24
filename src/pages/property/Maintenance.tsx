@@ -9,10 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import {
+import { toast } from 'sonner';
   Loader2,
   Plus,
   Wrench,
@@ -73,8 +73,6 @@ const priorityColors: Record<string, string> = {
 
 export default function PropertyMaintenance() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
-
   const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
   const [units, setUnits] = useState<PropertyUnit[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -188,7 +186,7 @@ export default function PropertyMaintenance() {
 
       if (error) throw error;
 
-      toast({ title: 'Maintenance request created' });
+      toast.success("Maintenance request created");
       setDialogOpen(false);
       resetForm();
       fetchData();
@@ -220,7 +218,7 @@ export default function PropertyMaintenance() {
             : req
         )
       );
-      toast({ title: 'Status updated' });
+      toast.success("Status updated");
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     }

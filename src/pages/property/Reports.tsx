@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/currency';
 import { format, subDays, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths } from 'date-fns';
 import {
@@ -36,6 +35,7 @@ import {
   Legend,
 } from 'recharts';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
+import { toast } from 'sonner';
 
 interface ReportMetrics {
   totalRevenue: number;
@@ -54,8 +54,6 @@ const COLORS = ['hsl(142, 71%, 45%)', 'hsl(199, 89%, 48%)', 'hsl(280, 60%, 50%)'
 
 export default function PropertyReports() {
   const { currentOrganization } = useAuth();
-  const { toast } = useToast();
-
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('30');
   const [metrics, setMetrics] = useState<ReportMetrics>({
@@ -233,7 +231,7 @@ export default function PropertyReports() {
     a.download = `property-report-${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast({ title: 'Report exported successfully' });
+    toast.success("Report exported successfully");
   };
 
   if (loading) {

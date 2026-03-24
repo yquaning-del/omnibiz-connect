@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { ProductGrid } from '@/components/ecommerce/ProductGrid';
 import { CartDrawer } from '@/components/ecommerce/CartDrawer';
 import { useCart } from '@/hooks/useCart';
-import { useToast } from '@/hooks/use-toast';
 import { ShoppingCart, Store } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 interface StoreInfo {
   id: string;
@@ -20,7 +20,6 @@ interface StoreInfo {
 export default function StoreCatalog() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [store, setStore] = useState<StoreInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [cartOpen, setCartOpen] = useState(false);
@@ -65,10 +64,7 @@ export default function StoreCatalog() {
   const handleAddToCart = async (productId: string, price: number) => {
     try {
       await cart.addItem(productId, price, 1);
-      toast({
-        title: 'Added to cart',
-        description: 'Product has been added to your cart.',
-      });
+      toast.success("Added to cart", { description: "Product has been added to your cart." });
     } catch (error) {
       toast({
         title: 'Error',

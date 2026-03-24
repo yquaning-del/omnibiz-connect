@@ -12,8 +12,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { AlertTriangle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ApplyLateFeeButtonProps {
   onSuccess?: () => void;
@@ -21,8 +21,6 @@ interface ApplyLateFeeButtonProps {
 
 export function ApplyLateFeeButton({ onSuccess }: ApplyLateFeeButtonProps) {
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-
   const handleApplyLateFees = async () => {
     setLoading(true);
     try {
@@ -30,10 +28,7 @@ export function ApplyLateFeeButton({ onSuccess }: ApplyLateFeeButtonProps) {
 
       if (error) throw error;
 
-      toast({
-        title: 'Late fees applied',
-        description: 'Late fees have been calculated and applied to overdue payments.',
-      });
+      toast.success("Late fees applied", { description: "Late fees have been calculated and applied to overdue payments." });
 
       onSuccess?.();
     } catch (error: any) {

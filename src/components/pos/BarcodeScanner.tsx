@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
 import { ScanLine, Camera, X, Flashlight } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
@@ -11,7 +11,6 @@ interface BarcodeScannerProps {
 }
 
 export function BarcodeScanner({ onScan, isOpen, onClose }: BarcodeScannerProps) {
-  const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -73,21 +72,14 @@ export function BarcodeScanner({ onScan, isOpen, onClose }: BarcodeScannerProps)
       });
       setTorchEnabled(!torchEnabled);
     } else {
-      toast({
-        variant: 'destructive',
-        title: 'Flashlight not available',
-        description: 'Your device does not support flashlight control.',
-      });
+      toast.error("Flashlight not available", { description: "Your device does not support flashlight control." });
     }
   };
 
   const startBarcodeDetection = () => {
     if (!('BarcodeDetector' in window)) {
       // Fallback for browsers without BarcodeDetector API
-      toast({
-        title: 'Barcode scanning limited',
-        description: 'Using manual input mode. Enter barcode manually.',
-      });
+      toast.success("Barcode scanning limited", { description: "Using manual input mode. Enter barcode manually." });
       return;
     }
 

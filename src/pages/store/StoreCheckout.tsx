@@ -4,10 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { CheckoutForm } from '@/components/ecommerce/CheckoutForm';
 import { useCart } from '@/hooks/useCart';
-import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Store, CheckCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
 
 interface StoreInfo {
   id: string;
@@ -20,7 +20,6 @@ interface StoreInfo {
 export default function StoreCheckout() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [store, setStore] = useState<StoreInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [orderComplete, setOrderComplete] = useState(false);

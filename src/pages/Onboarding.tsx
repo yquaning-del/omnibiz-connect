@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, UtensilsCrossed, Building2, Pill, ShoppingCart, Check, ArrowRight, ArrowLeft, RotateCcw, Home, Building } from 'lucide-react';
 import { BusinessVertical } from '@/types';
 import { cn } from '@/lib/utils';
@@ -22,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { PlanSelectionStep } from '@/components/subscription/PlanSelectionStep';
+import { toast } from 'sonner';
 
 const verticals = [
   {
@@ -74,8 +74,6 @@ const verticals = [
 export default function Onboarding() {
   const navigate = useNavigate();
   const { user, loading, refreshUserData } = useAuth();
-  const { toast } = useToast();
-  
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isResuming, setIsResuming] = useState(true);
@@ -149,18 +147,12 @@ export default function Onboarding() {
             setCountry(loc.country || '');
             // Org + location exist, just need role - go to step 2 to confirm
             setStep(2);
-            toast({
-              title: 'Resuming setup',
-              description: 'We found your partial setup. Just confirm to complete!',
-            });
+            toast.success("Resuming setup", { description: "We found your partial setup. Just confirm to complete!" });
           } else {
             // Org exists but no location - skip to step 2
             setLocationName(org.name + ' - Main');
             setStep(2);
-            toast({
-              title: 'Resuming setup',
-              description: 'We found your business. Add your first location to continue.',
-            });
+            toast.success("Resuming setup", { description: "We found your business. Add your first location to continue." });
           }
         }
       } catch (error) {
@@ -202,19 +194,11 @@ export default function Onboarding() {
   const handleNext = () => {
     if (step === 1) {
       if (!businessName.trim()) {
-        toast({
-          variant: 'destructive',
-          title: 'Business name required',
-          description: 'Please enter your business name.',
-        });
+        toast.error("Business name required", { description: "Please enter your business name." });
         return;
       }
       if (!selectedVertical) {
-        toast({
-          variant: 'destructive',
-          title: 'Business type required',
-          description: 'Please select your business type.',
-        });
+        toast.error("Business type required", { description: "Please select your business type." });
         return;
       }
       setLocationName(businessName + ' - Main');
@@ -372,10 +356,7 @@ export default function Onboarding() {
       setCountry('');
       setStep(1);
       
-      toast({
-        title: 'Fresh start!',
-        description: 'All partial data has been cleared. You can start over.',
-      });
+      toast.success("Fresh start!", { description: "All partial data has been cleared. You can start over." });
     } catch (error: any) {
       console.error('Clear data error:', error);
       toast({
