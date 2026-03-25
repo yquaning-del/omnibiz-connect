@@ -339,6 +339,7 @@ export default function Settings() {
                     value={locName}
                     onChange={(e) => setLocName(e.target.value)}
                     placeholder="Main Branch"
+                    maxLength={200}
                   />
                 </div>
 
