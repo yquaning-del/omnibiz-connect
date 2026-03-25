@@ -264,6 +264,10 @@ export default function Settings() {
             <BookOpen className="w-4 h-4" />
             Help & Docs
           </TabsTrigger>
+          <TabsTrigger value="account" className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Account
+          </TabsTrigger>
         </TabsList>
 
         {/* Organization Settings */}
