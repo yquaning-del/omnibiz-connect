@@ -15,6 +15,10 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { usePagination } from '@/hooks/usePagination';
+import { useDebounce } from '@/hooks/useDebounce';
+import { DataPageControls } from '@/components/ui/data-page-controls';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Customer } from '@/types';
 import { cn } from '@/lib/utils';
 import {
@@ -29,7 +33,9 @@ import {
   Mail,
   MapPin,
   Star,
+  Download,
 } from 'lucide-react';
+import { exportToCSV, ExportColumn } from '@/lib/export';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,8 +47,10 @@ import { toast } from 'sonner';
 
 export default function Customers() {
   const { currentOrganization } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -75,6 +83,19 @@ export default function Customers() {
     }
     setLoading(false);
   };
+
+  const filteredCustomers = customers.filter(c =>
+    c.full_name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+    c.email?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+    c.phone?.includes(debouncedSearch)
+  );
+
+  const pagination = usePagination(filteredCustomers);
+
+  // Reset page on search change
+  useEffect(() => {
+    pagination.resetPage();
+  }, [debouncedSearch]);
 
   const resetForm = () => {
     setFormName('');
@@ -139,7 +160,13 @@ export default function Customers() {
   };
 
   const deleteCustomer = async (customer: Customer) => {
-    if (!confirm(`Delete "${customer.full_name}"?`)) return;
+    const confirmed = await confirm({
+      title: `Delete "${customer.full_name}"?`,
+      description: 'This action cannot be undone.',
+      variant: 'destructive',
+      confirmLabel: 'Delete',
+    });
+    if (!confirmed) return;
 
     const { error } = await supabase
       .from('customers')
@@ -154,12 +181,6 @@ export default function Customers() {
     }
   };
 
-  const filteredCustomers = customers.filter(c =>
-    c.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.phone?.includes(searchQuery)
-  );
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
@@ -171,190 +192,233 @@ export default function Customers() {
   return (
     <FeatureGate feature="customer_management" requiredTier="Professional">
       <div className="space-y-6 animate-fade-in">
+        <ConfirmDialog />
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold font-display text-foreground">Customers</h1>
             <p className="text-muted-foreground">
-              Manage your customer database
+              Manage your customer database ({filteredCustomers.length} total)
             </p>
           </div>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Customer
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                const cols: ExportColumn<Customer>[] = [
+                  { header: 'Name', accessor: (c) => c.full_name },
+                  { header: 'Email', accessor: (c) => c.email ?? '' },
+                  { header: 'Phone', accessor: (c) => c.phone ?? '' },
+                  { header: 'Address', accessor: (c) => c.address ?? '' },
+                  { header: 'Loyalty Points', accessor: (c) => c.loyalty_points },
+                ];
+                exportToCSV('customers', cols, customers);
+              }}
+              disabled={customers.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Export
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder="John Doe"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
-                    placeholder="john@example.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={formPhone}
-                    onChange={(e) => setFormPhone(e.target.value)}
-                    placeholder="+1 234 567 8900"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  value={formAddress}
-                  onChange={(e) => setFormAddress(e.target.value)}
-                  placeholder="123 Main St, City"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formNotes}
-                  onChange={(e) => setFormNotes(e.target.value)}
-                  placeholder="Customer preferences, allergies, etc."
-                  rows={3}
-                />
-              </div>
-
-              <Button type="submit" className="w-full" disabled={saving}>
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : editingCustomer ? (
-                  'Update Customer'
-                ) : (
-                  'Create Customer'
-                )}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Search customers..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {filteredCustomers.length === 0 ? (
-        <Card className="border-border/50 bg-card/50">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <Users className="w-12 h-12 mb-4" />
-            <p>No customers found</p>
-            <p className="text-sm">Add your first customer to get started</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredCustomers.map(customer => (
-            <Card key={customer.id} className="border-border/50 bg-card/50 hover:bg-card transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                    <span className="text-lg font-bold text-primary">
-                      {customer.full_name.charAt(0).toUpperCase()}
-                    </span>
+            <Dialog open={dialogOpen} onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) resetForm();
+            }}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Customer
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name *</Label>
+                    <Input
+                      id="name"
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      placeholder="John Doe"
+                      required
+                      maxLength={200}
+                    />
                   </div>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEditDialog(customer)}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => deleteCustomer(customer)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
 
-                <h3 className="font-medium text-foreground mb-2">{customer.full_name}</h3>
-                
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  {customer.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      <span className="truncate">{customer.email}</span>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formEmail}
+                        onChange={(e) => setFormEmail(e.target.value)}
+                        placeholder="john@example.com"
+                        maxLength={255}
+                      />
                     </div>
-                  )}
-                  {customer.phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
-                      <span>{customer.phone}</span>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        value={formPhone}
+                        onChange={(e) => setFormPhone(e.target.value)}
+                        placeholder="+1 234 567 8900"
+                        maxLength={20}
+                      />
                     </div>
-                  )}
-                  {customer.address && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      <span className="truncate">{customer.address}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
-                  <div className="flex items-center gap-1 text-warning">
-                    <Star className="w-4 h-4 fill-current" />
-                    <span className="text-sm font-medium">{customer.loyalty_points}</span>
-                    <span className="text-xs text-muted-foreground">pts</span>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      value={formAddress}
+                      onChange={(e) => setFormAddress(e.target.value)}
+                      placeholder="123 Main St, City"
+                      maxLength={500}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes</Label>
+                    <Textarea
+                      id="notes"
+                      value={formNotes}
+                      onChange={(e) => setFormNotes(e.target.value)}
+                      placeholder="Customer preferences, allergies, etc."
+                      rows={3}
+                      maxLength={1000}
+                    />
+                    <p className="text-xs text-muted-foreground text-right">{formNotes.length}/1000</p>
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={saving}>
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : editingCustomer ? (
+                      'Update Customer'
+                    ) : (
+                      'Create Customer'
+                    )}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-      )}
+
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search customers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {filteredCustomers.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title={searchQuery ? 'No customers match your search' : 'No customers yet'}
+            description={searchQuery ? 'Try a different search term' : 'Add your first customer to get started'}
+            actionLabel={!searchQuery ? 'Add Customer' : undefined}
+            onAction={!searchQuery ? () => setDialogOpen(true) : undefined}
+            actionIcon={Plus}
+          />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pagination.paginatedItems.map(customer => (
+                <Card key={customer.id} className="border-border/50 bg-card/50 hover:bg-card transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                        <span className="text-lg font-bold text-primary">
+                          {customer.full_name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEditDialog(customer)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => deleteCustomer(customer)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    <h3 className="font-medium text-foreground mb-2">{customer.full_name}</h3>
+                    
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      {customer.email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 shrink-0" />
+                          <span className="truncate">{customer.email}</span>
+                        </div>
+                      )}
+                      {customer.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 shrink-0" />
+                          <span>{customer.phone}</span>
+                        </div>
+                      )}
+                      {customer.address && (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 shrink-0" />
+                          <span className="truncate">{customer.address}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                      <div className="flex items-center gap-1 text-warning">
+                        <Star className="w-4 h-4 fill-current" />
+                        <span className="text-sm font-medium">{customer.loyalty_points}</span>
+                        <span className="text-xs text-muted-foreground">pts</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <DataPageControls
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              startIndex={pagination.startIndex}
+              endIndex={pagination.endIndex}
+              onPrev={pagination.prevPage}
+              onNext={pagination.nextPage}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </>
+        )}
+      </div>
     </FeatureGate>
   );
 }
