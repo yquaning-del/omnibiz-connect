@@ -349,6 +349,7 @@ export default function Settings() {
                     value={locAddress}
                     onChange={(e) => setLocAddress(e.target.value)}
                     placeholder="123 Main Street"
+                    maxLength={500}
                   />
                 </div>
 
