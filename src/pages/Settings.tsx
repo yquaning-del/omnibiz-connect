@@ -406,6 +406,7 @@ export default function Settings() {
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
                     placeholder="John Doe"
+                    maxLength={200}
                   />
                 </div>
 
