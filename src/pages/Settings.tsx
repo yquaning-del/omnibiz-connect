@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard, Upload, BookOpen, FileText, ChevronRight, ExternalLink } from 'lucide-react';
+import { Loader2, Building2, MapPin, User, Bell, Globe, Save, CreditCard, Upload, BookOpen, FileText, ChevronRight, ExternalLink, Shield } from 'lucide-react';
+import { AccountManagement } from '@/components/settings/AccountManagement';
 import { BusinessVertical, VERTICAL_CONFIG } from '@/types';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
 import { SubscriptionSettings } from '@/components/settings/SubscriptionSettings';
@@ -263,6 +264,10 @@ export default function Settings() {
             <BookOpen className="w-4 h-4" />
             Help & Docs
           </TabsTrigger>
+          <TabsTrigger value="account" className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Account
+          </TabsTrigger>
         </TabsList>
 
         {/* Organization Settings */}
@@ -280,6 +285,7 @@ export default function Settings() {
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
                     placeholder="My Business"
+                    maxLength={200}
                   />
                 </div>
 
@@ -333,6 +339,7 @@ export default function Settings() {
                     value={locName}
                     onChange={(e) => setLocName(e.target.value)}
                     placeholder="Main Branch"
+                    maxLength={200}
                   />
                 </div>
 
@@ -342,6 +349,7 @@ export default function Settings() {
                     value={locAddress}
                     onChange={(e) => setLocAddress(e.target.value)}
                     placeholder="123 Main Street"
+                    maxLength={500}
                   />
                 </div>
 
@@ -398,6 +406,7 @@ export default function Settings() {
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
                     placeholder="John Doe"
+                    maxLength={200}
                   />
                 </div>
 
@@ -418,6 +427,7 @@ export default function Settings() {
                     value={userPhone}
                     onChange={(e) => setUserPhone(e.target.value)}
                     placeholder="+1 234 567 8900"
+                    maxLength={20}
                   />
                 </div>
 
@@ -615,6 +625,11 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Account Management (GDPR) */}
+        <TabsContent value="account">
+          <AccountManagement />
         </TabsContent>
       </Tabs>
     </div>
