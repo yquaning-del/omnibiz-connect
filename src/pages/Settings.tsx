@@ -427,6 +427,7 @@ export default function Settings() {
                     value={userPhone}
                     onChange={(e) => setUserPhone(e.target.value)}
                     placeholder="+1 234 567 8900"
+                    maxLength={20}
                   />
                 </div>
 

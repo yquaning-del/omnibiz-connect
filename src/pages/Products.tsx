@@ -303,6 +303,7 @@ export default function Products() {
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="Product name"
                   required
+                  maxLength={200}
                 />
               </div>
 
