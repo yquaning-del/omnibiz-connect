@@ -285,6 +285,7 @@ export default function Settings() {
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
                     placeholder="My Business"
+                    maxLength={200}
                   />
                 </div>
 
