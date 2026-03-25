@@ -621,6 +621,11 @@ export default function Settings() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Account Management (GDPR) */}
+        <TabsContent value="account">
+          <AccountManagement />
+        </TabsContent>
       </Tabs>
     </div>
   );
