@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
         let userId: string;
         
         if (existingUser) {
-          console.log(`User ${testUser.email} already exists, updating...`);
+          // User already exists, updating
           userId = existingUser.id;
           
           // Update password
