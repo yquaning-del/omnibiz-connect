@@ -107,7 +107,15 @@ export default function AdminUsers() {
       // Filter by role if needed
       let filteredUsers = usersWithMeta;
       if (roleFilter !== "all") {
-        filteredUsers = usersWithMeta.filter((u) => u.roles.includes(roleFilter));
+        filteredUsers = filteredUsers.filter((u) => u.roles.includes(roleFilter));
+      }
+
+      // Filter by search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        filteredUsers = filteredUsers.filter(
+          (u) => u.full_name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+        );
       }
 
       setUsers(filteredUsers);
