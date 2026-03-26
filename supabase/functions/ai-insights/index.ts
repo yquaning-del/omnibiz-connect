@@ -26,7 +26,7 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: "Access denied to this organization" }, cors, 403);
     }
 
-    console.log(`AI Insights request: ${type} for org ${organizationId}`);
+    // Process insights request
 
     let prompt = "";
     let context = "";
