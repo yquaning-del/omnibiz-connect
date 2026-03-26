@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
             }
             
             orgId = newOrg.id;
-            console.log(`Created organization ${orgName} with ID: ${orgId}`);
+            // Organization created
             
             // Create location for organization
             const { error: locError } = await supabaseAdmin
