@@ -127,7 +127,7 @@ const App = () => (
                   
                   {/* Protected routes with AppLayout */}
                   <Route element={<AppLayout />}>
-                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/dashboard" element={<PageErrorBoundary pageName="Dashboard"><Dashboard /></PageErrorBoundary>} />
                     <Route path="/pos" element={<POS />} />
                     <Route path="/products" element={<Products />} />
                     <Route path="/products/new" element={<Products />} />
