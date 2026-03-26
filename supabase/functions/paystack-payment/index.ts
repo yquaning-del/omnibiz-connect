@@ -139,7 +139,6 @@ serve(async (req) => {
       const paystackData = await paystackResponse.json();
       
       if (!paystackData.status) {
-        console.error("Paystack error:", paystackData);
         return new Response(
           JSON.stringify({ error: paystackData.message || "Payment initialization failed" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
