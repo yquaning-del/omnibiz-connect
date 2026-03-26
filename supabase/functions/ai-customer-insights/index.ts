@@ -136,7 +136,7 @@ Provide a JSON response with:
 
 Focus on actionable recommendations based on the actual data patterns.`;
 
-    console.log("Calling Lovable AI Gateway for customer insights...");
+    // Calling AI for customer insights
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
