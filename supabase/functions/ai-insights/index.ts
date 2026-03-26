@@ -114,7 +114,7 @@ Provide a brief, friendly summary including:
 Keep it under 100 words. Be conversational and helpful.`;
     }
 
-    console.log("Calling Lovable AI Gateway...");
+    // Calling AI Gateway
     
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
