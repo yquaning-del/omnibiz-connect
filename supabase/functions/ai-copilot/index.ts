@@ -352,7 +352,7 @@ If you can't help with something, politely explain what you can do instead.`;
     ];
 
     // Initial AI call with tools
-    console.log("Calling AI with tools...");
+    // Call AI with tools
     const initialResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
