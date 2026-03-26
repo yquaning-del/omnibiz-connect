@@ -171,7 +171,7 @@ Return ONLY valid JSON, no markdown or explanations.`;
       throw new Error("No content in AI response");
     }
 
-    console.log("AI response received, parsing comprehensive clauses...");
+    // AI response received, parsing clauses
 
     // Parse the JSON from the response
     let clauses;
