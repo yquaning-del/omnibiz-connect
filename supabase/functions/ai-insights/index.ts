@@ -141,7 +141,7 @@ Keep it under 100 words. Be conversational and helpful.`;
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", errorText);
+      throw new Error(`AI Gateway error: ${aiResponse.status}`);
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
