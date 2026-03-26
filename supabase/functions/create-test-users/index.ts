@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
 
     for (const testUser of testUsers) {
       try {
-        console.log(`Creating test user: ${testUser.email}`);
+        // Creating test user
         
         // Check if user already exists
         const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
