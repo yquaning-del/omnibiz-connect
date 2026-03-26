@@ -162,8 +162,7 @@ Focus on actionable recommendations based on the actual data patterns.`;
     });
 
     if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", errorText);
+      throw new Error(`AI Gateway error: ${aiResponse.status}`);
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
