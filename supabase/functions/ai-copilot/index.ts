@@ -291,7 +291,7 @@ async function executeTool(supabase: any, toolName: string, args: any, context: 
     }
 
     case "send_notification": {
-      console.log(`Would send ${args.type} notification to ${args.recipient}: ${args.message}`);
+      // Notification queued
       return { 
         success: true, 
         message: `Notification queued for delivery via ${args.type}` 

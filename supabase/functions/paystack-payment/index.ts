@@ -149,7 +149,7 @@ serve(async (req) => {
       message = "Payment initialized successfully";
     } else {
       // PLACEHOLDER MODE: Return mock URL
-      console.log("Initializing Paystack payment (placeholder mode)");
+      // Paystack placeholder mode
       authorizationUrl = `https://checkout.paystack.com/mock/${reference}`;
       message = "PLACEHOLDER MODE: Add PAYSTACK_SECRET_KEY to enable live payments";
     }

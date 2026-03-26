@@ -229,7 +229,7 @@ Return ONLY valid JSON, no markdown or explanations.`;
       },
     };
 
-    console.log("Comprehensive lease generation successful:", templateSource);
+    // Lease generation successful
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

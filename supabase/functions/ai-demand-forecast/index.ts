@@ -180,7 +180,7 @@ Be specific and actionable. Base predictions on the patterns in the data.`;
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
-    console.log("AI demand forecast received successfully");
+    // Demand forecast received
 
     let result;
     try {

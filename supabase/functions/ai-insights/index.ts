@@ -148,7 +148,7 @@ Keep it under 100 words. Be conversational and helpful.`;
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
-    console.log("AI response received successfully");
+    // AI response received
 
     let result;
     try {

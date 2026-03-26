@@ -169,7 +169,7 @@ Focus on actionable recommendations based on the actual data patterns.`;
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
-    console.log("AI customer insights received successfully");
+    // Customer insights received
 
     let result;
     try {
