@@ -115,7 +115,7 @@ serve(async (req) => {
 
     if (isLiveMode) {
       // LIVE MODE: Call actual Paystack API
-      console.log("Initializing Paystack payment (live mode)");
+      // Initializing Paystack payment (live mode)
       const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
         method: "POST",
         headers: {
