@@ -146,8 +146,7 @@ Return ONLY valid JSON, no markdown or explanations.`;
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("AI gateway error:", response.status);
       
       if (response.status === 429) {
         return new Response(
