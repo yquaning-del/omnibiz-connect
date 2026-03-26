@@ -103,7 +103,7 @@ serve(async (req) => {
       .single();
 
     if (txError) {
-      console.error("Error creating transaction:", txError);
+      // Error creating transaction
       return new Response(
         JSON.stringify({ error: "Failed to create transaction" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
