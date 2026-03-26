@@ -184,8 +184,7 @@ Return ONLY valid JSON, no markdown or explanations.`;
         throw new Error("No JSON found in response");
       }
     } catch (parseError) {
-      console.error("Failed to parse AI response:", parseError);
-      console.error("Raw content:", content);
+      console.error("Failed to parse AI response");
       throw new Error("Failed to parse lease clauses from AI");
     }
 
