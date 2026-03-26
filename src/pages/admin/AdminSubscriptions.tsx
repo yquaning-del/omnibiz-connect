@@ -67,6 +67,7 @@ interface SubscriptionStats {
 export default function AdminSubscriptions() {
   const [loading, setLoading] = useState(true);
   const [subscriptions, setSubscriptions] = useState<SubscriptionWithOrg[]>([]);
+  const [allSubscriptions, setAllSubscriptions] = useState<SubscriptionWithOrg[]>([]);
   const [stats, setStats] = useState<SubscriptionStats>({
     mrr: 0,
     arr: 0,
@@ -79,6 +80,7 @@ export default function AdminSubscriptions() {
   });
   const [tierFilter, setTierFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 10;
