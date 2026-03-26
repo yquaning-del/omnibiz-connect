@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
 
     for (const testUser of testUsers) {
       try {
-        console.log(`Creating test user: ${testUser.email}`);
+        // Creating test user
         
         // Check if user already exists
         const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
         let userId: string;
         
         if (existingUser) {
-          console.log(`User ${testUser.email} already exists, updating...`);
+          // User already exists, updating
           userId = existingUser.id;
           
           // Update password
@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
           }
           
           userId = newUser.user.id;
-          console.log(`Created user ${testUser.email} with ID: ${userId}`);
+          // User created
         }
 
         // Create or get organization for this vertical/tier combo
@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
             }
             
             orgId = newOrg.id;
-            console.log(`Created organization ${orgName} with ID: ${orgId}`);
+            // Organization created
             
             // Create location for organization
             const { error: locError } = await supabaseAdmin
@@ -285,7 +285,7 @@ Deno.serve(async (req) => {
 });
 
 async function createSampleData(supabase: any, organizations: Map<string, string>) {
-  console.log("Creating sample data for organizations...");
+  // Creating sample data for organizations
   
   for (const [key, orgId] of organizations) {
     const [vertical] = key.split("_");
@@ -337,7 +337,7 @@ async function createSampleData(supabase: any, organizations: Map<string, string
         await createRestaurantSampleData(supabase, orgId, locationId);
       }
       
-      console.log(`Created sample data for ${vertical} org: ${orgId}`);
+      // Sample data created for org
     } catch (error) {
       console.error(`Error creating sample data for ${key}:`, error);
     }

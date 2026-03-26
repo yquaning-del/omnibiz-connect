@@ -39,11 +39,7 @@ serve(async (req) => {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     
     if (!resendApiKey) {
-      console.log('RESEND_API_KEY not configured - logging notification instead');
-      
       const logMessage = generateEmailContent(type, recipientName, organizationName, data);
-      console.log('Would send email to:', recipientEmail);
-      console.log('Subject:', logMessage.subject);
 
       return jsonResponse({ 
         success: true, 

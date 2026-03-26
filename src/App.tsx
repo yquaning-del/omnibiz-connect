@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 import { CookieConsent } from "@/components/CookieConsent";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
@@ -126,8 +127,8 @@ const App = () => (
                   
                   {/* Protected routes with AppLayout */}
                   <Route element={<AppLayout />}>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/pos" element={<POS />} />
+                    <Route path="/dashboard" element={<PageErrorBoundary pageName="Dashboard"><Dashboard /></PageErrorBoundary>} />
+                    <Route path="/pos" element={<PageErrorBoundary pageName="POS"><POS /></PageErrorBoundary>} />
                     <Route path="/products" element={<Products />} />
                     <Route path="/products/new" element={<Products />} />
                     <Route path="/customers" element={<Customers />} />
@@ -143,13 +144,13 @@ const App = () => (
                     <Route path="/kitchen" element={<Kitchen />} />
                     <Route path="/reservations" element={<Reservations />} />
                     <Route path="/housekeeping" element={<Housekeeping />} />
-                    <Route path="/pharmacy" element={<Pharmacy />} />
-                    <Route path="/pharmacy/prescriptions" element={<PharmacyPrescriptions />} />
-                    <Route path="/pharmacy/patients" element={<PharmacyPatients />} />
-                    <Route path="/pharmacy/medications" element={<PharmacyMedications />} />
-                    <Route path="/pharmacy/insurance" element={<PharmacyInsurance />} />
-                    <Route path="/pharmacy/controlled" element={<PharmacyControlled />} />
-                    <Route path="/pharmacy/interactions" element={<PharmacyInteractions />} />
+                    <Route path="/pharmacy" element={<PageErrorBoundary pageName="Pharmacy"><Pharmacy /></PageErrorBoundary>} />
+                    <Route path="/pharmacy/prescriptions" element={<PageErrorBoundary pageName="Prescriptions"><PharmacyPrescriptions /></PageErrorBoundary>} />
+                    <Route path="/pharmacy/patients" element={<PageErrorBoundary pageName="Patients"><PharmacyPatients /></PageErrorBoundary>} />
+                    <Route path="/pharmacy/medications" element={<PageErrorBoundary pageName="Medications"><PharmacyMedications /></PageErrorBoundary>} />
+                    <Route path="/pharmacy/insurance" element={<PageErrorBoundary pageName="Insurance"><PharmacyInsurance /></PageErrorBoundary>} />
+                    <Route path="/pharmacy/controlled" element={<PageErrorBoundary pageName="Controlled"><PharmacyControlled /></PageErrorBoundary>} />
+                    <Route path="/pharmacy/interactions" element={<PageErrorBoundary pageName="Interactions"><PharmacyInteractions /></PageErrorBoundary>} />
                     <Route path="/front-desk" element={<FrontDesk />} />
                     <Route path="/maintenance" element={<Maintenance />} />
                     <Route path="/guest-services" element={<GuestServices />} />

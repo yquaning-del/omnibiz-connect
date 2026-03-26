@@ -67,6 +67,7 @@ interface SubscriptionStats {
 export default function AdminSubscriptions() {
   const [loading, setLoading] = useState(true);
   const [subscriptions, setSubscriptions] = useState<SubscriptionWithOrg[]>([]);
+  const [allSubscriptions, setAllSubscriptions] = useState<SubscriptionWithOrg[]>([]);
   const [stats, setStats] = useState<SubscriptionStats>({
     mrr: 0,
     arr: 0,
@@ -79,6 +80,7 @@ export default function AdminSubscriptions() {
   });
   const [tierFilter, setTierFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 10;
@@ -90,7 +92,7 @@ export default function AdminSubscriptions() {
 
   useEffect(() => {
     fetchSubscriptions();
-  }, [page, tierFilter, statusFilter]);
+  }, [page, tierFilter, statusFilter, searchQuery]);
 
   const fetchSubscriptions = async () => {
     setLoading(true);
@@ -194,6 +196,9 @@ export default function AdminSubscriptions() {
       });
       setRevenueData(mockRevenueData);
 
+      // Store all subs for filtering
+      setAllSubscriptions(subsWithOrg);
+
       // Apply filters
       let filteredSubs = subsWithOrg;
       if (tierFilter !== "all") {
@@ -201,6 +206,10 @@ export default function AdminSubscriptions() {
       }
       if (statusFilter !== "all") {
         filteredSubs = filteredSubs.filter((s) => s.status === statusFilter);
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        filteredSubs = filteredSubs.filter((s) => s.organization_name.toLowerCase().includes(q));
       }
 
       setSubscriptions(filteredSubs);
@@ -408,7 +417,7 @@ export default function AdminSubscriptions() {
               data={subscriptions}
               loading={loading}
               searchPlaceholder="Search subscriptions..."
-              onSearch={(query) => console.log("Search:", query)}
+              onSearch={(query) => { setSearchQuery(query); setPage(1); }}
               pagination={{
                 page,
                 pageSize,

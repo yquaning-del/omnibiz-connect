@@ -291,7 +291,7 @@ async function executeTool(supabase: any, toolName: string, args: any, context: 
     }
 
     case "send_notification": {
-      console.log(`Would send ${args.type} notification to ${args.recipient}: ${args.message}`);
+      // Notification queued
       return { 
         success: true, 
         message: `Notification queued for delivery via ${args.type}` 
@@ -352,7 +352,7 @@ If you can't help with something, politely explain what you can do instead.`;
     ];
 
     // Initial AI call with tools
-    console.log("Calling AI with tools...");
+    // Call AI with tools
     const initialResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -378,13 +378,13 @@ If you can't help with something, politely explain what you can do instead.`;
 
     // Check if AI wants to use tools
     if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
-      console.log(`AI requested ${assistantMessage.tool_calls.length} tool(s)`);
+      // Execute tool calls
 
       const toolResults = [];
       for (const toolCall of assistantMessage.tool_calls) {
         try {
           const args = JSON.parse(toolCall.function.arguments || "{}");
-          console.log(`Executing tool: ${toolCall.function.name}`, args);
+          const result = await executeTool(supabase, toolCall.function.name, args, context);
           const result = await executeTool(supabase, toolCall.function.name, args, context);
           toolResults.push({
             tool_call_id: toolCall.id,

@@ -26,7 +26,7 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: "Access denied to this organization" }, cors, 403);
     }
 
-    console.log(`AI Customer Insights: ${vertical} for org ${organizationId}`);
+    // Process customer insights
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -136,7 +136,7 @@ Provide a JSON response with:
 
 Focus on actionable recommendations based on the actual data patterns.`;
 
-    console.log("Calling Lovable AI Gateway for customer insights...");
+    // Calling AI for customer insights
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -162,15 +162,14 @@ Focus on actionable recommendations based on the actual data patterns.`;
     });
 
     if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", errorText);
+      throw new Error(`AI Gateway error: ${aiResponse.status}`);
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
-    console.log("AI customer insights received successfully");
+    // Customer insights received
 
     let result;
     try {

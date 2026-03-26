@@ -27,7 +27,7 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: "Access denied to this organization" }, cors, 403);
     }
 
-    console.log(`AI Demand Forecast: ${vertical} for org ${organizationId}`);
+    // Process demand forecast
 
     // Fetch historical data based on vertical
     const thirtyDaysAgo = new Date();
@@ -147,7 +147,7 @@ Provide a JSON response with:
 
 Be specific and actionable. Base predictions on the patterns in the data.`;
 
-    console.log("Calling Lovable AI Gateway for demand forecast...");
+    // Calling AI for demand forecast
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -173,15 +173,14 @@ Be specific and actionable. Base predictions on the patterns in the data.`;
     });
 
     if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", errorText);
+      throw new Error(`AI Gateway error: ${aiResponse.status}`);
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
-    console.log("AI demand forecast received successfully");
+    // Demand forecast received
 
     let result;
     try {

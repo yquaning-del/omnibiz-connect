@@ -49,13 +49,14 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<UserWithMeta | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 10;
 
   useEffect(() => {
     fetchUsers();
-  }, [page, roleFilter]);
+  }, [page, roleFilter, searchQuery]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -106,7 +107,15 @@ export default function AdminUsers() {
       // Filter by role if needed
       let filteredUsers = usersWithMeta;
       if (roleFilter !== "all") {
-        filteredUsers = usersWithMeta.filter((u) => u.roles.includes(roleFilter));
+        filteredUsers = filteredUsers.filter((u) => u.roles.includes(roleFilter));
+      }
+
+      // Filter by search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        filteredUsers = filteredUsers.filter(
+          (u) => u.full_name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+        );
       }
 
       setUsers(filteredUsers);
@@ -244,7 +253,8 @@ export default function AdminUsers() {
           loading={loading}
           searchPlaceholder="Search users by name or email..."
           onSearch={(query) => {
-            console.log("Search:", query);
+            setSearchQuery(query);
+            setPage(1);
           }}
           pagination={{
             page,

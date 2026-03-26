@@ -16,21 +16,48 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Download, Trash2, Shield } from 'lucide-react';
+import { Loader2, Download, Trash2, Shield, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function AccountManagement() {
-  const { user, profile, currentOrganization } = useAuth();
+  const { user } = useAuth();
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmText, setConfirmText] = useState('');
+
+  // Password change
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (!newPassword || newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success("Password updated successfully");
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast.error("Failed to update password", { description: error.message });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   const handleExportData = async () => {
     if (!user) return;
     setExporting(true);
 
     try {
-      // Gather all user data from accessible tables
       const [profileData, rolesData, notificationsData, settingsData] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', user.id).single(),
         supabase.from('user_roles').select('*').eq('user_id', user.id),
@@ -48,7 +75,6 @@ export function AccountManagement() {
         permissions: settingsData.data,
       };
 
-      // Download as JSON
       const blob = new Blob([JSON.stringify(exportData, null, 2)], {
         type: 'application/json;charset=utf-8;',
       });
@@ -74,14 +100,12 @@ export function AccountManagement() {
     setDeleting(true);
 
     try {
-      // Call the edge function to handle account deletion
       const { data, error } = await supabase.functions.invoke('delete-account', {
         body: { userId: user.id },
       });
 
       if (error) throw error;
 
-      // Sign out after deletion
       await supabase.auth.signOut();
       toast.success("Account deleted", { description: "Your account and data have been permanently removed." });
     } catch (error: any) {
@@ -93,6 +117,54 @@ export function AccountManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Password Change */}
+      <Card className="border-border/50 bg-card/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="w-5 h-5" />
+            Change Password
+          </CardTitle>
+          <CardDescription>
+            Update your account password. Must be at least 8 characters.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 max-w-md">
+          <div className="space-y-2">
+            <Label htmlFor="new-password">New Password</Label>
+            <Input
+              id="new-password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Enter new password"
+              maxLength={128}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirm-password">Confirm Password</Label>
+            <Input
+              id="confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+              maxLength={128}
+            />
+          </div>
+          <Button
+            onClick={handleChangePassword}
+            disabled={changingPassword || !newPassword || !confirmPassword}
+          >
+            {changingPassword ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <KeyRound className="w-4 h-4 mr-2" />
+            )}
+            Update Password
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Data Export */}
       <Card className="border-border/50 bg-card/50">
         <CardHeader>

@@ -103,7 +103,7 @@ serve(async (req) => {
       .single();
 
     if (txError) {
-      console.error("Error creating transaction:", txError);
+      // Error creating transaction
       return new Response(
         JSON.stringify({ error: "Failed to create transaction" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -115,7 +115,7 @@ serve(async (req) => {
 
     if (isLiveMode) {
       // LIVE MODE: Call actual Paystack API
-      console.log("Initializing Paystack payment (live mode)");
+      // Initializing Paystack payment (live mode)
       const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
         method: "POST",
         headers: {
@@ -139,7 +139,6 @@ serve(async (req) => {
       const paystackData = await paystackResponse.json();
       
       if (!paystackData.status) {
-        console.error("Paystack error:", paystackData);
         return new Response(
           JSON.stringify({ error: paystackData.message || "Payment initialization failed" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -150,7 +149,7 @@ serve(async (req) => {
       message = "Payment initialized successfully";
     } else {
       // PLACEHOLDER MODE: Return mock URL
-      console.log("Initializing Paystack payment (placeholder mode)");
+      // Paystack placeholder mode
       authorizationUrl = `https://checkout.paystack.com/mock/${reference}`;
       message = "PLACEHOLDER MODE: Add PAYSTACK_SECRET_KEY to enable live payments";
     }

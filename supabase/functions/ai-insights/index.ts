@@ -26,7 +26,7 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: "Access denied to this organization" }, cors, 403);
     }
 
-    console.log(`AI Insights request: ${type} for org ${organizationId}`);
+    // Process insights request
 
     let prompt = "";
     let context = "";
@@ -114,7 +114,7 @@ Provide a brief, friendly summary including:
 Keep it under 100 words. Be conversational and helpful.`;
     }
 
-    console.log("Calling Lovable AI Gateway...");
+    // Calling AI Gateway
     
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -141,14 +141,14 @@ Keep it under 100 words. Be conversational and helpful.`;
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", errorText);
+      throw new Error(`AI Gateway error: ${aiResponse.status}`);
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
-    console.log("AI response received successfully");
+    // AI response received
 
     let result;
     try {

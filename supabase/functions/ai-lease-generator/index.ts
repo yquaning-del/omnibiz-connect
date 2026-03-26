@@ -72,7 +72,7 @@ serve(async (req) => {
     const request: LeaseGenerationRequest = await req.json();
     const { country, state, city, unitDetails, leaseTerms, tenantInfo } = request;
 
-    console.log("Generating comprehensive lease for:", { country, state, city });
+    // Generating lease
 
     const jurisdictionContext = getJurisdictionContext(country, state, city);
     const templateSource = country === 'US' && state 
@@ -146,8 +146,7 @@ Return ONLY valid JSON, no markdown or explanations.`;
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("AI gateway error:", response.status);
       
       if (response.status === 429) {
         return new Response(
@@ -172,7 +171,7 @@ Return ONLY valid JSON, no markdown or explanations.`;
       throw new Error("No content in AI response");
     }
 
-    console.log("AI response received, parsing comprehensive clauses...");
+    // AI response received, parsing clauses
 
     // Parse the JSON from the response
     let clauses;
@@ -185,8 +184,7 @@ Return ONLY valid JSON, no markdown or explanations.`;
         throw new Error("No JSON found in response");
       }
     } catch (parseError) {
-      console.error("Failed to parse AI response:", parseError);
-      console.error("Raw content:", content);
+      console.error("Failed to parse AI response");
       throw new Error("Failed to parse lease clauses from AI");
     }
 
@@ -231,7 +229,7 @@ Return ONLY valid JSON, no markdown or explanations.`;
       },
     };
 
-    console.log("Comprehensive lease generation successful:", templateSource);
+    // Lease generation successful
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
