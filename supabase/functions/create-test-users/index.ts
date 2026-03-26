@@ -285,7 +285,7 @@ Deno.serve(async (req) => {
 });
 
 async function createSampleData(supabase: any, organizations: Map<string, string>) {
-  console.log("Creating sample data for organizations...");
+  // Creating sample data for organizations
   
   for (const [key, orgId] of organizations) {
     const [vertical] = key.split("_");
