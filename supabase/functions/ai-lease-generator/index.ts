@@ -72,7 +72,7 @@ serve(async (req) => {
     const request: LeaseGenerationRequest = await req.json();
     const { country, state, city, unitDetails, leaseTerms, tenantInfo } = request;
 
-    console.log("Generating comprehensive lease for:", { country, state, city });
+    // Generating lease
 
     const jurisdictionContext = getJurisdictionContext(country, state, city);
     const templateSource = country === 'US' && state 
