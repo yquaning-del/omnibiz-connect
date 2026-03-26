@@ -384,7 +384,7 @@ If you can't help with something, politely explain what you can do instead.`;
       for (const toolCall of assistantMessage.tool_calls) {
         try {
           const args = JSON.parse(toolCall.function.arguments || "{}");
-          console.log(`Executing tool: ${toolCall.function.name}`, args);
+          const result = await executeTool(supabase, toolCall.function.name, args, context);
           const result = await executeTool(supabase, toolCall.function.name, args, context);
           toolResults.push({
             tool_call_id: toolCall.id,
