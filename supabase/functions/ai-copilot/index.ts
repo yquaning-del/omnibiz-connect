@@ -378,7 +378,7 @@ If you can't help with something, politely explain what you can do instead.`;
 
     // Check if AI wants to use tools
     if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
-      console.log(`AI requested ${assistantMessage.tool_calls.length} tool(s)`);
+      // Execute tool calls
 
       const toolResults = [];
       for (const toolCall of assistantMessage.tool_calls) {
