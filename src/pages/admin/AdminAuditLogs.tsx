@@ -116,10 +116,21 @@ export default function AdminAuditLogs() {
         profiles?.map((p) => [p.id, p.full_name]) || []
       );
 
-      const logsWithNames: AuditLog[] = (data || []).map((log) => ({
+      let logsWithNames: AuditLog[] = (data || []).map((log) => ({
         ...log,
         admin_name: profileMap.get(log.admin_user_id) || "Unknown Admin",
       }));
+
+      // Filter by search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        logsWithNames = logsWithNames.filter(
+          (l) =>
+            (l.admin_name || "").toLowerCase().includes(q) ||
+            l.action_type.toLowerCase().includes(q) ||
+            (l.target_type || "").toLowerCase().includes(q)
+        );
+      }
 
       setLogs(logsWithNames);
       setTotal(count || 0);
