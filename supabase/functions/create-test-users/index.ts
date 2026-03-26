@@ -337,7 +337,7 @@ async function createSampleData(supabase: any, organizations: Map<string, string
         await createRestaurantSampleData(supabase, orgId, locationId);
       }
       
-      console.log(`Created sample data for ${vertical} org: ${orgId}`);
+      // Sample data created for org
     } catch (error) {
       console.error(`Error creating sample data for ${key}:`, error);
     }
