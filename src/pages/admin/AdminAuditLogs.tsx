@@ -79,6 +79,7 @@ export default function AdminAuditLogs() {
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [actionFilter, setActionFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 20;
