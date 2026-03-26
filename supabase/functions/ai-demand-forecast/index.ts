@@ -173,8 +173,7 @@ Be specific and actionable. Base predictions on the patterns in the data.`;
     });
 
     if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", errorText);
+      throw new Error(`AI Gateway error: ${aiResponse.status}`);
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
