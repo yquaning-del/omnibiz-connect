@@ -92,7 +92,7 @@ export default function AdminSubscriptions() {
 
   useEffect(() => {
     fetchSubscriptions();
-  }, [page, tierFilter, statusFilter]);
+  }, [page, tierFilter, statusFilter, searchQuery]);
 
   const fetchSubscriptions = async () => {
     setLoading(true);

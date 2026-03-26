@@ -56,7 +56,7 @@ export default function AdminUsers() {
 
   useEffect(() => {
     fetchUsers();
-  }, [page, roleFilter]);
+  }, [page, roleFilter, searchQuery]);
 
   const fetchUsers = async () => {
     setLoading(true);

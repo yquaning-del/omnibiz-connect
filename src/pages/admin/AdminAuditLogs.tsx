@@ -86,7 +86,7 @@ export default function AdminAuditLogs() {
 
   useEffect(() => {
     fetchLogs();
-  }, [page, actionFilter]);
+  }, [page, actionFilter, searchQuery]);
 
   const fetchLogs = async () => {
     setLoading(true);
