@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
           }
           
           userId = newUser.user.id;
-          console.log(`Created user ${testUser.email} with ID: ${userId}`);
+          // User created
         }
 
         // Create or get organization for this vertical/tier combo
