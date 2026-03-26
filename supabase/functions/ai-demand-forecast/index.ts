@@ -27,7 +27,7 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: "Access denied to this organization" }, cors, 403);
     }
 
-    console.log(`AI Demand Forecast: ${vertical} for org ${organizationId}`);
+    // Process demand forecast
 
     // Fetch historical data based on vertical
     const thirtyDaysAgo = new Date();
