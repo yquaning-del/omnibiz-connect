@@ -417,7 +417,7 @@ export default function AdminSubscriptions() {
               data={subscriptions}
               loading={loading}
               searchPlaceholder="Search subscriptions..."
-              onSearch={(query) => console.log("Search:", query)}
+              onSearch={(query) => { setSearchQuery(query); setPage(1); }}
               pagination={{
                 page,
                 pageSize,

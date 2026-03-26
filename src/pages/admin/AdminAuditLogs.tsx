@@ -253,7 +253,7 @@ export default function AdminAuditLogs() {
           data={logs}
           loading={loading}
           searchPlaceholder="Search logs..."
-          onSearch={(query) => console.log("Search:", query)}
+          onSearch={(query) => { setSearchQuery(query); setPage(1); }}
           pagination={{
             page,
             pageSize,

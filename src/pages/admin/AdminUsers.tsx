@@ -253,7 +253,8 @@ export default function AdminUsers() {
           loading={loading}
           searchPlaceholder="Search users by name or email..."
           onSearch={(query) => {
-            console.log("Search:", query);
+            setSearchQuery(query);
+            setPage(1);
           }}
           pagination={{
             page,
