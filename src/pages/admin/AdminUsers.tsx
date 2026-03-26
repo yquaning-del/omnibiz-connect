@@ -49,6 +49,7 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<UserWithMeta | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 10;
