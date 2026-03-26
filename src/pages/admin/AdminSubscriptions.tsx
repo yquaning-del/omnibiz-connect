@@ -196,6 +196,9 @@ export default function AdminSubscriptions() {
       });
       setRevenueData(mockRevenueData);
 
+      // Store all subs for filtering
+      setAllSubscriptions(subsWithOrg);
+
       // Apply filters
       let filteredSubs = subsWithOrg;
       if (tierFilter !== "all") {
@@ -203,6 +206,10 @@ export default function AdminSubscriptions() {
       }
       if (statusFilter !== "all") {
         filteredSubs = filteredSubs.filter((s) => s.status === statusFilter);
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        filteredSubs = filteredSubs.filter((s) => s.organization_name.toLowerCase().includes(q));
       }
 
       setSubscriptions(filteredSubs);
