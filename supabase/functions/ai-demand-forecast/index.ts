@@ -147,7 +147,7 @@ Provide a JSON response with:
 
 Be specific and actionable. Base predictions on the patterns in the data.`;
 
-    console.log("Calling Lovable AI Gateway for demand forecast...");
+    // Calling AI for demand forecast
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
