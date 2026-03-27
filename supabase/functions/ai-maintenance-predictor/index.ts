@@ -152,7 +152,7 @@ Provide a JSON response with:
 
 Focus on actionable predictions based on recurring patterns and category trends.`;
 
-    console.log("Calling Lovable AI Gateway for maintenance predictions...");
+    
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
