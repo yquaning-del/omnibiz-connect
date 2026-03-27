@@ -70,7 +70,7 @@ serve(async (req) => {
     const appUrl = Deno.env.get("APP_URL") || "https://lovable.dev";
     const inviteUrl = `${appUrl}/tenant/accept-invite/${token}`;
 
-    console.log(`Invitation created for ${email}. URL: ${inviteUrl}`);
+    
 
     return jsonResponse({
       success: true,
