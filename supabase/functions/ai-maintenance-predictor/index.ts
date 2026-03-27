@@ -186,7 +186,7 @@ Focus on actionable predictions based on recurring patterns and category trends.
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
-    console.log("AI maintenance predictions received successfully");
+    
 
     let result;
     try {
