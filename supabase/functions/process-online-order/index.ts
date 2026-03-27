@@ -126,7 +126,7 @@ serve(async (req) => {
             });
             
             if (stockError) {
-              console.error(`Failed to decrement stock for product ${item.product_id}:`, stockError);
+              // Stock decrement failed
             }
           }
         }
