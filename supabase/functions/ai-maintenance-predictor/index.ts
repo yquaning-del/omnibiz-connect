@@ -179,7 +179,7 @@ Focus on actionable predictions based on recurring patterns and category trends.
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", errorText);
+      
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
