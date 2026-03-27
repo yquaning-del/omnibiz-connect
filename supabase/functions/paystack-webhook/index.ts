@@ -43,7 +43,7 @@ serve(async (req) => {
         .digest("hex");
       
       if (hash !== signature) {
-        console.error("Invalid webhook signature");
+        
         return new Response(
           JSON.stringify({ error: "Invalid signature" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
