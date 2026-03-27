@@ -51,7 +51,7 @@ serve(async (req) => {
       }
       
     } else {
-      console.log("PLACEHOLDER MODE: Skipping signature verification");
+      
     }
 
     switch (event) {
