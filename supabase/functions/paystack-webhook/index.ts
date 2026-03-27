@@ -100,8 +100,7 @@ serve(async (req) => {
             });
 
           if (subError) {
-            console.error("Error updating subscription:", subError);
-            console.log("Subscription activated for org");
+            // Subscription update failed
           }
         }
 
