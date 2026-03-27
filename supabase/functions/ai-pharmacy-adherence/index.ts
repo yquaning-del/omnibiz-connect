@@ -202,7 +202,7 @@ Focus on actionable outreach recommendations to improve patient adherence.`;
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
-    console.log("AI pharmacy adherence received successfully");
+    
 
     let result;
     try {
