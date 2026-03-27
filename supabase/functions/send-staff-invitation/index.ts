@@ -197,7 +197,7 @@ Deno.serve(async (req) => {
     const origin = req.headers.get("origin") || "https://lovable.app";
     const inviteUrl = `${origin}/staff/accept-invite/${inviteToken}`;
 
-    console.log("Invitation created successfully");
+    
 
     // Check if RESEND_API_KEY is configured
     const resendKey = Deno.env.get("RESEND_API_KEY");
