@@ -31,7 +31,7 @@ serve(async (req) => {
     if (isLiveMode) {
       const signature = req.headers.get("x-paystack-signature");
       if (!signature) {
-        console.error("Missing webhook signature");
+        
         return new Response(
           JSON.stringify({ error: "Missing signature" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
