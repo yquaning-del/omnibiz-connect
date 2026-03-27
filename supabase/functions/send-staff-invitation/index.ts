@@ -186,7 +186,6 @@ Deno.serve(async (req) => {
         });
 
       if (insertError) {
-        console.error("Error creating invitation:", insertError);
         return new Response(
           JSON.stringify({ error: insertError.message }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
