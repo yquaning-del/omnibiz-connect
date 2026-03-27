@@ -126,7 +126,7 @@ serve(async (req) => {
       }
 
       default:
-        console.log("Unhandled event type:", event);
+        // Unhandled event type
     }
 
     return new Response(
