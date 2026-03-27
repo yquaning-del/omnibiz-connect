@@ -37,7 +37,7 @@ serve(async (req) => {
     }
 
     const { vertical, organizationId, locationId } = await req.json();
-    console.log(`AI Dynamic Pricing: ${vertical} for org ${organizationId}, user ${claims.user.id}`);
+    // Dynamic pricing request validated
 
     // Use service role for data queries
     const adminSupabase = createClient(
