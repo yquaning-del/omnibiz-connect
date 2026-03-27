@@ -183,7 +183,7 @@ Respond with JSON:
 
 Be specific with rate recommendations based on the occupancy and demand signals.`;
 
-    console.log("Calling Lovable AI Gateway for dynamic pricing...");
+    
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
