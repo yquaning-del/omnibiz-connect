@@ -199,7 +199,7 @@ serve(async (req) => {
       await sendSMSNotification(supabaseUrl, supabaseServiceKey, customerPhone, smsMessage, smsType);
     }
 
-    console.log(`Order ${orderId} updated successfully - New status: ${updateData.status}`);
+    
 
     return new Response(
       JSON.stringify({ success: true, status: updateData.status }),
