@@ -69,7 +69,6 @@ serve(async (req) => {
           .single();
 
         if (txError) {
-          console.error("Error updating transaction:", txError);
           break;
         }
 
