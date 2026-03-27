@@ -120,10 +120,8 @@ serve(async (req) => {
           .eq("provider_reference", reference);
 
         if (error) {
-          console.error("Error updating failed transaction:", error);
+          // Failed transaction update error
         }
-
-        console.log("Payment failed for transaction");
         break;
       }
 
