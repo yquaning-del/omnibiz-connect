@@ -217,7 +217,7 @@ Be specific with rate recommendations based on the occupancy and demand signals.
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
-    console.log("AI dynamic pricing received successfully");
+    
 
     let result;
     try {
