@@ -36,7 +36,7 @@ async function sendSMSNotification(
       // SMS notification failed
     }
   } catch (error) {
-    console.error('Error sending SMS notification:', error);
+    
   }
 }
 
