@@ -89,7 +89,6 @@ Deno.serve(async (req) => {
         });
 
       if (roleError) {
-        console.error("Error creating user role:", roleError);
         return new Response(
           JSON.stringify({ error: "Failed to assign role" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
