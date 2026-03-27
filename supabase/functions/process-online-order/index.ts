@@ -71,7 +71,7 @@ serve(async (req) => {
 
     const { orderId, action, trackingNumber, cancellationReason } = await req.json() as ProcessOrderRequest;
 
-    console.log(`Processing order ${orderId} - Action: ${action}`);
+    
 
     // Fetch the order with customer info for SMS
     const { data: order, error: orderError } = await supabase
