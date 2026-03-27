@@ -210,7 +210,7 @@ Be specific with rate recommendations based on the occupancy and demand signals.
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", errorText);
+      
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
