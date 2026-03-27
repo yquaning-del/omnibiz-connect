@@ -168,7 +168,7 @@ Provide a JSON response with:
 
 Focus on actionable outreach recommendations to improve patient adherence.`;
 
-    console.log("Calling Lovable AI Gateway for pharmacy adherence...");
+    
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
