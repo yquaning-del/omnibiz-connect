@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 
     // Handle token validation (public action)
     if (action === "validate" && token) {
-      console.log("Validating invitation token");
+      
       
       const { data: invitation, error } = await adminSupabase
         .from("staff_invitations")
@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
 
     // Handle invitation completion (after user signs up)
     if (action === "complete" && token && body.userId) {
-      console.log("Completing invitation for user");
+      
       
       const { data: invitation, error: fetchError } = await adminSupabase
         .from("staff_invitations")
@@ -89,7 +89,6 @@ Deno.serve(async (req) => {
         });
 
       if (roleError) {
-        console.error("Error creating user role:", roleError);
         return new Response(
           JSON.stringify({ error: "Failed to assign role" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -148,7 +147,7 @@ Deno.serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
-    console.log("Creating staff invitation");
+    
 
     // Check if there's already a pending invitation for this email in this org
     const { data: existingInvite } = await adminSupabase
@@ -187,7 +186,6 @@ Deno.serve(async (req) => {
         });
 
       if (insertError) {
-        console.error("Error creating invitation:", insertError);
         return new Response(
           JSON.stringify({ error: insertError.message }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -199,14 +197,13 @@ Deno.serve(async (req) => {
     const origin = req.headers.get("origin") || "https://lovable.app";
     const inviteUrl = `${origin}/staff/accept-invite/${inviteToken}`;
 
-    console.log("Invitation created successfully");
+    
 
     // Check if RESEND_API_KEY is configured
     const resendKey = Deno.env.get("RESEND_API_KEY");
     
     if (resendKey) {
       // TODO: Send email via Resend
-      console.log("RESEND_API_KEY found, would send email here");
     }
 
     // Return the invite URL for manual sharing
@@ -220,7 +217,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error: unknown) {
-    console.error("Error in send-staff-invitation:", error);
+    
     const message = error instanceof Error ? error.message : "Internal server error";
     return new Response(
       JSON.stringify({ error: message }),

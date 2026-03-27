@@ -37,7 +37,7 @@ serve(async (req) => {
     }
 
     const { vertical, organizationId, locationId } = await req.json();
-    console.log(`AI Maintenance Predictor: ${vertical} for org ${organizationId}, user ${claims.user.id}`);
+    
 
     // Use service role for data queries
     const adminSupabase = createClient(
@@ -152,7 +152,7 @@ Provide a JSON response with:
 
 Focus on actionable predictions based on recurring patterns and category trends.`;
 
-    console.log("Calling Lovable AI Gateway for maintenance predictions...");
+    
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -179,14 +179,14 @@ Focus on actionable predictions based on recurring patterns and category trends.
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", errorText);
+      
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
-    console.log("AI maintenance predictions received successfully");
+    
 
     let result;
     try {
@@ -209,7 +209,7 @@ Focus on actionable predictions based on recurring patterns and category trends.
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("AI Maintenance Predictor error:", errorMessage);
+    
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

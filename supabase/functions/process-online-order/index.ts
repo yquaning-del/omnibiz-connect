@@ -33,12 +33,10 @@ async function sendSMSNotification(
     });
     
     if (!response.ok) {
-      console.error('SMS notification failed:', await response.text());
-    } else {
-      console.log('SMS notification sent successfully');
+      // SMS notification failed
     }
   } catch (error) {
-    console.error('Error sending SMS notification:', error);
+    
   }
 }
 
@@ -73,7 +71,7 @@ serve(async (req) => {
 
     const { orderId, action, trackingNumber, cancellationReason } = await req.json() as ProcessOrderRequest;
 
-    console.log(`Processing order ${orderId} - Action: ${action}`);
+    
 
     // Fetch the order with customer info for SMS
     const { data: order, error: orderError } = await supabase
@@ -128,7 +126,7 @@ serve(async (req) => {
             });
             
             if (stockError) {
-              console.error(`Failed to decrement stock for product ${item.product_id}:`, stockError);
+              // Stock decrement failed
             }
           }
         }
@@ -201,7 +199,7 @@ serve(async (req) => {
       await sendSMSNotification(supabaseUrl, supabaseServiceKey, customerPhone, smsMessage, smsType);
     }
 
-    console.log(`Order ${orderId} updated successfully - New status: ${updateData.status}`);
+    
 
     return new Response(
       JSON.stringify({ success: true, status: updateData.status }),
@@ -212,7 +210,7 @@ serve(async (req) => {
     );
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error("Error processing order:", errorMessage);
+    
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {

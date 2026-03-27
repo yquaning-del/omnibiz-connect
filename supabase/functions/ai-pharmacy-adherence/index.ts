@@ -25,7 +25,7 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: "Access denied to this organization" }, cors, 403);
     }
 
-    console.log(`AI Pharmacy Adherence for org ${organizationId}`);
+    
 
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
@@ -168,7 +168,7 @@ Provide a JSON response with:
 
 Focus on actionable outreach recommendations to improve patient adherence.`;
 
-    console.log("Calling Lovable AI Gateway for pharmacy adherence...");
+    
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -195,14 +195,14 @@ Focus on actionable outreach recommendations to improve patient adherence.`;
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", errorText);
+      
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
-    console.log("AI pharmacy adherence received successfully");
+    
 
     let result;
     try {
@@ -222,7 +222,7 @@ Focus on actionable outreach recommendations to improve patient adherence.`;
 
     return jsonResponse({ success: true, data: result }, cors);
   } catch (error) {
-    console.error("AI Pharmacy Adherence error:", error);
+    
     return errorResponse(error, cors);
   }
 });

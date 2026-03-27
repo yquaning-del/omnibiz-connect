@@ -37,7 +37,7 @@ serve(async (req) => {
     }
 
     const { vertical, organizationId, locationId } = await req.json();
-    console.log(`AI Dynamic Pricing: ${vertical} for org ${organizationId}, user ${claims.user.id}`);
+    // Dynamic pricing request validated
 
     // Use service role for data queries
     const adminSupabase = createClient(
@@ -183,7 +183,7 @@ Respond with JSON:
 
 Be specific with rate recommendations based on the occupancy and demand signals.`;
 
-    console.log("Calling Lovable AI Gateway for dynamic pricing...");
+    
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -210,14 +210,14 @@ Be specific with rate recommendations based on the occupancy and demand signals.
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", errorText);
+      
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
-    console.log("AI dynamic pricing received successfully");
+    
 
     let result;
     try {
@@ -238,7 +238,7 @@ Be specific with rate recommendations based on the occupancy and demand signals.
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("AI Dynamic Pricing error:", errorMessage);
+    
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

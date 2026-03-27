@@ -57,7 +57,6 @@ serve(async (req) => {
       });
 
     if (inviteError) {
-      console.error("Error creating invitation:", inviteError);
       throw new Error("Failed to create invitation");
     }
 
@@ -71,7 +70,7 @@ serve(async (req) => {
     const appUrl = Deno.env.get("APP_URL") || "https://lovable.dev";
     const inviteUrl = `${appUrl}/tenant/accept-invite/${token}`;
 
-    console.log(`Invitation created for ${email}. URL: ${inviteUrl}`);
+    
 
     return jsonResponse({
       success: true,
@@ -79,7 +78,7 @@ serve(async (req) => {
       inviteUrl,
     }, cors);
   } catch (error) {
-    console.error("Error in send-lease-invitation:", error);
+    
     return errorResponse(error, cors);
   }
 });

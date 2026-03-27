@@ -244,6 +244,17 @@ export default function Rooms() {
         </TabsList>
 
         <TabsContent value="rooms" className="mt-4">
+          {rooms.length === 0 ? (
+            <Card className="border-border/50 bg-card/50">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <BedDouble className="w-12 h-12 mb-4 text-muted-foreground/50" />
+                <p className="font-medium text-foreground">No rooms yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Add your first room to start managing availability and bookings
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {rooms.map(room => (
               <Card key={room.id} className="border-border/50 bg-card/50">
@@ -269,6 +280,7 @@ export default function Rooms() {
               </Card>
             ))}
           </div>
+          )}
         </TabsContent>
 
         <TabsContent value="availability" className="mt-4">

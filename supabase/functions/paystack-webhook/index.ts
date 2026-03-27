@@ -25,13 +25,13 @@ serve(async (req) => {
     const body = JSON.parse(rawBody);
     const { event, data } = body;
 
-    console.log("Received webhook event:", event);
+    
 
     // Verify webhook signature in live mode
     if (isLiveMode) {
       const signature = req.headers.get("x-paystack-signature");
       if (!signature) {
-        console.error("Missing webhook signature");
+        
         return new Response(
           JSON.stringify({ error: "Missing signature" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -43,15 +43,15 @@ serve(async (req) => {
         .digest("hex");
       
       if (hash !== signature) {
-        console.error("Invalid webhook signature");
+        
         return new Response(
           JSON.stringify({ error: "Invalid signature" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      console.log("Webhook signature verified");
+      
     } else {
-      console.log("PLACEHOLDER MODE: Skipping signature verification");
+      
     }
 
     switch (event) {
@@ -69,7 +69,6 @@ serve(async (req) => {
           .single();
 
         if (txError) {
-          console.error("Error updating transaction:", txError);
           break;
         }
 
@@ -101,12 +100,11 @@ serve(async (req) => {
             });
 
           if (subError) {
-            console.error("Error updating subscription:", subError);
-            console.log("Subscription activated for org");
+            // Subscription update failed
           }
         }
 
-        console.log("Payment processed successfully");
+        
         break;
       }
 
@@ -122,15 +120,13 @@ serve(async (req) => {
           .eq("provider_reference", reference);
 
         if (error) {
-          console.error("Error updating failed transaction:", error);
+          // Failed transaction update error
         }
-
-        console.log("Payment failed for transaction");
         break;
       }
 
       default:
-        console.log("Unhandled event type:", event);
+        // Unhandled event type
     }
 
     return new Response(
@@ -138,7 +134,7 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Webhook error:", error);
+    
     return new Response(
       JSON.stringify({ error: "Webhook processing failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -129,21 +129,21 @@ const App = () => (
                   <Route element={<AppLayout />}>
                     <Route path="/dashboard" element={<PageErrorBoundary pageName="Dashboard"><Dashboard /></PageErrorBoundary>} />
                     <Route path="/pos" element={<PageErrorBoundary pageName="POS"><POS /></PageErrorBoundary>} />
-                    <Route path="/products" element={<Products />} />
-                    <Route path="/products/new" element={<Products />} />
-                    <Route path="/customers" element={<Customers />} />
-                    <Route path="/customers/new" element={<Customers />} />
-                    <Route path="/orders" element={<Orders />} />
-                    <Route path="/orders/:id" element={<Orders />} />
-                    <Route path="/inventory" element={<Inventory />} />
-                    <Route path="/online-orders" element={<OnlineOrders />} />
-                    <Route path="/reports" element={<Reports />} />
-                    <Route path="/staff" element={<Staff />} />
-                    <Route path="/tables" element={<Tables />} />
-                    <Route path="/rooms" element={<Rooms />} />
-                    <Route path="/kitchen" element={<Kitchen />} />
-                    <Route path="/reservations" element={<Reservations />} />
-                    <Route path="/housekeeping" element={<Housekeeping />} />
+                    <Route path="/products" element={<PageErrorBoundary pageName="Products"><Products /></PageErrorBoundary>} />
+                    <Route path="/products/new" element={<PageErrorBoundary pageName="Products"><Products /></PageErrorBoundary>} />
+                    <Route path="/customers" element={<PageErrorBoundary pageName="Customers"><Customers /></PageErrorBoundary>} />
+                    <Route path="/customers/new" element={<PageErrorBoundary pageName="Customers"><Customers /></PageErrorBoundary>} />
+                    <Route path="/orders" element={<PageErrorBoundary pageName="Orders"><Orders /></PageErrorBoundary>} />
+                    <Route path="/orders/:id" element={<PageErrorBoundary pageName="Orders"><Orders /></PageErrorBoundary>} />
+                    <Route path="/inventory" element={<PageErrorBoundary pageName="Inventory"><Inventory /></PageErrorBoundary>} />
+                    <Route path="/online-orders" element={<PageErrorBoundary pageName="Online Orders"><OnlineOrders /></PageErrorBoundary>} />
+                    <Route path="/reports" element={<PageErrorBoundary pageName="Reports"><Reports /></PageErrorBoundary>} />
+                    <Route path="/staff" element={<PageErrorBoundary pageName="Staff"><Staff /></PageErrorBoundary>} />
+                    <Route path="/tables" element={<PageErrorBoundary pageName="Tables"><Tables /></PageErrorBoundary>} />
+                    <Route path="/rooms" element={<PageErrorBoundary pageName="Rooms"><Rooms /></PageErrorBoundary>} />
+                    <Route path="/kitchen" element={<PageErrorBoundary pageName="Kitchen"><Kitchen /></PageErrorBoundary>} />
+                    <Route path="/reservations" element={<PageErrorBoundary pageName="Reservations"><Reservations /></PageErrorBoundary>} />
+                    <Route path="/housekeeping" element={<PageErrorBoundary pageName="Housekeeping"><Housekeeping /></PageErrorBoundary>} />
                     <Route path="/pharmacy" element={<PageErrorBoundary pageName="Pharmacy"><Pharmacy /></PageErrorBoundary>} />
                     <Route path="/pharmacy/prescriptions" element={<PageErrorBoundary pageName="Prescriptions"><PharmacyPrescriptions /></PageErrorBoundary>} />
                     <Route path="/pharmacy/patients" element={<PageErrorBoundary pageName="Patients"><PharmacyPatients /></PageErrorBoundary>} />
@@ -151,30 +151,30 @@ const App = () => (
                     <Route path="/pharmacy/insurance" element={<PageErrorBoundary pageName="Insurance"><PharmacyInsurance /></PageErrorBoundary>} />
                     <Route path="/pharmacy/controlled" element={<PageErrorBoundary pageName="Controlled"><PharmacyControlled /></PageErrorBoundary>} />
                     <Route path="/pharmacy/interactions" element={<PageErrorBoundary pageName="Interactions"><PharmacyInteractions /></PageErrorBoundary>} />
-                    <Route path="/front-desk" element={<FrontDesk />} />
-                    <Route path="/maintenance" element={<Maintenance />} />
-                    <Route path="/guest-services" element={<GuestServices />} />
-                    <Route path="/guest-profiles" element={<GuestProfiles />} />
-                    <Route path="/billing" element={<Billing />} />
-                    <Route path="/subscription" element={<Subscription />} />
-                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/front-desk" element={<PageErrorBoundary pageName="Front Desk"><FrontDesk /></PageErrorBoundary>} />
+                    <Route path="/maintenance" element={<PageErrorBoundary pageName="Maintenance"><Maintenance /></PageErrorBoundary>} />
+                    <Route path="/guest-services" element={<PageErrorBoundary pageName="Guest Services"><GuestServices /></PageErrorBoundary>} />
+                    <Route path="/guest-profiles" element={<PageErrorBoundary pageName="Guest Profiles"><GuestProfiles /></PageErrorBoundary>} />
+                    <Route path="/billing" element={<PageErrorBoundary pageName="Billing"><Billing /></PageErrorBoundary>} />
+                    <Route path="/subscription" element={<PageErrorBoundary pageName="Subscription"><Subscription /></PageErrorBoundary>} />
+                    <Route path="/settings" element={<PageErrorBoundary pageName="Settings"><Settings /></PageErrorBoundary>} />
                     {/* Property Management Routes */}
-                    <Route path="/property/units" element={<PropertyUnits />} />
-                    <Route path="/property/tenants" element={<PropertyTenants />} />
-                    <Route path="/property/leases" element={<PropertyLeases />} />
-                    <Route path="/property/rent" element={<PropertyRent />} />
-                    <Route path="/property/applications" element={<PropertyApplications />} />
-                    <Route path="/property/maintenance" element={<PropertyMaintenance />} />
-                    <Route path="/property/reports" element={<PropertyReports />} />
+                    <Route path="/property/units" element={<PageErrorBoundary pageName="Units"><PropertyUnits /></PageErrorBoundary>} />
+                    <Route path="/property/tenants" element={<PageErrorBoundary pageName="Tenants"><PropertyTenants /></PageErrorBoundary>} />
+                    <Route path="/property/leases" element={<PageErrorBoundary pageName="Leases"><PropertyLeases /></PageErrorBoundary>} />
+                    <Route path="/property/rent" element={<PageErrorBoundary pageName="Rent Collection"><PropertyRent /></PageErrorBoundary>} />
+                    <Route path="/property/applications" element={<PageErrorBoundary pageName="Applications"><PropertyApplications /></PageErrorBoundary>} />
+                    <Route path="/property/maintenance" element={<PageErrorBoundary pageName="Property Maintenance"><PropertyMaintenance /></PageErrorBoundary>} />
+                    <Route path="/property/reports" element={<PageErrorBoundary pageName="Property Reports"><PropertyReports /></PageErrorBoundary>} />
                     {/* Admin Routes (inside AppLayout for auth guard + sidebar) */}
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/organizations" element={<AdminOrganizations />} />
-                    <Route path="/admin/users" element={<AdminUsers />} />
-                    <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
-                    <Route path="/admin/support" element={<AdminSupport />} />
-                    <Route path="/admin/analytics" element={<AdminAnalytics />} />
-                    <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
-                    <Route path="/admin/uat-setup" element={<AdminUATSetup />} />
+                    <Route path="/admin" element={<PageErrorBoundary pageName="Admin Dashboard"><AdminDashboard /></PageErrorBoundary>} />
+                    <Route path="/admin/organizations" element={<PageErrorBoundary pageName="Organizations"><AdminOrganizations /></PageErrorBoundary>} />
+                    <Route path="/admin/users" element={<PageErrorBoundary pageName="Admin Users"><AdminUsers /></PageErrorBoundary>} />
+                    <Route path="/admin/subscriptions" element={<PageErrorBoundary pageName="Admin Subscriptions"><AdminSubscriptions /></PageErrorBoundary>} />
+                    <Route path="/admin/support" element={<PageErrorBoundary pageName="Support"><AdminSupport /></PageErrorBoundary>} />
+                    <Route path="/admin/analytics" element={<PageErrorBoundary pageName="Analytics"><AdminAnalytics /></PageErrorBoundary>} />
+                    <Route path="/admin/audit-logs" element={<PageErrorBoundary pageName="Audit Logs"><AdminAuditLogs /></PageErrorBoundary>} />
+                    <Route path="/admin/uat-setup" element={<PageErrorBoundary pageName="UAT Setup"><AdminUATSetup /></PageErrorBoundary>} />
                   </Route>
 
                   {/* Staff Invitation Route */}
