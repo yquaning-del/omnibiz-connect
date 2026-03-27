@@ -104,7 +104,7 @@ serve(async (req) => {
           }
         }
 
-        console.log("Payment processed successfully");
+        
         break;
       }
 
