@@ -204,7 +204,6 @@ Deno.serve(async (req) => {
     
     if (resendKey) {
       // TODO: Send email via Resend
-      console.log("RESEND_API_KEY found, would send email here");
     }
 
     // Return the invite URL for manual sharing
