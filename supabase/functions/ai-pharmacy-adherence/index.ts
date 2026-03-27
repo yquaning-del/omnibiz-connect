@@ -25,7 +25,7 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: "Access denied to this organization" }, cors, 403);
     }
 
-    console.log(`AI Pharmacy Adherence for org ${organizationId}`);
+    
 
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
