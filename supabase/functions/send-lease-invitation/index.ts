@@ -57,7 +57,6 @@ serve(async (req) => {
       });
 
     if (inviteError) {
-      console.error("Error creating invitation:", inviteError);
       throw new Error("Failed to create invitation");
     }
 
