@@ -78,7 +78,7 @@ serve(async (req) => {
       inviteUrl,
     }, cors);
   } catch (error) {
-    console.error("Error in send-lease-invitation:", error);
+    
     return errorResponse(error, cors);
   }
 });

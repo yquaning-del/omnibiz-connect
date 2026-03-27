@@ -222,7 +222,7 @@ Focus on actionable outreach recommendations to improve patient adherence.`;
 
     return jsonResponse({ success: true, data: result }, cors);
   } catch (error) {
-    console.error("AI Pharmacy Adherence error:", error);
+    
     return errorResponse(error, cors);
   }
 });

@@ -280,6 +280,7 @@ export default function Rooms() {
               </Card>
             ))}
           </div>
+          )}
         </TabsContent>
 
         <TabsContent value="availability" className="mt-4">

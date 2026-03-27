@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error: unknown) {
-    console.error("Error in send-staff-invitation:", error);
+    
     const message = error instanceof Error ? error.message : "Internal server error";
     return new Response(
       JSON.stringify({ error: message }),

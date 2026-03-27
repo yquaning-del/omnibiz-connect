@@ -210,7 +210,7 @@ serve(async (req) => {
     );
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error("Error processing order:", errorMessage);
+    
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {
