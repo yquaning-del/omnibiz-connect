@@ -37,7 +37,7 @@ serve(async (req) => {
     }
 
     const { vertical, organizationId, locationId } = await req.json();
-    console.log(`AI Maintenance Predictor: ${vertical} for org ${organizationId}, user ${claims.user.id}`);
+    
 
     // Use service role for data queries
     const adminSupabase = createClient(
