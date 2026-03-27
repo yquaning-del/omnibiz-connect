@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 
     // Handle token validation (public action)
     if (action === "validate" && token) {
-      console.log("Validating invitation token");
+      
       
       const { data: invitation, error } = await adminSupabase
         .from("staff_invitations")
