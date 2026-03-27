@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
 
     // Handle invitation completion (after user signs up)
     if (action === "complete" && token && body.userId) {
-      console.log("Completing invitation for user");
+      
       
       const { data: invitation, error: fetchError } = await adminSupabase
         .from("staff_invitations")
