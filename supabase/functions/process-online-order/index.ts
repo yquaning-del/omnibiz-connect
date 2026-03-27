@@ -33,9 +33,7 @@ async function sendSMSNotification(
     });
     
     if (!response.ok) {
-      console.error('SMS notification failed:', await response.text());
-    } else {
-      console.log('SMS notification sent successfully');
+      // SMS notification failed
     }
   } catch (error) {
     console.error('Error sending SMS notification:', error);
