@@ -34,7 +34,7 @@ const DEFAULT_COUNTRY: Country = {
   code: 'GH',
   name: 'Ghana',
   currency: 'GHS',
-  currencySymbol: 'GH₵',
+  symbol: '₵',
   flag: '🇬🇭',
 };
 
