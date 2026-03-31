@@ -20,8 +20,8 @@ interface Plan {
   features: string[] | null;
   max_locations: number | null;
   max_users: number | null;
-  currency?: string;
-  country_code?: string;
+  currency?: string | null;
+  country_code?: string | null;
 }
 
 interface SubscriptionPlansProps {
