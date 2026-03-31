@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PaystackCheckout } from '@/components/payment/PaystackCheckout';
-import { Country } from '@/components/payment/CountrySelector';
+import type { Country } from '@/components/payment/CountrySelector';
 
 interface Plan {
   id: string;
