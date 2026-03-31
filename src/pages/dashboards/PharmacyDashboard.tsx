@@ -87,7 +87,7 @@ export default function PharmacyDashboard() {
         supabase
           .from('prescriptions')
           .select(`
-            id, prescription_number, status, created_at, patient_id,
+            id, prescription_number, status, created_at, date_filled, patient_id,
             patient_profiles!patient_id (
               customer_id,
               customers!customer_id (full_name)
