@@ -115,11 +115,19 @@ export default function PropertyDashboard() {
         .eq('organization_id', currentOrganization.id)
         .in('status', ['submitted', 'screening']);
 
-      // Fetch open maintenance
+      // Fetch open maintenance — scoped to org locations
+      const { data: orgLocations } = await supabase
+        .from('locations')
+        .select('id')
+        .eq('organization_id', currentOrganization.id);
+      
+      const locationIds = orgLocations?.map(l => l.id) || [];
+      
       const { data: maintenance } = await supabase
         .from('maintenance_requests')
         .select('id')
-        .eq('status', 'open');
+        .eq('status', 'open')
+        .in('location_id', locationIds.length > 0 ? locationIds : ['00000000-0000-0000-0000-000000000000']);
 
       setStats({
         totalUnits,

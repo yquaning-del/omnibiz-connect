@@ -144,10 +144,11 @@ export default function RetailDashboard() {
           .eq('organization_id', currentOrganization.id)
           .gte('created_at', weekStart.toISOString())
           .lte('created_at', today.toISOString()),
-        // Order items for top products
+        // Order items for top products — scoped to org via order IDs
         supabase
           .from('order_items')
-          .select('product_id, product_name, quantity, total_price')
+          .select('product_id, product_name, quantity, total_price, order_id, orders!inner(organization_id)')
+          .eq('orders.organization_id', currentOrganization.id)
           .order('created_at', { ascending: false })
           .limit(100),
         // Products for inventory

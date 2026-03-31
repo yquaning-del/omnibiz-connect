@@ -108,6 +108,10 @@ const FEATURE_TIERS: Record<string, string[]> = {
   'bulk_operations': ['enterprise'],
   'custom_lease_templates': ['enterprise'],
   'unlimited_units': ['enterprise'],
+  
+  // Cross-vertical gated features
+  'billing_folios': ['starter', 'professional', 'enterprise'],  // Hotel-only, gated by vertical in sidebar
+  'online_orders': ['professional', 'enterprise'],
 };
 
 // Get required tier for a feature

@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PaystackCheckout } from '@/components/payment/PaystackCheckout';
+import { Country } from '@/components/payment/CountrySelector';
 
 interface Plan {
   id: string;
@@ -18,6 +20,8 @@ interface Plan {
   features: string[] | null;
   max_locations: number | null;
   max_users: number | null;
+  currency?: string;
+  country_code?: string;
 }
 
 interface SubscriptionPlansProps {
@@ -25,14 +29,24 @@ interface SubscriptionPlansProps {
   showCurrentPlan?: boolean;
 }
 
+// Default country for Paystack
+const DEFAULT_COUNTRY: Country = {
+  code: 'GH',
+  name: 'Ghana',
+  currency: 'GHS',
+  currencySymbol: 'GH₵',
+  flag: '🇬🇭',
+};
+
 export function SubscriptionPlans({ onPlanSelected, showCurrentPlan = true }: SubscriptionPlansProps) {
   const navigate = useNavigate();
   const { currentOrganization } = useAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentSubscription, setCurrentSubscription] = useState<{ plan_id: string | null; status: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [subscribing, setSubscribing] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
   useEffect(() => {
     fetchPlansAndSubscription();
@@ -42,7 +56,6 @@ export function SubscriptionPlans({ onPlanSelected, showCurrentPlan = true }: Su
     if (!currentOrganization) return;
 
     try {
-      // Fetch plans for the organization's vertical
       const { data: orgData } = await supabase
         .from('organizations')
         .select('primary_vertical')
@@ -65,7 +78,6 @@ export function SubscriptionPlans({ onPlanSelected, showCurrentPlan = true }: Su
         }
       }
 
-      // Fetch current subscription
       const { data: subData } = await supabase
         .from('organization_subscriptions')
         .select('plan_id, status')
@@ -82,55 +94,19 @@ export function SubscriptionPlans({ onPlanSelected, showCurrentPlan = true }: Su
     }
   };
 
-  const handleSubscribe = async (planId: string) => {
-    if (!currentOrganization) return;
+  const handleSubscribe = (plan: Plan) => {
+    setSelectedPlan(plan);
+    setCheckoutOpen(true);
+  };
 
-    setSubscribing(planId);
-
-    try {
-      // Placeholder: In production, this would redirect to Stripe checkout
-      // For now, we'll create/update the subscription directly
-      
-      const { data: existingSub } = await supabase
-        .from('organization_subscriptions')
-        .select('id')
-        .eq('organization_id', currentOrganization.id)
-        .maybeSingle();
-
-      if (existingSub) {
-        await supabase
-          .from('organization_subscriptions')
-          .update({
-            plan_id: planId,
-            status: 'active',
-            current_period_start: new Date().toISOString(),
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          })
-          .eq('id', existingSub.id);
-      } else {
-        await supabase
-          .from('organization_subscriptions')
-          .insert({
-            organization_id: currentOrganization.id,
-            plan_id: planId,
-            status: 'active',
-            current_period_start: new Date().toISOString(),
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          });
-      }
-
-      toast.success('Subscription updated successfully!');
-      
-      if (onPlanSelected) {
-        onPlanSelected(planId);
-      } else {
-        await fetchPlansAndSubscription();
-      }
-    } catch (error) {
-      console.error('Error subscribing:', error);
-      toast.error('Failed to update subscription');
-    } finally {
-      setSubscribing(null);
+  const handlePaymentSuccess = async (reference: string) => {
+    setCheckoutOpen(false);
+    toast.success('Payment successful! Your subscription is now active.');
+    
+    if (onPlanSelected && selectedPlan) {
+      onPlanSelected(selectedPlan.id);
+    } else {
+      await fetchPlansAndSubscription();
     }
   };
 
@@ -141,6 +117,20 @@ export function SubscriptionPlans({ onPlanSelected, showCurrentPlan = true }: Su
       </div>
     );
   }
+
+  const getPrice = (plan: Plan) => {
+    if (billingCycle === 'yearly' && plan.price_yearly) {
+      return plan.price_yearly;
+    }
+    return plan.price_monthly;
+  };
+
+  const getDisplayPrice = (plan: Plan) => {
+    if (billingCycle === 'yearly' && plan.price_yearly) {
+      return plan.price_yearly / 12;
+    }
+    return plan.price_monthly;
+  };
 
   return (
     <div className="space-y-6">
@@ -167,9 +157,7 @@ export function SubscriptionPlans({ onPlanSelected, showCurrentPlan = true }: Su
       <div className="grid md:grid-cols-3 gap-6">
         {plans.map((plan) => {
           const isCurrentPlan = currentSubscription?.plan_id === plan.id;
-          const price = billingCycle === 'yearly' && plan.price_yearly 
-            ? plan.price_yearly / 12 
-            : plan.price_monthly;
+          const displayPrice = getDisplayPrice(plan);
 
           return (
             <Card 
@@ -194,7 +182,7 @@ export function SubscriptionPlans({ onPlanSelected, showCurrentPlan = true }: Su
               
               <CardContent className="space-y-4">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">${price.toFixed(0)}</span>
+                  <span className="text-4xl font-bold">${displayPrice.toFixed(0)}</span>
                   <span className="text-muted-foreground">/month</span>
                 </div>
                 
@@ -230,12 +218,9 @@ export function SubscriptionPlans({ onPlanSelected, showCurrentPlan = true }: Su
                 <Button 
                   className="w-full" 
                   variant={plan.tier === 'professional' ? 'default' : 'outline'}
-                  disabled={isCurrentPlan || subscribing !== null}
-                  onClick={() => handleSubscribe(plan.id)}
+                  disabled={isCurrentPlan}
+                  onClick={() => handleSubscribe(plan)}
                 >
-                  {subscribing === plan.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : null}
                   {isCurrentPlan ? 'Current Plan' : 'Subscribe'}
                 </Button>
               </CardFooter>
@@ -244,10 +229,25 @@ export function SubscriptionPlans({ onPlanSelected, showCurrentPlan = true }: Su
         })}
       </div>
 
-      {/* Placeholder Notice */}
       <p className="text-center text-sm text-muted-foreground">
-        💳 Stripe payment integration coming soon. Subscriptions are currently simulated.
+        💳 Payments processed securely via Paystack.
       </p>
+
+      {/* Paystack Checkout Dialog */}
+      {selectedPlan && (
+        <PaystackCheckout
+          open={checkoutOpen}
+          onClose={() => setCheckoutOpen(false)}
+          planName={selectedPlan.name}
+          planId={selectedPlan.id}
+          amount={getPrice(selectedPlan)}
+          currency={selectedPlan.currency || 'USD'}
+          currencySymbol="$"
+          country={DEFAULT_COUNTRY}
+          onSuccess={handlePaymentSuccess}
+          billingCycle={billingCycle}
+        />
+      )}
     </div>
   );
 }

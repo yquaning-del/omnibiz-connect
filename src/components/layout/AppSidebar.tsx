@@ -119,7 +119,7 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
         { title: 'Point of Sale', href: '/pos', icon: ShoppingCart },
         { title: 'Products', href: '/products', icon: Package },
         { title: 'Orders', href: '/orders', icon: Receipt },
-        { title: 'Online Orders', href: '/online-orders', icon: Globe },
+        { title: 'Online Orders', href: '/online-orders', icon: Globe, requiredFeature: 'online_orders' },
       ],
       features: [
         { title: 'Inventory', href: '/inventory', icon: Warehouse, requiredFeature: 'inventory_management' },
