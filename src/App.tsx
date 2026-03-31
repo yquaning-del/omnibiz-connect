@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
+import { AdminRouteGuard } from "@/components/auth/AdminRouteGuard";
 import { CookieConsent } from "@/components/CookieConsent";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
