@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
+import { AdminRouteGuard } from "@/components/auth/AdminRouteGuard";
 import { CookieConsent } from "@/components/CookieConsent";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
@@ -166,15 +167,15 @@ const App = () => (
                     <Route path="/property/applications" element={<PageErrorBoundary pageName="Applications"><PropertyApplications /></PageErrorBoundary>} />
                     <Route path="/property/maintenance" element={<PageErrorBoundary pageName="Property Maintenance"><PropertyMaintenance /></PageErrorBoundary>} />
                     <Route path="/property/reports" element={<PageErrorBoundary pageName="Property Reports"><PropertyReports /></PageErrorBoundary>} />
-                    {/* Admin Routes (inside AppLayout for auth guard + sidebar) */}
-                    <Route path="/admin" element={<PageErrorBoundary pageName="Admin Dashboard"><AdminDashboard /></PageErrorBoundary>} />
-                    <Route path="/admin/organizations" element={<PageErrorBoundary pageName="Organizations"><AdminOrganizations /></PageErrorBoundary>} />
-                    <Route path="/admin/users" element={<PageErrorBoundary pageName="Admin Users"><AdminUsers /></PageErrorBoundary>} />
-                    <Route path="/admin/subscriptions" element={<PageErrorBoundary pageName="Admin Subscriptions"><AdminSubscriptions /></PageErrorBoundary>} />
-                    <Route path="/admin/support" element={<PageErrorBoundary pageName="Support"><AdminSupport /></PageErrorBoundary>} />
-                    <Route path="/admin/analytics" element={<PageErrorBoundary pageName="Analytics"><AdminAnalytics /></PageErrorBoundary>} />
-                    <Route path="/admin/audit-logs" element={<PageErrorBoundary pageName="Audit Logs"><AdminAuditLogs /></PageErrorBoundary>} />
-                    <Route path="/admin/uat-setup" element={<PageErrorBoundary pageName="UAT Setup"><AdminUATSetup /></PageErrorBoundary>} />
+                    {/* Admin Routes — super_admin only */}
+                    <Route path="/admin" element={<AdminRouteGuard><PageErrorBoundary pageName="Admin Dashboard"><AdminDashboard /></PageErrorBoundary></AdminRouteGuard>} />
+                    <Route path="/admin/organizations" element={<AdminRouteGuard><PageErrorBoundary pageName="Organizations"><AdminOrganizations /></PageErrorBoundary></AdminRouteGuard>} />
+                    <Route path="/admin/users" element={<AdminRouteGuard><PageErrorBoundary pageName="Admin Users"><AdminUsers /></PageErrorBoundary></AdminRouteGuard>} />
+                    <Route path="/admin/subscriptions" element={<AdminRouteGuard><PageErrorBoundary pageName="Admin Subscriptions"><AdminSubscriptions /></PageErrorBoundary></AdminRouteGuard>} />
+                    <Route path="/admin/support" element={<AdminRouteGuard><PageErrorBoundary pageName="Support"><AdminSupport /></PageErrorBoundary></AdminRouteGuard>} />
+                    <Route path="/admin/analytics" element={<AdminRouteGuard><PageErrorBoundary pageName="Analytics"><AdminAnalytics /></PageErrorBoundary></AdminRouteGuard>} />
+                    <Route path="/admin/audit-logs" element={<AdminRouteGuard><PageErrorBoundary pageName="Audit Logs"><AdminAuditLogs /></PageErrorBoundary></AdminRouteGuard>} />
+                    <Route path="/admin/uat-setup" element={<AdminRouteGuard><PageErrorBoundary pageName="UAT Setup"><AdminUATSetup /></PageErrorBoundary></AdminRouteGuard>} />
                   </Route>
 
                   {/* Staff Invitation Route */}

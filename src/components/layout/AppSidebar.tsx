@@ -74,7 +74,7 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
         { title: 'Tables', href: '/tables', icon: UtensilsCrossed },
         { title: 'Kitchen Display', href: '/kitchen', icon: ChefHat, requiredFeature: 'kitchen_display' },
         { title: 'Orders', href: '/orders', icon: Receipt },
-        { title: 'Online Orders', href: '/online-orders', icon: Globe },
+        { title: 'Online Orders', href: '/online-orders', icon: Globe, requiredFeature: 'online_orders' },
       ],
       features: [
         { title: 'Reservations', href: '/reservations', icon: Calendar, requiredFeature: 'reservations' },
@@ -95,7 +95,7 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
         { title: 'Maintenance', href: '/maintenance', icon: Wrench, requiredFeature: 'maintenance_tracking' },
         { title: 'Guest Services', href: '/guest-services', icon: ConciergeBell, requiredFeature: 'guest_services' },
         { title: 'Guest Profiles', href: '/guest-profiles', icon: UserCheck, requiredFeature: 'guest_profiles' },
-        { title: 'Billing & Folios', href: '/billing', icon: CreditCard },
+        { title: 'Billing & Folios', href: '/billing', icon: CreditCard, requiredFeature: 'billing_folios' },
       ],
     },
     pharmacy: {
@@ -119,7 +119,7 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
         { title: 'Point of Sale', href: '/pos', icon: ShoppingCart },
         { title: 'Products', href: '/products', icon: Package },
         { title: 'Orders', href: '/orders', icon: Receipt },
-        { title: 'Online Orders', href: '/online-orders', icon: Globe },
+        { title: 'Online Orders', href: '/online-orders', icon: Globe, requiredFeature: 'online_orders' },
       ],
       features: [
         { title: 'Inventory', href: '/inventory', icon: Warehouse, requiredFeature: 'inventory_management' },

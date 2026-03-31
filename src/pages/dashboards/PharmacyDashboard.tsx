@@ -87,7 +87,7 @@ export default function PharmacyDashboard() {
         supabase
           .from('prescriptions')
           .select(`
-            id, prescription_number, status, created_at, patient_id,
+            id, prescription_number, status, created_at, date_filled, patient_id,
             patient_profiles!patient_id (
               customer_id,
               customers!customer_id (full_name)
@@ -149,9 +149,9 @@ export default function PharmacyDashboard() {
           }));
         setPendingRx(pending);
 
-        // Today's dispensed
+        // Today's dispensed — use date_filled for accuracy
         const todayDispensedCount = prescriptions.filter(
-          p => p.status === 'dispensed' && p.created_at.startsWith(today)
+          p => p.status === 'dispensed' && (p as any).date_filled && String((p as any).date_filled) === today
         ).length;
         setTodayDispensed(todayDispensedCount);
 
