@@ -95,7 +95,7 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
         { title: 'Maintenance', href: '/maintenance', icon: Wrench, requiredFeature: 'maintenance_tracking' },
         { title: 'Guest Services', href: '/guest-services', icon: ConciergeBell, requiredFeature: 'guest_services' },
         { title: 'Guest Profiles', href: '/guest-profiles', icon: UserCheck, requiredFeature: 'guest_profiles' },
-        { title: 'Billing & Folios', href: '/billing', icon: CreditCard },
+        { title: 'Billing & Folios', href: '/billing', icon: CreditCard, requiredFeature: 'billing_folios' },
       ],
     },
     pharmacy: {
