@@ -1,100 +1,102 @@
 
 
-# Platform Audit — Remaining Issues & Improvements
+# Platform Audit Report — Remaining Issues
 
-## Current State
+## Findings Summary
 
-Previous audits addressed: toast unification, Phase 1-4 security fixes, admin search wiring, password change UI, pagination on Orders/Customers, and some PageErrorBoundary wrapping.
-
-After re-examining the codebase and security scan results, the following issues remain.
+After thorough review of all dashboards, payment flows, subscription gating, sidebar navigation, and data queries, here are the remaining issues organized by severity.
 
 ---
 
-## 1. SECURITY (Still Flagged by Scanner)
+## 1. CRITICAL: Payment Gate Bypass (Subscription Plans)
 
-### 1a. `customers` Table — No RLS Policies (SCANNER: ERROR)
-Still flagged. No migration was applied for this table. Any authenticated user can read all customer PII across organizations.
+**`SubscriptionPlans.tsx` lines 85-135**: The `handleSubscribe` function directly updates `organization_subscriptions` to `status: 'active'` without requiring payment. Any org_admin can click "Subscribe" on the Enterprise plan and get it activated for free — bypassing Paystack entirely.
 
-**Fix**: Add RLS policy restricting access to org members via `get_user_org_ids(auth.uid())`.
+The `PaystackCheckout` component exists but is never used by `SubscriptionPlans`. The flow skips payment completely.
 
-### 1b. `patient_profiles` — Medical Data Over-Exposed (SCANNER: ERROR)
-Still flagged. Current policy allows any org staff to view all patient records. Needs pharmacist/front-desk role gating.
-
-**Fix**: Tighten the existing RLS to use `is_pharmacist()` or `is_front_desk()`.
-
-### 1c. Leaked Password Protection (SCANNER: WARN)
-Still disabled. Requires auth config change.
-
-**Fix**: Enable via `configure_auth` tool.
+**Fix**: Route all subscription changes through `PaystackCheckout`. Only allow the `paystack-webhook` edge function (server-side, signature-verified) to set `status: 'active'`. Remove direct client-side subscription activation.
 
 ---
 
-## 2. INCOMPLETE ERROR BOUNDARIES
+## 2. CRITICAL: Cross-Tenant Data Leaks in Dashboards
 
-PageErrorBoundary is only applied to Dashboard, POS, and Pharmacy routes. **20+ routes** remain unwrapped: Products, Customers, Orders, Inventory, Reports, Staff, Tables, Rooms, Kitchen, Reservations, Housekeeping, FrontDesk, Maintenance, GuestServices, GuestProfiles, Billing, Settings, and all Property/Admin routes.
+### 2a. Retail Dashboard — Order Items Not Org-Scoped
+`RetailDashboard.tsx` line 148-152 queries `order_items` with NO `organization_id` filter. Top products and category sales show data from ALL organizations:
+```
+supabase.from('order_items').select(...).order('created_at').limit(100)
+```
+**Fix**: Join through `orders` table or filter by order IDs belonging to the current org.
 
-**Fix**: Wrap all remaining routes in `App.tsx`.
-
----
-
-## 3. EDGE FUNCTION LOGGING (Still Present)
-
-143 `console.log` matches remain across 9 edge functions: `ai-dynamic-pricing`, `ai-maintenance-predictor`, `ai-pharmacy-adherence`, `paystack-webhook`, `send-lease-invitation`, `send-staff-invitation`, `process-online-order`, `create-test-users`.
-
-**Fix**: Remove or guard all remaining `console.log` calls.
-
----
-
-## 4. MISSING EMPTY STATES & PAGINATION
-
-Only `Customers` and `Orders` have `EmptyState` + pagination. Pages like `Inventory`, `Kitchen`, `Rooms`, `Reservations` still fetch all records with no pagination and show blank content when empty.
-
-**Fix**: Add empty states and client-side pagination to Inventory, Kitchen, Rooms, and Reservations pages.
+### 2b. Property Dashboard — Maintenance Not Org-Scoped
+`PropertyDashboard.tsx` line 119-122 queries `maintenance_requests` with only `status: 'open'` — no org or location filter. Shows ALL open maintenance requests across the platform.
+**Fix**: Add `.eq('organization_id', currentOrganization.id)` or filter by location.
 
 ---
 
-## 5. MISSING FEATURES
+## 3. MEDIUM: Dashboard Representation Issues
 
-### 5a. No `customers` RLS — Data Leak Risk
-(Covered in 1a above, but also a functional gap: cross-org data bleeds.)
+### 3a. Property Dashboard — Missing Revenue Charts
+Unlike Retail (weekly sales trend), Restaurant (hourly + weekly revenue), Hotel (occupancy trend + weekly revenue), and Pharmacy (daily Rx volume + insurance claims), the Property Dashboard has NO charts or graphs. It only shows static cards and a recent activity list.
 
-### 5b. No Rate Limiting on Remaining Public Edge Functions
-`ai-copilot`, `ai-insights`, `ai-demand-forecast`, `ai-dynamic-pricing`, `ai-maintenance-predictor`, `ai-pharmacy-adherence`, `ai-lease-generator`, `drug-interactions` still lack rate limiting.
+**Fix**: Add a rent collection trend chart (monthly) and an occupancy rate gauge to match the visual richness of other dashboards.
 
-### 5c. Missing FK Constraints
-Tables `guest_folios`, `reservations`, `rent_payments`, `prescriptions`, `order_items` lack foreign key constraints to parent tables, risking orphaned records.
+### 3b. Pharmacy Dashboard — `todayDispensed` Uses `created_at` Instead of `date_filled`
+Line 153 checks `p.created_at.startsWith(today)` for dispensed prescriptions. A prescription created last week but dispensed today would NOT show in today's count. It should check `date_filled`.
+
+**Fix**: Filter by `date_filled` instead of `created_at` for dispensed count.
+
+---
+
+## 4. MEDIUM: Module Configuration Gaps
+
+### 4a. Billing Page Not Feature-Gated
+The Billing/Folios page at `/billing` is hotel-specific but has no `requiredFeature` in the sidebar config and no `FeatureGate` wrapper. Any vertical user with the URL can access it even though it queries hotel-specific tables (`guest_folios`, `folio_charges`).
+
+**Fix**: Add `requiredFeature: 'billing_folios'` to the sidebar nav and wrap with `FeatureGate`.
+
+### 4b. Online Orders Not Feature-Gated
+The `/online-orders` route appears in the sidebar for Restaurant and Retail but has no `requiredFeature`. This should be a Professional+ feature.
+
+**Fix**: Add `requiredFeature: 'online_orders'` and register it in `FEATURE_TIERS`.
+
+### 4c. Subscription Page Not Linked to PaystackCheckout
+The entire subscription upgrade flow in `SubscriptionPlans.tsx` never opens `PaystackCheckout`. The Paystack integration exists but is disconnected from the actual upgrade path.
+
+---
+
+## 5. LOW: Admin Routes Not Super-Admin Guarded
+
+Admin routes (`/admin/*`) are inside `AppLayout` which only checks for authentication. There's no `PermissionGate` or role check preventing a regular staff member from navigating to `/admin/users` or `/admin/organizations` via the URL bar. The sidebar hides admin links for non-super-admins, but the routes themselves are unprotected.
+
+**Fix**: Wrap admin routes with a role guard that redirects non-super-admins.
 
 ---
 
 ## Implementation Plan
 
-### Phase 1: Critical Security (Database)
-1. **Add `customers` table RLS** — org-scoped ALL policy
-2. **Tighten `patient_profiles` RLS** — require pharmacist/front-desk role
-3. **Enable leaked password protection** — auth config
-4. **Add FK constraints** on `order_items.order_id → orders.id`, `prescriptions.patient_id → patient_profiles.id`, `guest_folios.reservation_id → reservations.id`
+### Phase 1: Critical Security & Payment Fixes
+1. **Fix subscription payment bypass** — Wire `SubscriptionPlans` to `PaystackCheckout`; remove direct DB activation
+2. **Scope RetailDashboard order_items query** — Filter by org orders
+3. **Scope PropertyDashboard maintenance query** — Add org filter
 
-### Phase 2: Error Boundaries & Logging
-5. **Wrap all remaining routes** with `PageErrorBoundary` in `App.tsx` (~20 routes)
-6. **Clean remaining edge function logs** — remove `console.log` from 9 functions
+### Phase 2: Dashboard Accuracy & Completeness
+4. **Fix PharmacyDashboard dispensed count** — Use `date_filled` instead of `created_at`
+5. **Add charts to PropertyDashboard** — Rent trend + occupancy gauge
+6. **Guard admin routes** — Add super_admin role check to `/admin/*` routes
 
-### Phase 3: UX Completeness
-7. **Add empty states + pagination** to Inventory, Kitchen, Rooms, Reservations pages
-8. **Add rate limiting** to remaining public AI edge functions
+### Phase 3: Module Gating
+7. **Gate Billing page** — Add feature tier entry + sidebar requiredFeature
+8. **Gate Online Orders** — Add feature tier entry + sidebar requiredFeature
+9. **Register missing features** in `FEATURE_TIERS` map: `billing_folios`, `online_orders`
 
 ### Technical Details
 
-**Migration SQL for customers RLS:**
-```sql
-ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Staff can manage customers in their org"
-ON public.customers FOR ALL TO authenticated
-USING (organization_id IN (SELECT get_user_org_ids(auth.uid())));
-```
-
 **Files to modify:**
-- `src/App.tsx` — wrap ~20 routes with `PageErrorBoundary`
-- `src/pages/Inventory.tsx`, `Kitchen.tsx`, `Rooms.tsx`, `Reservations.tsx` — add pagination + empty states
-- 9 edge functions — remove `console.log` statements
-- 1 database migration — customers RLS, patient_profiles tightening, FK constraints
+- `src/pages/subscription/SubscriptionPlans.tsx` — Replace direct DB update with PaystackCheckout flow
+- `src/pages/dashboards/RetailDashboard.tsx` — Scope order_items query
+- `src/pages/dashboards/PropertyDashboard.tsx` — Scope maintenance query + add charts
+- `src/pages/dashboards/PharmacyDashboard.tsx` — Fix dispensed filter
+- `src/contexts/SubscriptionContext.tsx` — Add `billing_folios` and `online_orders` to FEATURE_TIERS
+- `src/components/layout/AppSidebar.tsx` — Add requiredFeature to Billing and Online Orders
+- `src/App.tsx` — Add admin route guard
 
