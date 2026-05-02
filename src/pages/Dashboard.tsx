@@ -32,8 +32,8 @@ function AdminBanner() {
 
 export default function Dashboard() {
   const { currentOrganization, currentLocation, hasRole } = useAuth();
-  
-  const vertical = currentLocation?.vertical || currentOrganization?.primary_vertical || 'retail';
+
+  const vertical = currentLocation?.vertical || currentOrganization?.primary_vertical;
   const isSuperAdmin = hasRole('super_admin');
 
   const renderDashboard = () => {
@@ -47,18 +47,34 @@ export default function Dashboard() {
       case 'property':
         return <PropertyDashboard />;
       case 'retail':
-      default:
         return <RetailDashboard />;
+      default:
+        return (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center">
+            <h2 className="text-lg font-semibold text-foreground mb-2">
+              Choose your business type
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              We need to know what kind of business you run before we can show the right dashboard.
+            </p>
+            <Link
+              to="/onboarding"
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Continue setup <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        );
     }
   };
 
   return (
     <div className="space-y-6">
       {isSuperAdmin && <AdminBanner />}
-      
+
       {/* Getting Started Checklist */}
       <SetupChecklist />
-      
+
       {renderDashboard()}
     </div>
   );
