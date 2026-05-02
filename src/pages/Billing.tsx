@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -77,7 +78,7 @@ const statusColors: Record<string, string> = {
   closed: 'bg-muted text-muted-foreground border-muted',
 };
 
-export default function Billing() {
+function BillingInner() {
   const { currentOrganization, currentLocation, user } = useAuth();
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
@@ -642,5 +643,14 @@ export default function Billing() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+
+export default function Billing() {
+  return (
+    <FeatureGate feature="billing_folios">
+      <BillingInner />
+    </FeatureGate>
   );
 }
