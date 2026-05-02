@@ -16,37 +16,58 @@ interface UseCartOptions {
   organizationId: string;
 }
 
-const SESSION_KEY = 'cart_session_id';
+const guestKey = (orgId: string) => `cart_guest_${orgId}`;
 
-function getSessionId(): string {
-  let sessionId = localStorage.getItem(SESSION_KEY);
-  if (!sessionId) {
-    sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-    localStorage.setItem(SESSION_KEY, sessionId);
+function loadGuestCart(orgId: string): CartItem[] {
+  try {
+    const raw = localStorage.getItem(guestKey(orgId));
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
   }
-  return sessionId;
 }
 
+function saveGuestCart(orgId: string, items: CartItem[]) {
+  try {
+    localStorage.setItem(guestKey(orgId), JSON.stringify(items));
+  } catch {
+    // ignore quota errors
+  }
+}
+
+/**
+ * Cart hook.
+ * - Authenticated users: persisted to `cart_items` table (org + user scoped via RLS).
+ * - Guest users: stored entirely in localStorage. Server-side guest carts were
+ *   removed because the previous session-id RLS policy allowed enumeration.
+ */
 export function useCart({ organizationId }: UseCartOptions) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  const sessionId = getSessionId();
 
-  // Check auth state
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUserId(data.user?.id || null);
     });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id || null);
+    });
+    return () => {
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
-  // Load cart from database
   const loadCart = useCallback(async () => {
     if (!organizationId) return;
-    
     setLoading(true);
     try {
-      let query = supabase
+      if (!userId) {
+        setItems(loadGuestCart(organizationId));
+        return;
+      }
+
+      const { data, error } = await supabase
         .from('cart_items')
         .select(`
           id,
@@ -57,16 +78,9 @@ export function useCart({ organizationId }: UseCartOptions) {
           products!inner(name, image_url),
           product_variants(name)
         `)
-        .eq('organization_id', organizationId);
+        .eq('organization_id', organizationId)
+        .eq('user_id', userId);
 
-      if (userId) {
-        query = query.eq('user_id', userId);
-      } else {
-        query = query.eq('session_id', sessionId);
-      }
-
-      const { data, error } = await query;
-      
       if (error) throw error;
 
       const cartItems: CartItem[] = (data || []).map((item: any) => ({
@@ -86,7 +100,7 @@ export function useCart({ organizationId }: UseCartOptions) {
     } finally {
       setLoading(false);
     }
-  }, [organizationId, userId, sessionId]);
+  }, [organizationId, userId]);
 
   useEffect(() => {
     loadCart();
@@ -96,16 +110,33 @@ export function useCart({ organizationId }: UseCartOptions) {
     productId: string,
     unitPrice: number,
     quantity: number = 1,
-    variantId?: string
+    variantId?: string,
+    productName?: string,
+    imageUrl?: string,
   ) => {
     try {
-      // Check if item already exists
       const existingItem = items.find(
-        i => i.product_id === productId && i.variant_id === variantId
+        i => i.product_id === productId && i.variant_id === variantId,
       );
 
       if (existingItem) {
         await updateQuantity(existingItem.id, existingItem.quantity + quantity);
+        return;
+      }
+
+      if (!userId) {
+        const newItem: CartItem = {
+          id: `guest_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          product_id: productId,
+          variant_id: variantId,
+          product_name: productName || 'Item',
+          quantity,
+          unit_price: unitPrice,
+          image_url: imageUrl,
+        };
+        const next = [...items, newItem];
+        saveGuestCart(organizationId, next);
+        setItems(next);
         return;
       }
 
@@ -115,18 +146,10 @@ export function useCart({ organizationId }: UseCartOptions) {
         variant_id: variantId || null,
         quantity,
         unit_price: unitPrice,
+        user_id: userId,
       };
 
-      if (userId) {
-        insertData.user_id = userId;
-      } else {
-        insertData.session_id = sessionId;
-      }
-
-      const { error } = await supabase
-        .from('cart_items')
-        .insert(insertData);
-
+      const { error } = await supabase.from('cart_items').insert(insertData);
       if (error) throw error;
       await loadCart();
     } catch (error) {
@@ -139,6 +162,13 @@ export function useCart({ organizationId }: UseCartOptions) {
     try {
       if (quantity <= 0) {
         await removeItem(itemId);
+        return;
+      }
+
+      if (!userId) {
+        const next = items.map(i => (i.id === itemId ? { ...i, quantity } : i));
+        saveGuestCart(organizationId, next);
+        setItems(next);
         return;
       }
 
@@ -157,11 +187,14 @@ export function useCart({ organizationId }: UseCartOptions) {
 
   const removeItem = async (itemId: string) => {
     try {
-      const { error } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('id', itemId);
+      if (!userId) {
+        const next = items.filter(i => i.id !== itemId);
+        saveGuestCart(organizationId, next);
+        setItems(next);
+        return;
+      }
 
+      const { error } = await supabase.from('cart_items').delete().eq('id', itemId);
       if (error) throw error;
       await loadCart();
     } catch (error) {
@@ -172,18 +205,17 @@ export function useCart({ organizationId }: UseCartOptions) {
 
   const clearCart = async () => {
     try {
-      let query = supabase
-        .from('cart_items')
-        .delete()
-        .eq('organization_id', organizationId);
-
-      if (userId) {
-        query = query.eq('user_id', userId);
-      } else {
-        query = query.eq('session_id', sessionId);
+      if (!userId) {
+        saveGuestCart(organizationId, []);
+        setItems([]);
+        return;
       }
 
-      const { error } = await query;
+      const { error } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('organization_id', organizationId)
+        .eq('user_id', userId);
       if (error) throw error;
       setItems([]);
     } catch (error) {
