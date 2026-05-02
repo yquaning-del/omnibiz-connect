@@ -141,33 +141,33 @@ const App = () => (
                     <Route path="/online-orders" element={<PageErrorBoundary pageName="Online Orders"><OnlineOrders /></PageErrorBoundary>} />
                     <Route path="/reports" element={<PageErrorBoundary pageName="Reports"><Reports /></PageErrorBoundary>} />
                     <Route path="/staff" element={<PageErrorBoundary pageName="Staff"><Staff /></PageErrorBoundary>} />
-                    <Route path="/tables" element={<PageErrorBoundary pageName="Tables"><Tables /></PageErrorBoundary>} />
-                    <Route path="/rooms" element={<PageErrorBoundary pageName="Rooms"><Rooms /></PageErrorBoundary>} />
-                    <Route path="/kitchen" element={<PageErrorBoundary pageName="Kitchen"><Kitchen /></PageErrorBoundary>} />
-                    <Route path="/reservations" element={<PageErrorBoundary pageName="Reservations"><Reservations /></PageErrorBoundary>} />
-                    <Route path="/housekeeping" element={<PageErrorBoundary pageName="Housekeeping"><Housekeeping /></PageErrorBoundary>} />
-                    <Route path="/pharmacy" element={<PageErrorBoundary pageName="Pharmacy"><Pharmacy /></PageErrorBoundary>} />
-                    <Route path="/pharmacy/prescriptions" element={<PageErrorBoundary pageName="Prescriptions"><PharmacyPrescriptions /></PageErrorBoundary>} />
-                    <Route path="/pharmacy/patients" element={<PageErrorBoundary pageName="Patients"><PharmacyPatients /></PageErrorBoundary>} />
-                    <Route path="/pharmacy/medications" element={<PageErrorBoundary pageName="Medications"><PharmacyMedications /></PageErrorBoundary>} />
-                    <Route path="/pharmacy/insurance" element={<PageErrorBoundary pageName="Insurance"><PharmacyInsurance /></PageErrorBoundary>} />
-                    <Route path="/pharmacy/controlled" element={<PageErrorBoundary pageName="Controlled"><PharmacyControlled /></PageErrorBoundary>} />
-                    <Route path="/pharmacy/interactions" element={<PageErrorBoundary pageName="Interactions"><PharmacyInteractions /></PageErrorBoundary>} />
-                    <Route path="/front-desk" element={<PageErrorBoundary pageName="Front Desk"><FrontDesk /></PageErrorBoundary>} />
-                    <Route path="/maintenance" element={<PageErrorBoundary pageName="Maintenance"><Maintenance /></PageErrorBoundary>} />
-                    <Route path="/guest-services" element={<PageErrorBoundary pageName="Guest Services"><GuestServices /></PageErrorBoundary>} />
-                    <Route path="/guest-profiles" element={<PageErrorBoundary pageName="Guest Profiles"><GuestProfiles /></PageErrorBoundary>} />
-                    <Route path="/billing" element={<PageErrorBoundary pageName="Billing"><Billing /></PageErrorBoundary>} />
+                    <Route path="/tables" element={<VerticalRouteGuard allowed={['restaurant']}><PageErrorBoundary pageName="Tables"><Tables /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/rooms" element={<VerticalRouteGuard allowed={['hotel']}><PageErrorBoundary pageName="Rooms"><Rooms /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/kitchen" element={<VerticalRouteGuard allowed={['restaurant']}><PageErrorBoundary pageName="Kitchen"><Kitchen /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/reservations" element={<VerticalRouteGuard allowed={['restaurant', 'hotel']}><PageErrorBoundary pageName="Reservations"><Reservations /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/housekeeping" element={<VerticalRouteGuard allowed={['hotel']}><PageErrorBoundary pageName="Housekeeping"><Housekeeping /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/pharmacy" element={<VerticalRouteGuard allowed={['pharmacy']}><PageErrorBoundary pageName="Pharmacy"><Pharmacy /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/pharmacy/prescriptions" element={<VerticalRouteGuard allowed={['pharmacy']}><PageErrorBoundary pageName="Prescriptions"><PharmacyPrescriptions /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/pharmacy/patients" element={<VerticalRouteGuard allowed={['pharmacy']}><PageErrorBoundary pageName="Patients"><PharmacyPatients /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/pharmacy/medications" element={<VerticalRouteGuard allowed={['pharmacy']}><PageErrorBoundary pageName="Medications"><PharmacyMedications /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/pharmacy/insurance" element={<VerticalRouteGuard allowed={['pharmacy']}><PageErrorBoundary pageName="Insurance"><PharmacyInsurance /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/pharmacy/controlled" element={<VerticalRouteGuard allowed={['pharmacy']}><PageErrorBoundary pageName="Controlled"><PharmacyControlled /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/pharmacy/interactions" element={<VerticalRouteGuard allowed={['pharmacy']}><PageErrorBoundary pageName="Interactions"><PharmacyInteractions /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/front-desk" element={<VerticalRouteGuard allowed={['hotel']}><PageErrorBoundary pageName="Front Desk"><FrontDesk /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/maintenance" element={<VerticalRouteGuard allowed={['hotel']}><PageErrorBoundary pageName="Maintenance"><Maintenance /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/guest-services" element={<VerticalRouteGuard allowed={['hotel']}><PageErrorBoundary pageName="Guest Services"><GuestServices /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/guest-profiles" element={<VerticalRouteGuard allowed={['hotel']}><PageErrorBoundary pageName="Guest Profiles"><GuestProfiles /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/billing" element={<VerticalRouteGuard allowed={['hotel']}><PageErrorBoundary pageName="Billing"><Billing /></PageErrorBoundary></VerticalRouteGuard>} />
                     <Route path="/subscription" element={<PageErrorBoundary pageName="Subscription"><Subscription /></PageErrorBoundary>} />
                     <Route path="/settings" element={<PageErrorBoundary pageName="Settings"><Settings /></PageErrorBoundary>} />
                     {/* Property Management Routes */}
-                    <Route path="/property/units" element={<PageErrorBoundary pageName="Units"><PropertyUnits /></PageErrorBoundary>} />
-                    <Route path="/property/tenants" element={<PageErrorBoundary pageName="Tenants"><PropertyTenants /></PageErrorBoundary>} />
-                    <Route path="/property/leases" element={<PageErrorBoundary pageName="Leases"><PropertyLeases /></PageErrorBoundary>} />
-                    <Route path="/property/rent" element={<PageErrorBoundary pageName="Rent Collection"><PropertyRent /></PageErrorBoundary>} />
-                    <Route path="/property/applications" element={<PageErrorBoundary pageName="Applications"><PropertyApplications /></PageErrorBoundary>} />
-                    <Route path="/property/maintenance" element={<PageErrorBoundary pageName="Property Maintenance"><PropertyMaintenance /></PageErrorBoundary>} />
-                    <Route path="/property/reports" element={<PageErrorBoundary pageName="Property Reports"><PropertyReports /></PageErrorBoundary>} />
+                    <Route path="/property/units" element={<VerticalRouteGuard allowed={['property']}><PageErrorBoundary pageName="Units"><PropertyUnits /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/property/tenants" element={<VerticalRouteGuard allowed={['property']}><PageErrorBoundary pageName="Tenants"><PropertyTenants /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/property/leases" element={<VerticalRouteGuard allowed={['property']}><PageErrorBoundary pageName="Leases"><PropertyLeases /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/property/rent" element={<VerticalRouteGuard allowed={['property']}><PageErrorBoundary pageName="Rent Collection"><PropertyRent /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/property/applications" element={<VerticalRouteGuard allowed={['property']}><PageErrorBoundary pageName="Applications"><PropertyApplications /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/property/maintenance" element={<VerticalRouteGuard allowed={['property']}><PageErrorBoundary pageName="Property Maintenance"><PropertyMaintenance /></PageErrorBoundary></VerticalRouteGuard>} />
+                    <Route path="/property/reports" element={<VerticalRouteGuard allowed={['property']}><PageErrorBoundary pageName="Property Reports"><PropertyReports /></PageErrorBoundary></VerticalRouteGuard>} />
                     {/* Admin Routes — super_admin only */}
                     <Route path="/admin" element={<AdminRouteGuard><PageErrorBoundary pageName="Admin Dashboard"><AdminDashboard /></PageErrorBoundary></AdminRouteGuard>} />
                     <Route path="/admin/organizations" element={<AdminRouteGuard><PageErrorBoundary pageName="Organizations"><AdminOrganizations /></PageErrorBoundary></AdminRouteGuard>} />
