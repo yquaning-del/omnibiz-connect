@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -144,6 +145,7 @@ export default function PropertyDashboard() {
       });
     } catch (error) {
       console.error('Error fetching property stats:', error);
+      toast.error('Could not load dashboard data. Please refresh.');
     } finally {
       setLoading(false);
     }
@@ -164,6 +166,7 @@ export default function PropertyDashboard() {
       setRecentActivity(recentLeases || []);
     } catch (error) {
       console.error('Error fetching activity:', error);
+      toast.error('Could not load dashboard data. Please refresh.');
     }
   };
 

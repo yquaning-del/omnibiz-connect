@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -242,6 +243,7 @@ export default function HotelDashboard() {
       setOccupancyTrend(occupancyData);
     } catch (error) {
       console.error('Error fetching hotel dashboard:', error);
+      toast.error('Could not load dashboard data. Please refresh.');
     } finally {
       setLoading(false);
     }
