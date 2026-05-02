@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,7 +66,7 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
   refunded: 'bg-red-100 text-red-800',
 };
 
-export default function OnlineOrders() {
+function OnlineOrdersInner() {
   const { currentOrganization } = useAuth();
   const [orders, setOrders] = useState<OnlineOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -514,5 +515,14 @@ export default function OnlineOrders() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+
+export default function OnlineOrders() {
+  return (
+    <FeatureGate feature="online_orders">
+      <OnlineOrdersInner />
+    </FeatureGate>
   );
 }
