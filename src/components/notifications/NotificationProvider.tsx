@@ -37,7 +37,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Subscribe to reservations
     const reservationsChannel = supabase
-      .channel('reservations-notifications')
+      .channel(`reservations-notifications:${currentLocation.id}`)
       .on(
         'postgres_changes',
         {
