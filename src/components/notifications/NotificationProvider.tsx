@@ -75,7 +75,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Subscribe to housekeeping tasks
     const housekeepingChannel = supabase
-      .channel('housekeeping-notifications')
+      .channel(`housekeeping-notifications:${currentLocation.id}`)
       .on(
         'postgres_changes',
         {
