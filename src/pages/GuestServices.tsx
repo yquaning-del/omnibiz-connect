@@ -169,7 +169,7 @@ export default function GuestServices() {
       .subscribe();
 
     const amenitiesChannel = supabase
-      .channel('amenity-requests')
+      .channel(`amenity-requests:${currentLocation.id}`)
       .on(
         'postgres_changes',
         {
