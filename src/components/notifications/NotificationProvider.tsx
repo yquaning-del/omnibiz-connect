@@ -19,7 +19,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Subscribe to new orders
     const ordersChannel = supabase
-      .channel('orders-notifications')
+      .channel(`orders-notifications:${currentLocation.id}`)
       .on(
         'postgres_changes',
         {
