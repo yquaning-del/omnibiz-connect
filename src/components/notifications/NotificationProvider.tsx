@@ -55,7 +55,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Subscribe to low stock alerts (product updates)
     const productsChannel = supabase
-      .channel('products-notifications')
+      .channel(`products-notifications:${currentOrganization.id}`)
       .on(
         'postgres_changes',
         {
