@@ -155,7 +155,7 @@ export default function GuestServices() {
     if (!currentLocation) return;
 
     const ordersChannel = supabase
-      .channel('room-service-orders')
+      .channel(`room-service-orders:${currentLocation.id}`)
       .on(
         'postgres_changes',
         {
