@@ -53,7 +53,7 @@ export default function Kitchen() {
 
     // Set up realtime subscription
     const channel = supabase
-      .channel('kitchen-orders')
+      .channel(`kitchen-orders:${currentLocation.id}`)
       .on(
         'postgres_changes',
         {
