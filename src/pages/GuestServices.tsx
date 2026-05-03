@@ -155,7 +155,7 @@ export default function GuestServices() {
     if (!currentLocation) return;
 
     const ordersChannel = supabase
-      .channel('room-service-orders')
+      .channel(`room-service-orders:${currentLocation.id}`)
       .on(
         'postgres_changes',
         {
@@ -169,7 +169,7 @@ export default function GuestServices() {
       .subscribe();
 
     const amenitiesChannel = supabase
-      .channel('amenity-requests')
+      .channel(`amenity-requests:${currentLocation.id}`)
       .on(
         'postgres_changes',
         {

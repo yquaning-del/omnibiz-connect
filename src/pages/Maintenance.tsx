@@ -165,7 +165,7 @@ export default function Maintenance() {
     if (!currentLocation) return;
 
     const channel = supabase
-      .channel('maintenance-requests')
+      .channel(`maintenance-requests:${currentLocation.id}`)
       .on(
         'postgres_changes',
         {

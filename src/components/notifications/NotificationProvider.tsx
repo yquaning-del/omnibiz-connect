@@ -19,7 +19,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Subscribe to new orders
     const ordersChannel = supabase
-      .channel('orders-notifications')
+      .channel(`orders-notifications:${currentLocation.id}`)
       .on(
         'postgres_changes',
         {
@@ -37,7 +37,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Subscribe to reservations
     const reservationsChannel = supabase
-      .channel('reservations-notifications')
+      .channel(`reservations-notifications:${currentLocation.id}`)
       .on(
         'postgres_changes',
         {
@@ -55,7 +55,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Subscribe to low stock alerts (product updates)
     const productsChannel = supabase
-      .channel('products-notifications')
+      .channel(`products-notifications:${currentOrganization.id}`)
       .on(
         'postgres_changes',
         {
@@ -75,7 +75,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Subscribe to housekeeping tasks
     const housekeepingChannel = supabase
-      .channel('housekeeping-notifications')
+      .channel(`housekeeping-notifications:${currentLocation.id}`)
       .on(
         'postgres_changes',
         {

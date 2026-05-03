@@ -163,7 +163,7 @@ const Housekeeping = () => {
     if (!currentLocation) return;
 
     const channel = supabase
-      .channel("housekeeping-tasks")
+      .channel(`housekeeping-tasks:${currentLocation.id}`)
       .on(
         "postgres_changes",
         {
