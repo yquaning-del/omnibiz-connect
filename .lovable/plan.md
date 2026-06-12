@@ -1,120 +1,44 @@
+# Plan — Resolve Outstanding Linter & Hardening Items
 
-# Platform Audit — Critical Remaining Issues
+The Supabase linter currently reports **159 SECURITY warnings**. Prior audits already fixed app-layer issues (RLS, route guards, payment gating, realtime scoping, refill rate limiting, PII policies). The remaining work is database-grant hygiene plus one storage bucket issue. No UI changes needed.
 
-After re-running the security scanner and reviewing routing, RLS, and module isolation, the following high-impact issues remain. Two are **CRITICAL ERROR-level** vulnerabilities surfaced by the scanner that allow account takeover and cross-tenant data exposure.
+## Findings (grouped)
 
----
+1. **Lint 0025 — Public bucket allows listing (1)**
+   The `unit-photos` bucket is public AND the broad `storage.objects` SELECT policy lets clients list every file. We want files publicly readable by direct URL, not enumerable.
 
-## 1. CRITICAL — Privilege Escalation via `user_roles` Insert
+2. **Lint 0026 — Tables visible to `anon` in GraphQL schema (~75)**
+   Default `GRANT SELECT ... TO anon` exists on internal tables that should never be discoverable before sign-in (e.g. `profiles`, `user_roles`, `user_sessions`, `admin_audit_logs`, `phi_access_logs`, `patient_profiles`, `prescriptions`, `controlled_substance_log`, `insurance_claims`, `leases`, `rent_payments`, `tenants`, `guest_folios`, `folio_charges`, `night_audit_records`, `staff_invitations`, `user_permissions`, etc.). RLS already blocks reads, but exposing them in the GraphQL/PostgREST schema leaks structure.
 
-The `user_roles` table has a policy "Users can insert own first role" that lets any authenticated user with no existing role insert a row for themselves with **any** `app_role` (including `super_admin` or `org_admin`) in **any** organization. A new signup can immediately self-promote to platform super-admin.
+3. **Lint 0029 — SECURITY DEFINER functions executable by `authenticated` (~80)**
+   Helper functions like `has_role`, `is_org_admin`, `is_super_admin`, `is_manager`, `is_pharmacist`, `is_front_desk`, `is_tenant`, `is_location_in_org`, `is_org_creator`, `get_user_org_ids`, `get_user_location_ids`, `get_tenant_id`, `verify_pos_pin`, `apply_late_fees`, `calculate_platform_metrics`, `generate_online_order_number`, `handle_new_user`, `log_user_session`, `update_updated_at_column` are callable directly by signed-in users. Most are only meant for RLS evaluation or triggers.
 
-**Fix:** Drop that policy. Replace with a restricted policy that:
-- Only allows inserting role = `staff` (or no role at all),
-- Only into an `organization_id` the user just created (`is_org_creator`) or where they have a valid invitation,
-- And only for `user_id = auth.uid()`.
+## Changes
 
-Privileged role assignment must go exclusively through admin flows / invitation acceptance.
+### A. Restrict `anon` GraphQL exposure (single migration)
+For every table that should NOT be visible to anonymous visitors, run:
+```
+REVOKE SELECT ON public.<table> FROM anon;
+```
+Keep `anon` SELECT only on truly public-catalog tables: `products`, `product_variants`, `subscription_plans`, `supported_countries`, `hotel_rooms`, `property_units`, `locations` (for public site lookups), `organizations` (slug lookups), `reviews`, `medications` (if used by public refill portal).
 
----
+Tables to lock down: `profiles, user_roles, user_sessions, user_notifications, user_permissions, user_achievements, admin_audit_logs, admin_impersonation_sessions, admin_notifications, phi_access_logs, patient_profiles, prescriptions, prescription_items, prescription_reminders, refill_requests, controlled_substance_log, drug_interactions, insurance_claims, customers, orders, order_items, online_orders, online_order_items, cart_items, shipping_addresses, leases, lease_invitations, lease_signatures, lease_templates, rent_payments, tenants, tenant_applications, tenant_documents, guest_folios, folio_charges, guest_profiles, room_service_orders, night_audit_records, housekeeping_tasks, maintenance_requests, amenity_requests, reservations, restaurant_tables, staff_invitations, staff_schedules, stock_transfers, data_migrations, business_goals, feedback_submissions, payment_transactions, organization_subscriptions, platform_metrics`.
 
-## 2. CRITICAL — Realtime Channels Have No Authorization
+### B. Lock down SECURITY DEFINER execution
+For internal helpers used only inside RLS and triggers:
+```
+REVOKE EXECUTE ON FUNCTION public.<fn>(...) FROM PUBLIC, anon, authenticated;
+```
+Targets: `handle_new_user, log_user_session, update_updated_at_column, generate_online_order_number, apply_late_fees, calculate_platform_metrics, is_org_creator, is_location_in_org, get_user_org_ids, get_user_location_ids, get_tenant_id`.
 
-`realtime.messages` has no RLS. Any authenticated user can subscribe to broadcasts on `orders`, `housekeeping_tasks`, `maintenance_requests`, `room_service_orders`, `amenity_requests` — all org/location-scoped operational data leaks across tenants.
+Keep EXECUTE for `authenticated` on functions the client legitimately calls: `has_role, is_org_admin, is_super_admin, is_manager, is_front_desk, is_pharmacist, is_tenant, verify_pos_pin`.
 
-**Fix:** Add an RLS policy on `realtime.messages` restricting subscriptions so the topic name encodes the user's `organization_id` / `location_id`, validated against `get_user_org_ids(auth.uid())` / `get_user_location_ids(auth.uid())`. Update client `.channel()` calls to use scoped topic names like `org:{orgId}:orders`.
+### C. Storage bucket — `unit-photos`
+Replace the broad SELECT-all policy on `storage.objects` with: no list policy. Files remain readable via signed/public URL but `storage.from('unit-photos').list()` is denied to clients. Add an authenticated INSERT/UPDATE/DELETE policy scoped to org membership (re-use existing org check helpers).
 
----
+### D. Manual reminders (cannot be done in SQL)
+- Enable **HIBP leaked-password protection** in Auth settings.
+- Confirm Auth OTP expiry ≤ 1 hour.
 
-## 3. HIGH — Guest Cart Enumeration
-
-`cart_items` "Guest cart select with session" allows anonymous reads of any row whose `session_id` length > 10 — no binding to the requesting client. Guessable/enumerable session IDs leak cart contents.
-
-**Fix:** Either (a) store guest carts only in localStorage (drop the public SELECT policy entirely), or (b) require a signed/HMACed session token and validate via a SQL function. Recommended approach: client-side only for guests; persist on login.
-
----
-
-## 4. HIGH — Public Refill PII Submission Without Throttling
-
-`refill_requests` accepts unauthenticated inserts containing patient name, phone, email, and medication details with no captcha or rate limit — enables mass spam and fake medical record creation.
-
-**Fix:** Route public refill submissions through a dedicated edge function (`submit-refill-request`) that enforces: per-IP rate limit (existing `_shared/rateLimit.ts`), Turnstile/hCaptcha verification, payload validation, and inserts via service role. Tighten the table policy to authenticated-only.
-
----
-
-## 5. HIGH — Cross-Vertical Route Overlap (UX + Data Confusion)
-
-`AppLayout` only checks authentication. Routes like `/pharmacy/*`, `/property/*`, `/billing`, `/front-desk`, `/kitchen`, `/rooms`, `/tables`, `/housekeeping`, `/guest-services`, `/guest-profiles` are reachable by URL from any vertical even though the sidebar hides them. A Retail org user navigating to `/property/leases` sees an empty/broken page; a Pharmacy user can hit `/billing` (hotel folios) and query unrelated tables.
-
-**Fix:** Create a `<VerticalRouteGuard allowed={['hotel']}>` component (super_admin bypass) and wrap each vertical-specific route group. Redirect mismatched verticals to `/dashboard` with a toast: "This module is not available for your business type."
-
-Vertical-to-route map:
-- **restaurant**: `/kitchen`, `/tables`, `/reservations` (also hotel)
-- **hotel**: `/rooms`, `/front-desk`, `/housekeeping`, `/maintenance`, `/guest-services`, `/guest-profiles`, `/billing`, `/reservations`
-- **pharmacy**: `/pharmacy/*`
-- **property**: `/property/*`
-- **retail**: (shared `/pos`, `/products`, `/inventory`, `/customers`, `/orders`, `/online-orders`)
-
----
-
-## 6. MEDIUM — Missing Page-Level FeatureGate on `/billing` and `/online-orders`
-
-Sidebar items have `requiredFeature`, but the route components themselves don't wrap content in `<FeatureGate>`. A user who upgrades/downgrades or types the URL bypasses tier enforcement. Wrap page bodies in `<FeatureGate feature="billing_folios">` / `<FeatureGate feature="online_orders">`.
-
----
-
-## 7. MEDIUM — Storage Bucket Allows Public Listing
-
-A public storage bucket has a broad SELECT policy on `storage.objects` allowing anyone to enumerate all uploaded files (signed leases, ID documents, unit photos, prescription scans). 
-
-**Fix:** Restrict the bucket's SELECT policy to either `auth.uid() IS NOT NULL` plus org-scoped path prefix (`organization_id/...`), or move sensitive buckets to private and serve via signed URLs.
-
----
-
-## 8. MEDIUM — Anon GraphQL Exposure of Operational Tables
-
-~50 tables remain visible in the public GraphQL schema to the anon key. Most are properly RLS-locked, but discovery itself reveals schema/business intel and enables targeted enumeration. 
-
-**Fix:** `REVOKE SELECT ON <table> FROM anon` for all non-public-facing tables (keep grants only on `products`, `hotel_rooms` for public booking, `units` for listings, `medications` for refill catalog).
-
----
-
-## 9. LOW — Dashboard Overlap Cleanup
-
-- `Dashboard.tsx` defaults `vertical` to `'retail'` when neither location nor org specifies one. New orgs without a vertical see a misleading retail dashboard. Show an "Choose your business type" prompt instead.
-- `console.error` calls in the 5 vertical dashboards should route through the existing toast system rather than only logging silently — users currently see infinite spinners on query failure.
-
----
-
-## Implementation Plan
-
-### Phase 1 — Critical Security (must ship first)
-1. Migration: drop unsafe `user_roles` insert policy; replace with restricted version.
-2. Migration: add `realtime.messages` RLS using topic-encoded org/location scoping; refactor `useNotifications`, kitchen, maintenance, room-service realtime subscriptions to use scoped topic names.
-3. Migration: drop `cart_items` guest SELECT policy; refactor `useCart` to use localStorage for guests.
-4. Edge function `submit-refill-request` with rate limit + payload validation; tighten `refill_requests` insert policy to authenticated only.
-
-### Phase 2 — Module Isolation
-5. New `src/components/auth/VerticalRouteGuard.tsx`.
-6. Wrap vertical-specific routes in `src/App.tsx` with `VerticalRouteGuard`.
-7. Wrap `/billing` and `/online-orders` page contents with `<FeatureGate>`.
-
-### Phase 3 — Hardening + Polish
-8. Migration: tighten storage bucket SELECT policy for the public bucket; verify lease/ID/prescription buckets are private.
-9. Migration: `REVOKE SELECT ... FROM anon` on non-public tables (batch).
-10. `Dashboard.tsx`: detect missing vertical → render onboarding CTA instead of defaulting to retail.
-11. Surface dashboard fetch errors via toast.
-
-### Files to Modify
-- `supabase/migrations/<new>.sql` — user_roles policy, realtime RLS, cart policy, refill_requests policy, storage policy, anon revokes
-- `supabase/functions/submit-refill-request/index.ts` (new)
-- `src/components/auth/VerticalRouteGuard.tsx` (new)
-- `src/App.tsx` — wrap vertical route groups
-- `src/pages/Billing.tsx`, `src/pages/OnlineOrders.tsx` — FeatureGate wrappers
-- `src/hooks/useCart.ts` — localStorage guest cart
-- `src/components/notifications/NotificationProvider.tsx` and any `.channel()` callers — scoped topic names
-- `src/pages/Dashboard.tsx` — vertical-missing handling
-- 5 dashboard files — toast on error
-
-### Manual Action (cannot be automated)
-- Enable HIBP leaked-password protection in the Cloud Auth dashboard (still pending from prior audits).
+## Deliverable
+A single migration file that performs all REVOKE/GRANT changes in section A and B, plus an updated storage policy for `unit-photos`. After it runs, re-running the linter should drop from 159 → near 0 (only intentional public-catalog grants remain). No frontend code changes required.
