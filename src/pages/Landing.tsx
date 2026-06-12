@@ -1,16 +1,20 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import {
   ArrowRight,
-  Building2,
   Utensils,
   Hotel,
   Pill,
   ShoppingBag,
   Home,
-  CheckCircle2,
   Play,
   BarChart3,
   Shield,
@@ -22,46 +26,19 @@ import {
   TrendingUp,
   Clock,
   Layers,
+  Mail,
+  MapPin,
+  MessageCircle,
 } from 'lucide-react';
 import { DemoModal } from '@/components/demo/DemoModal';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 
 const verticals = [
-  {
-    icon: Utensils,
-    label: 'Restaurants',
-    color: 'text-restaurant',
-    bgColor: 'bg-restaurant/10',
-    description: 'POS, kitchen display, table management, reservations, QR menus, and online ordering.',
-  },
-  {
-    icon: Hotel,
-    label: 'Hotels',
-    color: 'text-hotel',
-    bgColor: 'bg-hotel/10',
-    description: 'Front desk, room management, housekeeping, guest profiles, billing, and night audit.',
-  },
-  {
-    icon: Pill,
-    label: 'Pharmacies',
-    color: 'text-pharmacy',
-    bgColor: 'bg-pharmacy/10',
-    description: 'Prescriptions, patient profiles, drug interactions, insurance billing, and controlled substances.',
-  },
-  {
-    icon: ShoppingBag,
-    label: 'Retail',
-    color: 'text-retail',
-    bgColor: 'bg-retail/10',
-    description: 'Point of sale, inventory tracking, customer loyalty, online store, and order management.',
-  },
-  {
-    icon: Home,
-    label: 'Property',
-    color: 'text-property',
-    bgColor: 'bg-property/10',
-    description: 'Units, tenants, leases, rent collection, applications, maintenance, and tenant portal.',
-  },
+  { icon: Utensils, label: 'Restaurants', color: 'text-restaurant', bgColor: 'bg-restaurant/10', description: 'POS, kitchen display, table management, reservations, QR menus, and online ordering.' },
+  { icon: Hotel, label: 'Hotels', color: 'text-hotel', bgColor: 'bg-hotel/10', description: 'Front desk, room management, housekeeping, guest profiles, billing, and night audit.' },
+  { icon: Pill, label: 'Pharmacies', color: 'text-pharmacy', bgColor: 'bg-pharmacy/10', description: 'Prescriptions, patient profiles, drug interactions, insurance billing, and controlled substances.' },
+  { icon: ShoppingBag, label: 'Retail', color: 'text-retail', bgColor: 'bg-retail/10', description: 'Point of sale, inventory tracking, customer loyalty, online store, and order management.' },
+  { icon: Home, label: 'Property', color: 'text-property', bgColor: 'bg-property/10', description: 'Units, tenants, leases, rent collection, applications, maintenance, and tenant portal.' },
 ];
 
 const stats = [
@@ -72,24 +49,9 @@ const stats = [
 ];
 
 const howItWorks = [
-  {
-    step: '01',
-    icon: Layers,
-    title: 'Choose Your Vertical',
-    description: 'Select your industry -- restaurant, hotel, pharmacy, retail, or property. We tailor the experience to fit your business.',
-  },
-  {
-    step: '02',
-    icon: Zap,
-    title: 'Set Up in Minutes',
-    description: 'Add your products, configure your settings, invite your team. Our guided onboarding gets you running fast.',
-  },
-  {
-    step: '03',
-    icon: TrendingUp,
-    title: 'Grow Your Business',
-    description: 'Use real-time analytics, AI insights, and automation to optimize operations and increase revenue.',
-  },
+  { step: '01', icon: Layers, title: 'Choose Your Vertical', description: 'Select your industry — restaurant, hotel, pharmacy, retail, or property. We tailor the experience to fit your business.' },
+  { step: '02', icon: Zap, title: 'Set Up in Minutes', description: 'Add your products, configure your settings, invite your team. Our guided onboarding gets you running fast.' },
+  { step: '03', icon: TrendingUp, title: 'Grow Your Business', description: 'Use real-time analytics, AI insights, and automation to optimize operations and increase revenue.' },
 ];
 
 const features = [
@@ -98,32 +60,37 @@ const features = [
   { icon: Shield, title: 'Secure by Default', description: 'Row-level security, JWT verification, encrypted data, and audit logging built in.' },
   { icon: Globe, title: 'Multi-Location', description: 'Manage multiple locations from one account. Each with its own staff, inventory, and settings.' },
   { icon: Users, title: 'Team Management', description: 'Role-based permissions, staff scheduling, and activity tracking for your entire team.' },
-  { icon: Clock, title: 'Saves You Time', description: 'Automate repetitive tasks -- rent reminders, refill alerts, kitchen orders, and more.' },
+  { icon: Clock, title: 'Saves You Time', description: 'Automate repetitive tasks — rent reminders, refill alerts, kitchen orders, and more.' },
 ];
 
 const testimonials = [
-  {
-    name: 'Kwame Asante',
-    role: 'Restaurant Owner, Accra',
-    quote: 'OmniBiz Connect transformed how we run our restaurant. The kitchen display and POS work seamlessly together.',
-    rating: 5,
-  },
-  {
-    name: 'Ama Mensah',
-    role: 'Pharmacy Manager, Kumasi',
-    quote: 'The prescription management and drug interaction checking have made our workflow so much safer and faster.',
-    rating: 5,
-  },
-  {
-    name: 'Kofi Darko',
-    role: 'Property Manager, Tema',
-    quote: 'Managing 30 units used to be a nightmare. Now rent collection and maintenance tracking are all in one place.',
-    rating: 5,
-  },
+  { name: 'Kwame Asante', role: 'Restaurant Owner, Accra', quote: 'OmniBiz Connect transformed how we run our restaurant. The kitchen display and POS work seamlessly together.', rating: 5 },
+  { name: 'Ama Mensah', role: 'Pharmacy Manager, Kumasi', quote: 'The prescription management and drug interaction checking have made our workflow so much safer and faster.', rating: 5 },
+  { name: 'Kofi Darko', role: 'Property Manager, Tema', quote: 'Managing 30 units used to be a nightmare. Now rent collection and maintenance tracking are all in one place.', rating: 5 },
+];
+
+const faqs = [
+  { q: 'Is there a free trial?', a: 'Yes. Every plan starts with a 14-day free trial — no credit card required. You get full access to your chosen vertical so you can evaluate the product on real workflows.' },
+  { q: 'Can I run more than one business type?', a: 'Absolutely. A single account can host multiple organizations and locations, each with its own vertical, staff, inventory, and settings. Switch between them from the location switcher in the sidebar.' },
+  { q: 'Does it work offline?', a: 'The POS is offline-first. Sales, kitchen orders, and inventory updates queue locally and sync automatically when you reconnect. Ideal for spotty networks.' },
+  { q: 'What payment methods are supported?', a: 'We support Paystack (card payments), mobile money (MoMo, M-Pesa), and cash. New rails are added based on regional demand.' },
+  { q: 'How is my data protected?', a: 'Every record is scoped by organization with Postgres row-level security. Edge functions verify JWTs, sensitive PII (medical, financial) requires elevated roles, and all admin actions are audit-logged.' },
+  { q: 'Can I cancel anytime?', a: 'Yes. Plans are month-to-month and you can cancel from Settings → Subscription. Your data stays exportable for 30 days after cancellation.' },
 ];
 
 const Landing = () => {
   const [demoOpen, setDemoOpen] = useState(false);
+  const { hash } = useLocation();
+
+  // Smooth-scroll to hash anchors when the route changes
+  useEffect(() => {
+    if (!hash) return;
+    const id = hash.replace('#', '');
+    requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [hash]);
 
   return (
     <PublicLayout>
@@ -133,7 +100,7 @@ const Landing = () => {
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0 gradient-glow" />
         <div className="absolute inset-0 bg-grid-pattern opacity-50" />
-        
+
         <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
@@ -160,6 +127,7 @@ const Landing = () => {
                 Watch Demo
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground mt-4">No credit card required · Cancel anytime</p>
           </div>
         </div>
       </section>
@@ -179,15 +147,11 @@ const Landing = () => {
       </section>
 
       {/* Verticals Section */}
-      <section id="features" className="py-20">
+      <section id="features" className="py-20 scroll-mt-20">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
-              Tailored for Your Industry
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              Choose your vertical and get tools purpose-built for your business type.
-            </p>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">Tailored for Your Industry</h2>
+            <p className="text-muted-foreground text-lg">Choose your vertical and get tools purpose-built for your business type.</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
@@ -210,12 +174,8 @@ const Landing = () => {
       <section className="py-20 bg-card/30">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
-              Up and Running in 3 Steps
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              From signup to your first sale in under 10 minutes.
-            </p>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">Up and Running in 3 Steps</h2>
+            <p className="text-muted-foreground text-lg">From signup to your first sale in under 10 minutes.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -237,12 +197,8 @@ const Landing = () => {
       <section className="py-20">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
-              Everything You Need to Succeed
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              Powerful tools designed for modern businesses.
-            </p>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">Everything You Need to Succeed</h2>
+            <p className="text-muted-foreground text-lg">Powerful tools designed for modern businesses.</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -261,16 +217,38 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* About Section */}
+      <section id="about" className="py-20 bg-card/30 scroll-mt-20">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">Built for Operators, by Operators</h2>
+            <p className="text-muted-foreground text-lg leading-relaxed mb-8">
+              OmniBiz Connect was born out of one frustration shared by every business owner we spoke to: juggling five different apps for POS, inventory, bookings, billing, and reporting. We set out to build a single platform that respects how real businesses actually operate — fast, offline-capable, and tailored to each industry.
+            </p>
+            <div className="grid sm:grid-cols-3 gap-6 mt-12 text-left">
+              <div className="p-5 rounded-xl border border-border/50 bg-card/50">
+                <h3 className="font-semibold text-foreground mb-2">Africa-First</h3>
+                <p className="text-sm text-muted-foreground">Mobile money, SMS receipts, and offline POS designed for the markets we serve.</p>
+              </div>
+              <div className="p-5 rounded-xl border border-border/50 bg-card/50">
+                <h3 className="font-semibold text-foreground mb-2">Always Improving</h3>
+                <p className="text-sm text-muted-foreground">New features ship weekly, driven by feedback from operators on the ground.</p>
+              </div>
+              <div className="p-5 rounded-xl border border-border/50 bg-card/50">
+                <h3 className="font-semibold text-foreground mb-2">Honest Pricing</h3>
+                <p className="text-sm text-muted-foreground">No setup fees, no surprise add-ons. One plan covers your team, your data, your devices.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials */}
-      <section className="py-20 bg-card/30">
+      <section className="py-20">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
-              Trusted by Business Owners
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              Hear from real people running real businesses.
-            </p>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">Trusted by Business Owners</h2>
+            <p className="text-muted-foreground text-lg">Hear from real people running real businesses.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -294,16 +272,73 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section id="faq" className="py-20 bg-card/30 scroll-mt-20">
+        <div className="container mx-auto px-6">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">Frequently Asked Questions</h2>
+              <p className="text-muted-foreground text-lg">Everything you need to know before signing up.</p>
+            </div>
+
+            <Accordion type="single" collapsible className="space-y-3">
+              {faqs.map(({ q, a }, i) => (
+                <AccordionItem key={i} value={`item-${i}`} className="border border-border/50 rounded-xl bg-card/50 px-5">
+                  <AccordionTrigger className="text-left font-semibold text-foreground hover:no-underline">
+                    {q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed">
+                    {a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact */}
+      <section id="contact" className="py-20 scroll-mt-20">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">Get in Touch</h2>
+              <p className="text-muted-foreground text-lg">Questions, demos, partnerships — we'd love to hear from you.</p>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-6">
+              <a href="mailto:hello@omnibizconnect.com" className="flex flex-col items-center text-center p-6 rounded-xl border border-border/50 bg-card/50 hover:border-primary/30 transition-colors">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+                  <Mail className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-1">Email</h3>
+                <p className="text-sm text-muted-foreground">hello@omnibizconnect.com</p>
+              </a>
+              <a href="https://wa.me/233000000000" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center text-center p-6 rounded-xl border border-border/50 bg-card/50 hover:border-primary/30 transition-colors">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+                  <MessageCircle className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-1">WhatsApp</h3>
+                <p className="text-sm text-muted-foreground">Chat with our team</p>
+              </a>
+              <div className="flex flex-col items-center text-center p-6 rounded-xl border border-border/50 bg-card/50">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+                  <MapPin className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-1">Headquarters</h3>
+                <p className="text-sm text-muted-foreground">Accra, Ghana</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto text-center p-12 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-border/50">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
-              Ready to Transform Your Business?
-            </h2>
-            <p className="text-muted-foreground mb-8 text-lg">
-              Start your free 14-day trial today. No credit card required.
-            </p>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">Ready to Transform Your Business?</h2>
+            <p className="text-muted-foreground mb-8 text-lg">Start your free 14-day trial today. No credit card required.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/auth">
                 <Button size="lg" className="gap-2 shadow-glow h-12 px-8">
