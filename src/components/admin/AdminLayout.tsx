@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   Shield,
   LogOut,
+  ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,9 @@ const adminNavItems = [
   { path: "/admin/support", label: "Support", icon: HeadphonesIcon },
   { path: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { path: "/admin/audit-logs", label: "Audit Logs", icon: FileText },
+  { path: "/admin/uat-setup", label: "UAT Setup", icon: ClipboardCheck },
 ];
+
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();

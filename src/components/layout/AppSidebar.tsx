@@ -145,8 +145,10 @@ const getNavItems = (vertical: BusinessVertical, isSuperAdmin: boolean) => {
   const management: NavItem[] = [
     { title: 'Reports', href: '/reports', icon: BarChart3 },
     { title: 'Staff', href: '/staff', icon: UserCog, requiredFeature: 'staff_management' },
+    { title: 'Subscription', href: '/subscription', icon: CreditCard },
     { title: 'Settings', href: '/settings', icon: Settings },
   ];
+
 
   // Admin panel link - only visible to super admins
   const adminItems: NavItem[] = isSuperAdmin

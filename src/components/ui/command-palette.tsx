@@ -20,13 +20,24 @@ import {
   BarChart3,
   Calendar,
   Building,
+  Building2,
   Bed,
   UtensilsCrossed,
   Pill,
   Plus,
-  Search,
   FileText,
   HelpCircle,
+  Globe,
+  Wrench,
+  ConciergeBell,
+  UserCheck,
+  CreditCard,
+  DollarSign,
+  Shield,
+  AlertTriangle,
+  UserCog,
+  ClipboardCheck,
+  HeadphonesIcon,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -54,6 +65,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       { label: "Orders", icon: FileText, path: "/orders" },
       { label: "Customers", icon: Users, path: "/customers" },
       { label: "Reports", icon: BarChart3, path: "/reports" },
+      { label: "Staff", icon: UserCog, path: "/staff" },
+      { label: "Subscription", icon: CreditCard, path: "/subscription" },
       { label: "Settings", icon: Settings, path: "/settings" },
     ];
 
@@ -62,23 +75,54 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         { label: "Tables", icon: UtensilsCrossed, path: "/tables" },
         { label: "Reservations", icon: Calendar, path: "/reservations" },
         { label: "Kitchen Display", icon: UtensilsCrossed, path: "/kitchen" },
+        { label: "Online Orders", icon: Globe, path: "/online-orders" },
       ],
       hotel: [
         { label: "Rooms", icon: Bed, path: "/rooms" },
         { label: "Reservations", icon: Calendar, path: "/reservations" },
         { label: "Front Desk", icon: Building, path: "/front-desk" },
-        { label: "Housekeeping", icon: Building, path: "/housekeeping" },
+        { label: "Housekeeping", icon: ClipboardList, path: "/housekeeping" },
+        { label: "Maintenance", icon: Wrench, path: "/maintenance" },
+        { label: "Guest Services", icon: ConciergeBell, path: "/guest-services" },
+        { label: "Guest Profiles", icon: UserCheck, path: "/guest-profiles" },
+        { label: "Billing & Folios", icon: CreditCard, path: "/billing" },
       ],
       pharmacy: [
         { label: "Prescriptions", icon: Pill, path: "/pharmacy/prescriptions" },
         { label: "Patients", icon: Users, path: "/pharmacy/patients" },
         { label: "Medications", icon: Pill, path: "/pharmacy/medications" },
+        { label: "Insurance", icon: DollarSign, path: "/pharmacy/insurance" },
+        { label: "Controlled Substances", icon: Shield, path: "/pharmacy/controlled" },
+        { label: "Drug Interactions", icon: AlertTriangle, path: "/pharmacy/interactions" },
       ],
-      retail: [],
+      retail: [
+        { label: "Online Orders", icon: Globe, path: "/online-orders" },
+      ],
+      property: [
+        { label: "Units", icon: Building2, path: "/property/units" },
+        { label: "Tenants", icon: Users, path: "/property/tenants" },
+        { label: "Leases", icon: FileText, path: "/property/leases" },
+        { label: "Rent Collection", icon: DollarSign, path: "/property/rent" },
+        { label: "Applications", icon: ClipboardList, path: "/property/applications" },
+        { label: "Maintenance", icon: Wrench, path: "/property/maintenance" },
+        { label: "Property Reports", icon: BarChart3, path: "/property/reports" },
+      ],
     };
 
     return [...common, ...(verticalSpecific[vertical] || [])];
   }, [vertical]);
+
+  const adminItems = [
+    { label: "Admin Dashboard", icon: LayoutDashboard, path: "/admin" },
+    { label: "Organizations", icon: Building2, path: "/admin/organizations" },
+    { label: "All Users", icon: Users, path: "/admin/users" },
+    { label: "Subscriptions", icon: CreditCard, path: "/admin/subscriptions" },
+    { label: "Support", icon: HeadphonesIcon, path: "/admin/support" },
+    { label: "Analytics", icon: BarChart3, path: "/admin/analytics" },
+    { label: "Audit Logs", icon: FileText, path: "/admin/audit-logs" },
+    { label: "UAT Setup", icon: ClipboardCheck, path: "/admin/uat-setup" },
+  ];
+
 
   const quickActions = [
     { label: "New Sale", icon: Plus, action: () => navigate("/pos") },
@@ -123,21 +167,19 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           <>
             <CommandSeparator />
             <CommandGroup heading="Admin">
-              <CommandItem onSelect={() => runCommand(() => navigate("/admin"))}>
-                <Building className="mr-2 h-4 w-4" />
-                <span>Admin Dashboard</span>
-              </CommandItem>
-              <CommandItem onSelect={() => runCommand(() => navigate("/admin/organizations"))}>
-                <Building className="mr-2 h-4 w-4" />
-                <span>Organizations</span>
-              </CommandItem>
-              <CommandItem onSelect={() => runCommand(() => navigate("/admin/users"))}>
-                <Users className="mr-2 h-4 w-4" />
-                <span>All Users</span>
-              </CommandItem>
+              {adminItems.map((item) => (
+                <CommandItem
+                  key={item.path}
+                  onSelect={() => runCommand(() => navigate(item.path))}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  <span>{item.label}</span>
+                </CommandItem>
+              ))}
             </CommandGroup>
           </>
         )}
+
 
         <CommandSeparator />
         
