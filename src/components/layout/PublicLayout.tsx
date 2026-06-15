@@ -42,8 +42,10 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-6">
+            <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Home</Link>
             <Link to="/#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</Link>
             <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
+            <Link to="/#about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About Us</Link>
             <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
           </div>
 
@@ -87,8 +89,10 @@ export function PublicLayout({ children }: PublicLayoutProps) {
         {/* Mobile menu */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl px-6 py-4 space-y-3">
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground py-2">Home</Link>
             <Link to="/#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground py-2">Features</Link>
             <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground py-2">Pricing</Link>
+            <Link to="/#about" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground py-2">About Us</Link>
             <Link to="/docs" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground py-2">Docs</Link>
             <div className="pt-3 border-t border-border/50 flex flex-col gap-2">
               {user ? (
