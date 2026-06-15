@@ -167,21 +167,19 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           <>
             <CommandSeparator />
             <CommandGroup heading="Admin">
-              <CommandItem onSelect={() => runCommand(() => navigate("/admin"))}>
-                <Building className="mr-2 h-4 w-4" />
-                <span>Admin Dashboard</span>
-              </CommandItem>
-              <CommandItem onSelect={() => runCommand(() => navigate("/admin/organizations"))}>
-                <Building className="mr-2 h-4 w-4" />
-                <span>Organizations</span>
-              </CommandItem>
-              <CommandItem onSelect={() => runCommand(() => navigate("/admin/users"))}>
-                <Users className="mr-2 h-4 w-4" />
-                <span>All Users</span>
-              </CommandItem>
+              {adminItems.map((item) => (
+                <CommandItem
+                  key={item.path}
+                  onSelect={() => runCommand(() => navigate(item.path))}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  <span>{item.label}</span>
+                </CommandItem>
+              ))}
             </CommandGroup>
           </>
         )}
+
 
         <CommandSeparator />
         
