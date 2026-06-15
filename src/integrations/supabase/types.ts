@@ -319,6 +319,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_storefront_products"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cart_items_variant_id_fkey"
             columns: ["variant_id"]
             isOneToOne: false
@@ -402,6 +409,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controlled_substance_log_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_storefront_products"
             referencedColumns: ["id"]
           },
         ]
@@ -1706,6 +1720,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "online_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_storefront_products"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "online_order_items_variant_id_fkey"
             columns: ["variant_id"]
             isOneToOne: false
@@ -1886,6 +1907,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_storefront_products"
             referencedColumns: ["id"]
           },
         ]
@@ -2345,6 +2373,13 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "prescription_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_storefront_products"
+            referencedColumns: ["id"]
+          },
         ]
       }
       prescription_reminders: {
@@ -2534,6 +2569,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_storefront_products"
             referencedColumns: ["id"]
           },
         ]
@@ -3448,6 +3490,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stock_transfers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_storefront_products"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "stock_transfers_to_location_id_fkey"
             columns: ["to_location_id"]
             isOneToOne: false
@@ -3916,7 +3965,75 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_storefront_products: {
+        Row: {
+          category: string | null
+          description: string | null
+          id: string | null
+          image_url: string | null
+          is_active: boolean | null
+          is_available_online: boolean | null
+          location_id: string | null
+          name: string | null
+          online_description: string | null
+          online_images: Json | null
+          organization_id: string | null
+          subcategory: string | null
+          tax_rate: number | null
+          unit_price: number | null
+          vertical: Database["public"]["Enums"]["business_vertical"] | null
+        }
+        Insert: {
+          category?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          is_available_online?: boolean | null
+          location_id?: string | null
+          name?: string | null
+          online_description?: string | null
+          online_images?: Json | null
+          organization_id?: string | null
+          subcategory?: string | null
+          tax_rate?: number | null
+          unit_price?: number | null
+          vertical?: Database["public"]["Enums"]["business_vertical"] | null
+        }
+        Update: {
+          category?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          is_available_online?: boolean | null
+          location_id?: string | null
+          name?: string | null
+          online_description?: string | null
+          online_images?: Json | null
+          organization_id?: string | null
+          subcategory?: string | null
+          tax_rate?: number | null
+          unit_price?: number | null
+          vertical?: Database["public"]["Enums"]["business_vertical"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       apply_late_fees: { Args: never; Returns: undefined }
