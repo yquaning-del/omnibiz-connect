@@ -42,8 +42,10 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-6">
+            <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Home</Link>
             <Link to="/#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</Link>
             <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
+            <Link to="/#about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About Us</Link>
             <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
           </div>
 
