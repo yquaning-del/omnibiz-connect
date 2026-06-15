@@ -89,8 +89,10 @@ export function PublicLayout({ children }: PublicLayoutProps) {
         {/* Mobile menu */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl px-6 py-4 space-y-3">
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground py-2">Home</Link>
             <Link to="/#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground py-2">Features</Link>
             <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground py-2">Pricing</Link>
+            <Link to="/#about" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground py-2">About Us</Link>
             <Link to="/docs" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground py-2">Docs</Link>
             <div className="pt-3 border-t border-border/50 flex flex-col gap-2">
               {user ? (
